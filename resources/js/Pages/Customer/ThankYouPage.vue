@@ -2,15 +2,43 @@
 import { Head, Link } from "@inertiajs/vue3";
 
 // Import the Lottie player
-import { onMounted } from "vue";
+import { onMounted, nextTick } from "vue";
 
-onMounted(() => {
+onMounted(async () => {
     // Dynamically load the Lottie player script
     const script = document.createElement("script");
     script.src =
         "https://unpkg.com/@lottiefiles/lottie-player@2.0.8/dist/lottie-player.js";
     script.async = true;
     document.head.appendChild(script);
+
+    // Wait for DOM to be ready and handle video autoplay issues
+    await nextTick();
+    
+    // Get all video elements
+    const videos = document.querySelectorAll('video');
+    
+    // Try to play each video with proper error handling
+    videos.forEach(video => {
+        // Add event listener for error handling
+        video.addEventListener('error', (e) => {
+            console.warn('Video failed to play:', e);
+        });
+        
+        // Try to play the video with proper handling
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                // Auto-play was prevented, handle it gracefully
+                console.warn('Autoplay prevented:', error);
+                // Mute the video and try again if needed
+                video.muted = true;
+                video.play().catch(err => {
+                    console.warn('Even muted autoplay failed:', err);
+                });
+            });
+        }
+    });
 });
 </script>
 
@@ -19,9 +47,9 @@ onMounted(() => {
         <Head title="Thank You" />
         <!-- Video Background -->
         <video
-            autoplay
             muted
             loop
+            playsinline
             class="absolute w-full h-full top-0 left-0 object-cover -z-10"
         >
             <source
@@ -95,4 +123,3 @@ onMounted(() => {
         </div>
     </div>
 </template>
-

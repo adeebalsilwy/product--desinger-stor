@@ -65,7 +65,7 @@ const policies = [
         <div class="mb-12 space-y-2 text-center">
             <h1 class="text-5xl font-bold text-gray-800 font-main">Privacy Policy</h1>
             <h2>Effective Date: <span class="font-bold font-secondary">November 28, 2024</span></h2>
-            <p class="font-main">At <span class="font-semibold">D-shirts</span>, we value your privacy and are committed to protecting your personal information. This Privacy Policy outlines how we collect, use, and safeguard your data when you visit our website or make a purchase.</p>
+            <p class="font-main">At <span class="font-semibold">Ahlam’s Girls   </span>, we value your privacy and are committed to protecting your personal information. This Privacy Policy outlines how we collect, use, and safeguard your data when you visit our website or make a purchase.</p>
         </div>
 
         <section v-for="policy in policies" :key="policy.title" class="bg-white shadow-md rounded-lg p-6 mb-4">

@@ -1,82 +1,73 @@
 <script setup>
+import { computed } from 'vue';
+
 const props = defineProps({
-  type: String,
+  status: String,
+  type: String
 });
 
-const types = {
-  pending: {
-    label: "Pending",
-    bg: "bg-neumorphic-badge",
-    text: "text-neumorphic-text",
-    border: "border-neumorphic-text",
-    darkBg: "bg-neumorphic-active",
-    darkText: "text-neumorphic-text",
-    emoji: "⏸️",
-  },
-  processing: {
-    label: "Processing",
-    bg: "bg-neumorphic-badge",
-    text: "text-neumorphic-text",
-    border: "border-neumorphic-text",
-    darkBg: "bg-neumorphic-active",
-    darkText: "text-neumorphic-text",
-    emoji: "♻️",
-  },
-  shipped: {
-    label: "Shipped",
-    bg: "bg-neumorphic-badge",
-    text: "text-neumorphic-text",
-    border: "border-neumorphic-text",
-    darkBg: "bg-neumorphic-active",
-    darkText: "text-neumorphic-text",
-    emoji: "🚚",
-  },
-  delivered: {
-    label: "Delivered",
-    bg: "bg-neumorphic-badge",
-    text: "text-neumorphic-text",
-    border: "border-neumorphic-text",
-    darkBg: "bg-neumorphic-active",
-    darkText: "text-neumorphic-text",
-    emoji: "✅",
-  },
-  cancelled: {
-    label: "Cancelled",
-    bg: "bg-neumorphic-badge",
-    text: "text-neumorphic-text",
-    border: "border-neumorphic-text",
-    darkBg: "bg-neumorphic-active",
-    darkText: "text-neumorphic-text",
-    emoji: "❌",
-  },
-  active: {
-    label: "Active",
-    bg: "bg-neumorphic-badge",
-    text: "text-neumorphic-text",
-    border: "border-neumorphic-text",
-    darkBg: "bg-neumorphic-active",
-    darkText: "text-neumorphic-text",
-    emoji: "🟢",
-  },
-  inactive: {
-    label: "Inactive",
-    bg: "bg-neumorphic-badge",
-    text: "text-neumorphic-text",
-    border: "border-neumorphic-text",
-    darkBg: "bg-neumorphic-active",
-    darkText: "text-neumorphic-text",
-    emoji: "🔴",
-  },
-};
+// Use either status or type prop, prioritizing status
+const currentStatus = computed(() => props.status || props.type);
 
-// Dynamically select the current type based on the prop
-const currentType = types[props.type] || types.pending; // Default to 'pending' if type is not provided
+const statusClasses = computed(() => {
+  if (!currentStatus.value) return 'bg-gray-100 text-gray-800 border border-gray-200';
+  
+  switch(currentStatus.value.toLowerCase()) {
+    case 'active':
+    case 'completed':
+    case 'delivered':
+    case 'paid':
+      return 'bg-green-100 text-green-800 border border-green-200';
+    case 'inactive':
+    case 'cancelled':
+    case 'failed':
+      return 'bg-red-100 text-red-800 border border-red-200';
+    case 'pending':
+    case 'processing':
+    case 'draft':
+      return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+    case 'shipped':
+    case 'in transit':
+      return 'bg-blue-100 text-blue-800 border border-blue-200';
+    case 'refunded':
+      return 'bg-purple-100 text-purple-800 border border-purple-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border border-gray-200';
+  }
+});
+
+const dotColorClass = computed(() => {
+  if (!currentStatus.value) return 'bg-gray-500';
+  
+  switch(currentStatus.value.toLowerCase()) {
+    case 'active':
+    case 'completed':
+    case 'delivered':
+    case 'paid':
+      return 'bg-green-500';
+    case 'inactive':
+    case 'cancelled':
+    case 'failed':
+      return 'bg-red-500';
+    case 'pending':
+    case 'processing':
+    case 'draft':
+      return 'bg-yellow-500';
+    case 'shipped':
+    case 'in transit':
+      return 'bg-blue-500';
+    case 'refunded':
+      return 'bg-purple-500';
+    default:
+      return 'bg-gray-500';
+  }
+});
 </script>
 
 <template>
-  <div
-    :class="`inline-flex gap-2 items-center ${currentType.bg} ${currentType.text} border ${currentType.border} text-xs font-medium px-2.5 py-0.5 rounded-full neumorphic-btn`"
-  >
-    <p>{{ currentType.label }}</p>
-  </div>
+  <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium capitalize" 
+        :class="statusClasses">
+    <span class="w-2 h-2 rounded-full mr-2" :class="dotColorClass"></span>
+    {{ currentStatus }}
+  </span>
 </template>

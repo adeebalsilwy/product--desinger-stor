@@ -8,7 +8,7 @@ We truly appreciate your support and for choosing **{{ config('app.name') }}** f
 
 Your order is currently being processed, and we are working to ensure everything is perfect for you. Once your order has been shipped, we will send you another email with the tracking number so you can keep an eye on its journey to your doorstep.
 
-If you have any questions in the meantime, feel free to contact us at [support@d-shirts.com](mailto:support@d-shirts.com).
+If you have any questions in the meantime, feel free to contact us at [support@Ahlam’s Girls   .com](mailto:support@Ahlam’s Girls   .com).
 
 Thank you for being a valued customer!
 

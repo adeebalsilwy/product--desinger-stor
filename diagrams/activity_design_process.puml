@@ -1,0 +1,119 @@
+@startuml
+' Activity Diagram - Design Creation Process
+
+!define START_COLOR #4CAF50
+!define END_COLOR #F44336
+!define PROCESS_COLOR #2196F3
+!define DECISION_COLOR #FFC107
+
+skinparam activity {
+    BackgroundColor #FFF3E0
+    BorderColor #FF9800
+    FontSize 12
+}
+
+skinparam activityStart {
+    BackgroundColor START_COLOR
+    BorderColor START_COLOR
+}
+
+skinparam activityEnd {
+    BackgroundColor END_COLOR
+    BorderColor END_COLOR
+}
+
+skinparam activityBar {
+    BackgroundColor PROCESS_COLOR
+    BorderColor PROCESS_COLOR
+}
+
+title Design Creation and Management Process
+
+start
+:User accesses designer;
+:Select product type;
+
+if (User authenticated?) then (yes)
+    :Load user's saved designs;
+    :Show user's design history;
+else (no)
+    :Continue as guest;
+    :Generate session identifier;
+endif
+
+:Load product template;
+:Load available print areas;
+
+note right
+  Design Tools Available:
+  - Text tools
+  - Image upload
+  - Clipart selection
+  - Color customization
+  - Layer management
+  - Alignment tools
+end note
+
+:User creates/modifies design;
+
+if (User wants to save?) then (yes)
+    if (User authenticated?) then (yes)
+        :Save to user account;
+        :Generate thumbnail;
+        :Store design data;
+    else (no)
+        :Save to session storage;
+        :Associate with session ID;
+    endif
+    :Queue preview generation;
+else
+    :Keep in temporary storage;
+endif
+
+if (User wants to export?) then (yes)
+    :Select export format;
+    if (Format is high_res?) then (yes)
+        :Generate high-resolution image;
+        :Apply print specifications;
+    elseif (Format is preview?) then (yes)
+        :Generate web preview;
+    elseif (Format is PDF?) then (yes)
+        :Generate PDF document;
+    else
+        :Export layers data;
+    endif
+    :Provide download link;
+endif
+
+if (User wants to order?) then (yes)
+    :Add design to cart;
+    :Proceed to checkout process;
+    goto CheckoutProcess
+else
+    :Continue designing;
+endif
+
+if (User wants to save as template?) then (yes)
+    :Convert design to template;
+    :Set template properties;
+    :Store template data;
+    :Update usage statistics;
+endif
+
+:Return to designer interface;
+
+CheckoutProcess:
+:Process order as described in order flow;
+
+stop
+
+note bottom
+  Design Process Features:
+  - Real-time preview updates
+  - Multiple save options
+  - Template creation
+  - Export functionality
+  - Integration with order system
+end note
+
+@enduml

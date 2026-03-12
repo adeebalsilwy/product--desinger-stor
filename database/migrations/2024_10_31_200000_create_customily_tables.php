@@ -25,24 +25,67 @@ return new class extends Migration
             $table->index('is_active');
         });
 
-        // Products Table
-        Schema::create('products', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('product_type_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('name');
-            $table->string('slug')->unique();
-            $table->text('description')->nullable();
-            $table->string('sku')->unique();
-            $table->decimal('price', 10, 2);
-            $table->decimal('sale_price', 10, 2)->nullable();
-            $table->integer('inventory_count')->default(0);
-            $table->boolean('is_active')->default(true);
-            $table->string('thumbnail_url')->nullable();
-            $table->timestamps();
+        // Products Table - Update existing table with additional fields
+        // First, add the product_type_id column if it doesn't exist
+        if (!Schema::hasColumn('products', 'product_type_id')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->foreignId('product_type_id')->nullable()->after('id')->constrained()->nullOnDelete();
+            });
+        }
+        
+        // Next, add the name column if it doesn't exist
+        if (!Schema::hasColumn('products', 'name')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->string('name')->after('product_type_id')->nullable();
+            });
+            
+            // Copy data from title to name if title exists
+            if (Schema::hasColumn('products', 'title')) {
+                \DB::statement('UPDATE products SET name = title WHERE name IS NULL OR name = ""');
+            }
+        }
+        
+        // Continue with other column additions
+        Schema::table('products', function (Blueprint $table) {
+            // Add SKU if not exists
+            if (!Schema::hasColumn('products', 'sku')) {
+                $table->string('sku')->unique()->after('slug');
+            }
+            
+            // Add sale_price if not exists
+            if (!Schema::hasColumn('products', 'sale_price')) {
+                $table->decimal('sale_price', 10, 2)->nullable()->after('price');
+            }
+            
+            // Add inventory_count if not exists
+            if (!Schema::hasColumn('products', 'inventory_count')) {
+                $table->integer('inventory_count')->default(0)->after('sale_price');
+            }
+            
+            // Add is_active if not exists
+            if (!Schema::hasColumn('products', 'is_active')) {
+                $table->boolean('is_active')->default(true)->after('inventory_count');
+            }
+            
+            // Add thumbnail_url if not exists
+            if (!Schema::hasColumn('products', 'thumbnail_url')) {
+                $table->string('thumbnail_url')->nullable()->after('is_active');
+            }
+            
+            // Remove listed column as it's replaced by is_active
+            if (Schema::hasColumn('products', 'listed')) {
+                $table->dropColumn('listed');
+            }
             
             $table->index(['product_type_id', 'is_active']);
-            $table->index('slug');
         });
+        
+        // Finally, drop the title column if it still exists
+        if (Schema::hasColumn('products', 'title')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->dropColumn('title');
+            });
+        }
 
         // Print Areas Table
         Schema::create('print_areas', function (Blueprint $table) {

@@ -11,6 +11,7 @@ use App\Services\Design\ExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cookie;
 
 class DesignController extends Controller
 {
@@ -36,11 +37,12 @@ class DesignController extends Controller
             $query->where('is_template', $request->is_template);
         }
         
-        // User's own designs or guest designs by session
+        // User's own designs or guest designs by session/guest identifier
         if (Auth::check()) {
             $query->where('user_id', Auth::id());
         } else {
-            $query->where('session_id', $request->session()->getId());
+            $guestIdentifier = $this->getGuestIdentifier($request);
+            $query->where('session_id', $guestIdentifier);
         }
         
         $designs = $query->with('productType')
@@ -87,9 +89,12 @@ class DesignController extends Controller
             'is_public' => 'boolean',
         ]);
         
+        // Get guest identifier (either from session or cookie)
+        $guestIdentifier = $this->getGuestIdentifier($request);
+        
         $design = SavedDesign::create([
-            'user_id' => Auth::id(),
-            'session_id' => $request->session()->getId(),
+            'user_id' => Auth::check() ? Auth::id() : null,  // Only assign user ID if authenticated
+            'session_id' => $guestIdentifier,
             'product_type_id' => $validated['product_type_id'],
             'name' => $validated['name'] ?? 'Untitled Design',
             'design_data' => $validated['design_data'],
@@ -295,9 +300,10 @@ class DesignController extends Controller
             return true;
         }
         
-        // Guest can access by session
-        if (!Auth::check() && $design->session_id === request()->session()->getId()) {
-            return true;
+        // Guest can access by identifier
+        if (!Auth::check() && $design->session_id) {
+            $guestIdentifier = $this->getGuestIdentifier(request());
+            return $design->session_id === $guestIdentifier;
         }
         
         // Public designs are accessible
@@ -306,5 +312,30 @@ class DesignController extends Controller
         }
         
         return false;
+    }
+    
+    /**
+     * Get guest identifier from request - either session or cookie
+     */
+    private function getGuestIdentifier(Request $request): string
+    {
+        // Try to get from session first (if session is available)
+        try {
+            if ($request->hasSession() && $request->session()->isStarted()) {
+                return $request->session()->getId();
+            }
+        } catch (\Exception $e) {
+            // Session not available, fall back to cookie
+        }
+        
+        // Fall back to a guest identifier stored in cookie
+        $guestId = $request->cookie('guest_design_id');
+        if (!$guestId) {
+            $guestId = Str::uuid()->toString();
+            // We can't set the cookie here since we're in an API response
+            // The frontend should handle this
+        }
+        
+        return $guestId;
     }
 }

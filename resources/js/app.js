@@ -4,8 +4,9 @@ import PrimeVue from "primevue/config";
 import Aura from '@primevue/themes/aura';
 import ToastService from "primevue/toastservice";
 import ConfirmationService from 'primevue/confirmationservice';
-
-
+import { brandSettings } from './plugins/BrandSettings';
+import VueApexCharts from 'vue3-apexcharts';
+import CSRFService from './Services/CSRFService';
 
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
@@ -22,6 +23,9 @@ createInertiaApp({
             import.meta.glob("./Pages/**/*.vue")
         ),
     setup({ el, App, props, plugin }) {
+        // Initialize global CSRF protection
+        CSRFService.initCSRFProtection();
+        
         return createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)
@@ -37,6 +41,8 @@ createInertiaApp({
             })
             .use(ToastService)
             .use(ConfirmationService)
+            .use(brandSettings)
+            .use(VueApexCharts)
             .mount(el);
     },
     progress: {

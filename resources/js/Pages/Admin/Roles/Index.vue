@@ -112,6 +112,12 @@
                     Edit
                   </button>
                   <button
+                    @click="openPermissionModal(role)"
+                    class="text-green-600 hover:text-green-900"
+                  >
+                    Permissions
+                  </button>
+                  <button
                     @click="toggleStatus(role)"
                     class="text-yellow-600 hover:text-yellow-900"
                   >
@@ -219,6 +225,99 @@
           </form>
         </div>
       </div>
+
+      <!-- Permission Management Modal -->
+      <div v-if="showPermissionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-screen overflow-y-auto">
+          <h3 class="text-lg font-semibold mb-4 text-neumorphic-text">
+            Manage Permissions for "{{ selectedRoleForPermissions?.name }}"
+          </h3>
+          
+          <div class="mb-4">
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id="select-all-permissions"
+                v-model="selectAllPermissions"
+                @change="toggleSelectAllPermissions"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label for="select-all-permissions" class="ml-2 block text-sm font-medium text-gray-700">
+                Select All Permissions
+              </label>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div 
+              v-for="permission in permissions" 
+              :key="permission.id"
+              class="border rounded p-3 hover:bg-gray-50 transition-colors"
+              :class="{ 'bg-blue-50 border-blue-200': selectedPermissions.includes(permission.id) }"
+            >
+              <div class="flex items-start">
+                <input
+                  type="checkbox"
+                  :id="'permission-' + permission.id"
+                  :value="permission.id"
+                  v-model="selectedPermissions"
+                  @change="togglePermission(permission.id)"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
+                />
+                <div class="ml-3">
+                  <label 
+                    :for="'permission-' + permission.id"
+                    class="block text-sm font-medium text-gray-700 cursor-pointer"
+                  >
+                    {{ permission.name }}
+                  </label>
+                  <p class="text-xs text-gray-500 mt-1">
+                    {{ permission.description || permission.slug }}
+                  </p>
+                  <div class="mt-2 flex flex-wrap gap-1">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {{ permission.resource }}
+                    </span>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      {{ permission.action }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-between items-center pt-4 border-t">
+            <div class="text-sm text-gray-600">
+              Selected: {{ selectedPermissions.length }} of {{ permissions.length }} permissions
+            </div>
+            <div class="flex space-x-2">
+              <button
+                type="button"
+                @click="closePermissionModal"
+                class="px-4 py-2 bg-gray-600 text-white rounded neumorphic-btn"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                @click="revokeAllPermissions(selectedRoleForPermissions)"
+                class="px-4 py-2 bg-red-600 text-white rounded neumorphic-btn hover:bg-red-700"
+              >
+                Revoke All
+              </button>
+              <button
+                type="button"
+                @click="grantPermissions"
+                :disabled="selectedPermissions.length === 0"
+                class="px-4 py-2 bg-green-600 text-white rounded neumorphic-btn hover:bg-green-700 disabled:opacity-50"
+              >
+                Grant Selected ({{ selectedPermissions.length }})
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </AdminLayout>
 </template>
@@ -236,12 +335,17 @@ export default {
   
   props: {
     roles: Object,
+    permissions: Array,
   },
   
   data() {
     return {
       showModal: false,
       editingRole: null,
+      showPermissionModal: false,
+      selectedRoleForPermissions: null,
+      selectedPermissions: [],
+      selectAllPermissions: false,
       form: {
         name: '',
         slug: '',
@@ -383,6 +487,77 @@ export default {
           onSuccess: () => {
             this.clearSelection();
             // Message is handled by Laravel
+          },
+          onError: (errors) => {
+            console.error(errors);
+          },
+        });
+      }
+    },
+
+    openPermissionModal(role) {
+      this.selectedRoleForPermissions = role;
+      this.selectedPermissions = role.permissions ? role.permissions.map(p => p.id) : [];
+      this.selectAllPermissions = this.selectedPermissions.length === this.permissions.length;
+      this.showPermissionModal = true;
+    },
+
+    closePermissionModal() {
+      this.showPermissionModal = false;
+      this.selectedRoleForPermissions = null;
+      this.selectedPermissions = [];
+      this.selectAllPermissions = false;
+    },
+
+    toggleSelectAllPermissions() {
+      if (this.selectAllPermissions) {
+        this.selectedPermissions = this.permissions.map(p => p.id);
+      } else {
+        this.selectedPermissions = [];
+      }
+    },
+
+    togglePermission(permissionId) {
+      const index = this.selectedPermissions.indexOf(permissionId);
+      if (index > -1) {
+        this.selectedPermissions.splice(index, 1);
+      } else {
+        this.selectedPermissions.push(permissionId);
+      }
+      this.selectAllPermissions = this.selectedPermissions.length === this.permissions.length;
+    },
+
+    async grantPermissions() {
+      if (!this.selectedRoleForPermissions) {
+        alert('No role selected');
+        return;
+      }
+
+      if (this.selectedPermissions.length === 0) {
+        alert('Please select at least one permission');
+        return;
+      }
+
+      if (confirm(`Are you sure you want to grant ${this.selectedPermissions.length} permission(s) to the role "${this.selectedRoleForPermissions.name}"?`)) {
+        router.post(`/admin/roles/${this.selectedRoleForPermissions.id}/grant-permissions`, {
+          permission_ids: this.selectedPermissions,
+        }, {
+          onSuccess: () => {
+            this.closePermissionModal();
+            router.reload();
+          },
+          onError: (errors) => {
+            console.error(errors);
+          },
+        });
+      }
+    },
+
+    async revokeAllPermissions(role) {
+      if (confirm(`Are you sure you want to revoke all permissions from the role "${role.name}"?`)) {
+        router.delete(`/admin/roles/${role.id}/revoke-all-permissions`, {
+          onSuccess: () => {
+            router.reload();
           },
           onError: (errors) => {
             console.error(errors);

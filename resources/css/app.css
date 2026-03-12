@@ -1,4 +1,5 @@
 @import "./flags.css";
+@import "./cropper.css";
 
 @tailwind base;
 @tailwind components;
@@ -9,9 +10,33 @@
     .smooth {
         @apply transition-all duration-100 ease-in-out;
     }
+    
+    /* Brand Button Styles */
     .btn{
-        @apply rounded-md p-2 text-white text-sm font-semibold bg-green-500 hover:bg-green-600 transition-all duration-100 ease-in-out;
+        background: linear-gradient(135deg, var(--brand-accent), var(--brand-gold));
+        @apply rounded-md p-2 text-white text-sm font-semibold hover:opacity-90 transition-all duration-100 ease-in-out;
     }
+    
+    .btn-primary {
+        background-color: var(--brand-primary);
+        @apply rounded-md p-2 text-white text-sm font-semibold hover:bg-opacity-90 transition-all duration-100 ease-in-out;
+    }
+    
+    .btn-secondary {
+        background-color: var(--brand-secondary);
+        @apply rounded-md p-2 text-white text-sm font-semibold hover:bg-opacity-90 transition-all duration-100 ease-in-out;
+    }
+    
+    .btn-accent {
+        background-color: var(--brand-accent);
+        @apply rounded-md p-2 text-white text-sm font-semibold hover:bg-opacity-90 transition-all duration-100 ease-in-out;
+    }
+    
+    .btn-luxury {
+        background: linear-gradient(135deg, var(--brand-gold), var(--brand-accent));
+        @apply rounded-md p-2 text-white text-sm font-semibold hover:opacity-90 transition-all duration-100 ease-in-out;
+    }
+    
     .btn-danger{
         @apply rounded-md p-2 text-white text-sm font-semibold bg-red-500 hover:bg-red-600 transition-all duration-100 ease-in-out;
     }
@@ -19,30 +44,61 @@
 
 @layer base {
     @font-face {
-        font-family: "bespoke";
+       font-family: "bespoke";
         src: url("../../public/assets/fonts/BespokeStencil-Variable.ttf");
     }
     @font-face {
-        font-family: "main";
+       font-family: "main";
         src: url("../../public/assets/fonts/Rubik-VariableFont_wght.ttf");
     }
     @font-face {
-        font-family: "secondary";
+       font-family: "secondary";
         src: url("../../public/assets/fonts/RobotoMono-VariableFont_wght.ttf");
+    }
+    /* Ahlam's Girls Brand Fonts- Elegant & Script */
+    @font-face {
+       font-family: "brand-script";
+        src: local("Great Vibes"), local("Dancing Script"), 
+            url("https://fonts.gstatic.com/s/greatvibes/v21/PIvzPREXu4CYKgCjI7JzcA.woff2") format("woff2");
+       font-weight: normal;
+       font-style: normal;
+       font-display: swap;
+    }
+    @font-face {
+       font-family: "brand-elegant";
+        src: local("Playfair Display"), local("Cormorant Garamond"), 
+            url("https://fonts.gstatic.com/s/playfairdisplay/v36/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvXDXbtM.woff2") format("woff2");
+       font-weight: normal;
+       font-style: normal;
+       font-display: swap;
     }
 }
 
-/* Neumorphism Base Styles - Matching Blade Template Design */
+/* Ahlam's Girls - Professional Yemeni Brand Colors */
 :root {
-    --neumorphic-bg: #e0e5ec;
+    /* Primary Brand Colors - Professional Yemeni Theme */
+    --brand-primary: #2c3e50;         /* Deep navy blue - elegance, sophistication */
+    --brand-secondary: #34495e;      /* Rich slate blue - depth, professionalism */
+    --brand-accent: #e74c3c;         /* Crimson red - feminine, energetic accent */
+    --brand-bg: #ecf0f1;             /* Light gray - clean background */
+    --brand-text: #2c3e50;            /* Dark navy - clear, readable text */
+    
+    /* Luxury Accent Colors */
+    --brand-gold: #f39c12;            /* Warm gold - premium Yemeni feel */
+    --brand-rose: #e74c3c;           /* Deep rose - feminine touch */
+    --brand-lavender: #d6eaf8;       /* Soft blue - creativity, imagination */
+    --brand-cream: #fefefe;          /* Pure cream - luxury background */
+    
+    /* Neumorphism Colors - Updated for Brand (No shadows) */
+    --neumorphic-bg: #ffffff;
     --neumorphic-shadow-light: #ffffff;
-    --neumorphic-shadow-dark: #a3b1c6;
-    --neumorphic-text: #6d7587;
-    --neumorphic-text-hover: #4a5568;
-    --neumorphic-accent: #9c27b0;
-    --neumorphic-active: #d2d8e0;
-    --neumorphic-hover: #d9dde5;
-    --neumorphic-badge: #d1d8e0;
+    --neumorphic-shadow-dark: #ecf0f1;
+    --neumorphic-text: #2c3e50;
+    --neumorphic-text-hover: #34495e;
+    --neumorphic-accent: #e74c3c;
+    --neumorphic-active: #f8f9fa;
+    --neumorphic-hover: #f1f2f6;
+    --neumorphic-badge: #ecf0f1;
 }
 
 /* Neumorphism base classes */
@@ -53,35 +109,36 @@
 .neumorphic {
     border-radius: 15px;
     background: var(--neumorphic-bg);
-    box-shadow: 9px 9px 16px var(--neumorphic-shadow-dark),
-                -9px -9px 16px var(--neumorphic-shadow-light);
+    /* Removed all shadows for professional appearance */
+    border: 1px solid var(--neumorphic-shadow-dark);
 }
 
 .neumorphic-inset {
     border-radius: 15px;
     background: var(--neumorphic-bg);
-    box-shadow: inset 3px 3px 5px var(--neumorphic-shadow-dark),
-                inset -3px -3px 5px var(--neumorphic-shadow-light);
+    /* Removed all inset shadows for clean professional look */
+    border: 1px solid var(--neumorphic-shadow-dark);
 }
 
 .neumorphic-btn {
-    border: none;
+    border: 1px solid var(--neumorphic-shadow-dark);
     border-radius: 10px;
     background: var(--neumorphic-bg);
-    box-shadow: 5px 5px 10px var(--neumorphic-shadow-dark),
-                -5px -5px 10px var(--neumorphic-shadow-light);
+    /* Removed all button shadows for professional appearance */
     transition: all 0.3s ease;
     cursor: pointer;
 }
 
 .neumorphic-btn:hover {
-    box-shadow: 2px 2px 5px var(--neumorphic-shadow-dark),
-                -2px -2px 5px var(--neumorphic-shadow-light);
+    border-color: var(--neumorphic-text-hover);
+    background-color: var(--neumorphic-hover);
+    /* Removed hover shadows for clean professional look */
 }
 
 .neumorphic-btn:active {
-    box-shadow: inset 2px 2px 5px var(--neumorphic-shadow-dark),
-                inset -2px -2px 5px var(--neumorphic-shadow-light);
+    background-color: var(--neumorphic-active);
+    border-color: var(--neumorphic-text);
+    /* Removed active shadows for professional appearance */
 }
 
 .text-neumorphic {
@@ -90,6 +147,64 @@
 
 .border-neumorphic {
     border-color: var(--neumorphic-text);
+}
+
+/* Ahlam's Girls Brand Classes */
+.bg-brand-primary {
+    background-color: var(--brand-primary);
+}
+
+.bg-brand-secondary {
+    background-color: var(--brand-secondary);
+}
+
+.bg-brand-accent {
+    background-color: var(--brand-accent);
+}
+
+.bg-brand-gold {
+    background-color: var(--brand-gold);
+}
+
+.text-brand-primary {
+    color: var(--brand-primary);
+}
+
+.text-brand-accent {
+    color: var(--brand-accent);
+}
+
+.text-brand-gold {
+    color: var(--brand-gold);
+}
+
+.bg-brand-cream {
+    background-color: var(--brand-cream);
+}
+
+.text-brand-cream {
+    color: var(--brand-cream);
+}
+
+.border-brand-accent {
+    border-color: var(--brand-accent);
+}
+
+.border-brand-gold {
+    border-color: var(--brand-gold);
+}
+
+/* Gradient Backgrounds */
+.gradient-brand {
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+}
+
+.gradient-luxury {
+    background: linear-gradient(135deg, var(--brand-gold) 0%, var(--brand-accent) 100%);
+}
+
+.gradient-elegant {
+    background: linear-gradient(135deg, var(--brand-rose) 0%, var(--brand-lavender) 100%);
 }
 
 /* Additional Admin UI Styles */
@@ -109,28 +224,44 @@
     @apply bg-neumorphic shadow rounded-lg p-6 neumorphic;
 }
 
+/* Brand Status Badges */
 .status-badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
 }
 
 .status-pending {
-    @apply bg-yellow-100 text-yellow-800;
+    background-color: var(--brand-gold);
+    color: white;
 }
 
 .status-processing {
-    @apply bg-blue-100 text-blue-800;
+    background-color: var(--brand-secondary);
+    color: white;
 }
 
 .status-shipped {
-    @apply bg-indigo-100 text-indigo-800;
+    background-color: var(--brand-lavender);
+    color: white;
 }
 
 .status-delivered {
-    @apply bg-green-100 text-green-800;
+    background-color: var(--brand-accent);
+    color: white;
 }
 
 .status-cancelled {
-    @apply bg-red-100 text-red-800;
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Luxury Badge */
+.luxury-badge {
+    background: linear-gradient(135deg, var(--brand-gold), var(--brand-accent));
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+   font-size: 0.75rem;
+   font-weight: 600;
 }
 
 /* Scrollbar styling */

@@ -3,19 +3,32 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Tshirt;
+use App\Models\Product;
+use App\Models\User;
+use App\Models\OrderItem;
+use App\Models\OrderHistory;
 
 class Order extends Model
 {
-    protected $fillable = ['customer_id', 'number_of_items', 'status', 'tracking_number', 'total_tshirts', 'total_amount', 'payment_status', 'payment_id'];
+    protected $fillable = ['customer_id', 'number_of_items', 'status', 'tracking_number', 'total_tshirts', 'total_amount', 'payment_status', 'payment_id', 'reference_number', 'transfer_date', 'bank_details', 'receipt_path'];
 
     public function customer()
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(User::class, 'customer_id');
     }
 
     public function tshirts()
     {
-        return $this->belongsToMany(Tshirt::class)
+        // For backward compatibility, map to products table using the new table/column names
+        return $this->belongsToMany(Tshirt::class, 'order_product', 'order_id', 'product_id')
+            ->withPivot('quantity', 'price', 'size')
+            ->withTimestamps();
+    }
+
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'order_product', 'order_id', 'product_id')
             ->withPivot('quantity', 'price', 'size')
             ->withTimestamps();
     }
@@ -47,6 +60,12 @@ class Order extends Model
         return $this->tshirts->sum(function ($tshirt) {
             return $tshirt->pivot->quantity * $tshirt->pivot->price;
         });
+    }
+
+    public function getTotalProducts()
+    {
+        $this->loadMissing('products');
+        return $this->products->sum('pivot.quantity');
     }
 
 }

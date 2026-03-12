@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('shirt_images', function (Blueprint $table) {
             $table->id();
             $table->integer('order');
-            $table->foreignId('tshirt_id')->constrained('tshirts')->onDelete('cascade');
+            $table->foreignId('tshirt_id')->constrained('products')->onDelete('cascade');
             $table->string('url');
             $table->timestamps();
         });

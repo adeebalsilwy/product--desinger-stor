@@ -1,349 +1,292 @@
 <script setup>
-import { ref } from "vue";
-import Dropdown from "@/Components/Breeze/Dropdown.vue";
-import DropdownLink from "@/Components/Breeze/DropdownLink.vue";
-import IconsOrder from "@/Icons/Order.vue";
-import IconsTshirt from "@/Icons/Tshirt.vue";
-import IconsUsers from "@/Icons/Users.vue";
-import IconsMoney from "@/Icons/Money.vue";
-import ResponsiveNavLink from "@/Components/Breeze/ResponsiveNavLink.vue";
-import { Link } from "@inertiajs/vue3";
-import DashboardCard from "@/Components/DashboardCard.vue";
-import DashboardChartCard from "@/Components/DashboardChartCard.vue";
-import { computed } from 'vue'
-import { usePage } from '@inertiajs/vue3'
+import { ref, onMounted, onUnmounted } from 'vue';
+import { Link } from '@inertiajs/vue3';
 
-const page = usePage()
-
-const orders_count = computed(() => page.props.orders_count)
-const customers_count = computed(() => page.props.customers_count)
-const tshirts_count = computed(() => page.props.tshirts_count)
-const revenue = computed(() => page.props.revenue)
-
-const showingNavigationDropdown = ref(false);
 const sidebarOpen = ref(true);
+const showProfileDropdown = ref(false);
 
-// Toggle sidebar visibility on mobile
 const toggleSidebar = () => {
     sidebarOpen.value = !sidebarOpen.value;
+};
+
+const toggleProfileDropdown = () => {
+    showProfileDropdown.value = !showProfileDropdown.value;
+};
+
+// Close sidebar when clicking outside (on larger screens)
+const handleClickOutside = (event) => {
+    const sidebar = document.querySelector('aside');
+    const menuButton = document.querySelector('button[onclick="toggleSidebar"]');
+    
+    if (sidebarOpen.value && 
+        sidebar && 
+        !sidebar.contains(event.target) && 
+        menuButton && 
+        !menuButton.contains(event.target) &&
+        window.innerWidth < 1024) {
+        sidebarOpen.value = false;
+    }
+    
+    // Close profile dropdown when clicking outside
+    const profileMenu = document.querySelector('.profile-dropdown');
+    const profileButton = document.querySelector('.profile-button');
+    
+    if (showProfileDropdown.value && 
+        profileMenu && 
+        !profileMenu.contains(event.target) && 
+        profileButton && 
+        !profileButton.contains(event.target)) {
+        showProfileDropdown.value = false;
+    }
+};
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+});
+
+const setDefaultLogo = (event) => {
+    event.target.src = '/images/logo.jpeg';
 };
 </script>
 
 <template>
-    <div class="min-h-screen flex bg-neumorphic">
+    <div class="min-h-screen flex flex-col bg-gradient-elegant">
         <!-- Sidebar -->
         <aside 
-            :class="{'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen}" 
-            class="fixed inset-y-0 left-0 z-30 w-64 bg-neumorphic shadow-lg transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 neumorphic-box"
+            class="fixed inset-y-0 left-0 z-30 w-64 bg-brand-primary text-white transition-transform duration-300 ease-in-out transform"
+            :class="{ '-translate-x-full lg:translate-x-0': !sidebarOpen, 'translate-x-0': sidebarOpen }"
         >
-            <div class="flex items-center justify-between p-4 border-b border-neumorphic">
-                <Link :href="route('home')" class="flex items-center space-x-2">
-                    <img
-                        src="../../../public/assets/logo/d-shirts.png"
-                        alt="d-shirts logo"
-                        class="w-10"
+            <div class="flex items-center justify-between p-6 border-b border-brand-gold border-opacity-20">
+                <div class="flex items-center space-x-3">
+                    <img 
+                      :src="$page.props.settings?.site_logo_url || '/images/logo.jpeg'" 
+                      :alt="$page.props.settings?.site_name || 'Ahlam\'s Girls Logo'"
+                      class="w-10 h-10 rounded-lg object-contain"
+                      @error="setDefaultLogo"
                     />
-                    <span class="text-xl font-bold text-neumorphic-text">D-Shirts</span>
-                </Link>
-                
-                <!-- Close button for mobile -->
+                    <div>
+                        <h1 class="font-brand-elegant text-xl font-bold text-white">{{$page.props.settings?.site_name || 'Ahlam\'s Girls'}}</h1>
+                        <p class="text-xs text-white">Admin Panel</p>
+                    </div>
+                </div>
                 <button 
                     @click="toggleSidebar" 
-                    class="lg:hidden text-neumorphic-text hover:text-neumorphic-text-hover"
+                    class="lg:hidden text-brand-gold hover:text-white transition-colors"
                 >
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
-            
-            <nav class="mt-6 px-2">
+
+            <nav class="p-4 space-y-2">
                 <Link 
                     :href="route('admin.dashboard')" 
-                    :class="$page.component === 'Admin/Dashboard' ? 'bg-neumorphic-active text-neumorphic-text border-r-2 border-neumorphic-accent' : 'text-neumorphic-text hover:bg-neumorphic-hover'"
-                    class="flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 neumorphic-btn"
+                    class="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-brand-gold hover:bg-opacity-20 border border-transparent hover:border-brand-gold hover:border-opacity-30"
+                    :class="{ 'bg-brand-gold bg-opacity-20 border border-brand-gold border-opacity-30': route().current('admin.dashboard') }"
                 >
-                    <svg class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    <svg class="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z"></path>
                     </svg>
-                    Dashboard
+                    <span>Dashboard</span>
                 </Link>
-                
-                <Link 
-                    :href="route('admin.orders.index')" 
-                    :class="$page.component === 'Admin/Orders' ? 'bg-neumorphic-active text-neumorphic-text border-r-2 border-neumorphic-accent' : 'text-neumorphic-text hover:bg-neumorphic-hover'"
-                    class="flex items-center px-4 py-3 text-sm font-medium rounded-lg mt-2 transition-colors duration-200 neumorphic-btn"
-                >
-                    <IconsOrder class="h-5 w-5 mr-3" />
-                    Orders
-                    <span class="ml-auto bg-neumorphic-badge text-neumorphic-text text-xs font-medium px-2 py-0.5 rounded-full">
-                        {{ orders_count }}
-                    </span>
-                </Link>
-                
-                <Link 
-                    :href="route('admin.customers.index')" 
-                    :class="$page.component === 'Admin/Customers' ? 'bg-neumorphic-active text-neumorphic-text border-r-2 border-neumorphic-accent' : 'text-neumorphic-text hover:bg-neumorphic-hover'"
-                    class="flex items-center px-4 py-3 text-sm font-medium rounded-lg mt-2 transition-colors duration-200 neumorphic-btn"
-                >
-                    <IconsUsers class="h-5 w-5 mr-3" />
-                    Customers
-                    <span class="ml-auto bg-neumorphic-badge text-neumorphic-text text-xs font-medium px-2 py-0.5 rounded-full">
-                        {{ customers_count }}
-                    </span>
-                </Link>
-                
-                <Link 
-                    :href="route('admin.products.index')" 
-                    :class="$page.component === 'Admin/Tshirts' ? 'bg-neumorphic-active text-neumorphic-text border-r-2 border-neumorphic-accent' : 'text-neumorphic-text hover:bg-neumorphic-hover'"
-                    class="flex items-center px-4 py-3 text-sm font-medium rounded-lg mt-2 transition-colors duration-200 neumorphic-btn"
-                >
-                    <IconsTshirt class="h-5 w-5 mr-3" />
-                    T-Shirts
-                    <span class="ml-auto bg-neumorphic-badge text-neumorphic-text text-xs font-medium px-2 py-0.5 rounded-full">
-                        {{ tshirts_count }}
-                    </span>
-                </Link>
-                
+
                 <Link 
                     :href="route('admin.users.index')" 
-                    :class="$page.component === 'Admin/Users/Index' ? 'bg-neumorphic-active text-neumorphic-text border-r-2 border-neumorphic-accent' : 'text-neumorphic-text hover:bg-neumorphic-hover'"
-                    class="flex items-center px-4 py-3 text-sm font-medium rounded-lg mt-2 transition-colors duration-200 neumorphic-btn"
+                    class="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-brand-gold hover:bg-opacity-20 border border-transparent hover:border-brand-gold hover:border-opacity-30"
+                    :class="{ 'bg-brand-gold bg-opacity-20 border border-brand-gold border-opacity-30': route().current('admin.users.index') }"
                 >
-                    <svg class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    <svg class="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
                     </svg>
-                    Users
+                    <span>Users</span>
                 </Link>
-                
+
+                <Link 
+                    :href="route('admin.products.index')" 
+                    class="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-brand-gold hover:bg-opacity-20 border border-transparent hover:border-brand-gold hover:border-opacity-30"
+                    :class="{ 'bg-brand-gold bg-opacity-20 border border-brand-gold border-opacity-30': route().current('admin.products.index') }"
+                >
+                    <svg class="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                    <span>Products</span>
+                </Link>
+
+                <Link 
+                    :href="route('admin.orders.index')" 
+                    class="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-brand-gold hover:bg-opacity-20 border border-transparent hover:border-brand-gold hover:border-opacity-30"
+                    :class="{ 'bg-brand-gold bg-opacity-20 border border-brand-gold border-opacity-30': route().current('admin.orders.index') }"
+                >
+                    <svg class="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                    </svg>
+                    <span>Orders</span>
+                </Link>
+
                 <Link 
                     :href="route('admin.designs.index')" 
-                    :class="$page.component === 'Admin/Designs/Index' ? 'bg-neumorphic-active text-neumorphic-text border-r-2 border-neumorphic-accent' : 'text-neumorphic-text hover:bg-neumorphic-hover'"
-                    class="flex items-center px-4 py-3 text-sm font-medium rounded-lg mt-2 transition-colors duration-200 neumorphic-btn"
+                    class="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-brand-gold hover:bg-opacity-20 border border-transparent hover:border-brand-gold hover:border-opacity-30"
+                    :class="{ 'bg-brand-gold bg-opacity-20 border border-brand-gold border-opacity-30': route().current('admin.designs.index') }"
                 >
-                    <svg class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                    <svg class="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"></path>
                     </svg>
-                    Designs
+                    <span>Designs</span>
                 </Link>
-                
-                <Link 
-                    :href="route('designer.my-designs')" 
-                    class="flex items-center px-4 py-3 text-sm font-medium rounded-lg mt-2 transition-colors duration-200 neumorphic-btn text-neumorphic-text hover:bg-neumorphic-hover"
-                >
-                    <svg class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                    Designer
-                </Link>
-                
-                <Link 
-                    :href="route('admin.revenue.index')" 
-                    :class="$page.component === 'Admin/Revenue' ? 'bg-neumorphic-active text-neumorphic-text border-r-2 border-neumorphic-accent' : 'text-neumorphic-text hover:bg-neumorphic-hover'"
-                    class="flex items-center px-4 py-3 text-sm font-medium rounded-lg mt-2 transition-colors duration-200 neumorphic-btn"
-                >
-                    <IconsMoney class="h-5 w-5 mr-3" />
-                    Revenue
-                    <span class="ml-auto bg-neumorphic-badge text-neumorphic-text text-xs font-medium px-2 py-0.5 rounded-full">
-                        {{ revenue }}
-                    </span>
-                </Link>
-                
-                <Link 
-                    :href="route('admin.roles.index')" 
-                    :class="$page.component === 'Admin/Roles/Index' ? 'bg-neumorphic-active text-neumorphic-text border-r-2 border-neumorphic-accent' : 'text-neumorphic-text hover:bg-neumorphic-hover'"
-                    class="flex items-center px-4 py-3 text-sm font-medium rounded-lg mt-2 transition-colors duration-200 neumorphic-btn"
-                >
-                    <svg class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    Roles
-                </Link>
-                
-                <Link 
-                    :href="route('admin.permissions.index')" 
-                    :class="$page.component === 'Admin/Permissions/Index' ? 'bg-neumorphic-active text-neumorphic-text border-r-2 border-neumorphic-accent' : 'text-neumorphic-text hover:bg-neumorphic-hover'"
-                    class="flex items-center px-4 py-3 text-sm font-medium rounded-lg mt-2 transition-colors duration-200 neumorphic-btn"
-                >
-                    <svg class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                    Permissions
-                </Link>
-                
+
                 <Link 
                     :href="route('admin.templates.index')" 
-                    :class="$page.component === 'Admin/Templates/Index' ? 'bg-neumorphic-active text-neumorphic-text border-r-2 border-neumorphic-accent' : 'text-neumorphic-text hover:bg-neumorphic-hover'"
-                    class="flex items-center px-4 py-3 text-sm font-medium rounded-lg mt-2 transition-colors duration-200 neumorphic-btn"
+                    class="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-brand-gold hover:bg-opacity-20 border border-transparent hover:border-brand-gold hover:border-opacity-30"
+                    :class="{ 'bg-brand-gold bg-opacity-20 border border-brand-gold border-opacity-30': route().current('admin.templates.index') }"
                 >
-                    <svg class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <svg class="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
                     </svg>
-                    Templates
+                    <span>Templates</span>
+                </Link>
+
+                <Link 
+                    :href="route('admin.roles.index')" 
+                    class="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-brand-gold hover:bg-opacity-20 border border-transparent hover:border-brand-gold hover:border-opacity-30"
+                    :class="{ 'bg-brand-gold bg-opacity-20 border border-brand-gold border-opacity-30': route().current('admin.roles.index') }"
+                >
+                    <svg class="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <span>Roles</span>
+                </Link>
+
+                <Link 
+                    :href="route('admin.permissions.index')" 
+                    class="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-brand-gold hover:bg-opacity-20 border border-transparent hover:border-brand-gold hover:border-opacity-30"
+                    :class="{ 'bg-brand-gold bg-opacity-20 border border-brand-gold border-opacity-30': route().current('admin.permissions.index') }"
+                >
+                    <svg class="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                    <span>Permissions</span>
+                </Link>
+
+                <Link 
+                    :href="route('admin.settings.index')" 
+                    class="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-brand-gold hover:bg-opacity-20 border border-transparent hover:border-brand-gold hover:border-opacity-30"
+                    :class="{ 'bg-brand-gold bg-opacity-20 border border-brand-gold border-opacity-30': route().current('admin.settings.index') }"
+                >
+                    <svg class="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span>Settings</span>
                 </Link>
             </nav>
         </aside>
 
-        <!-- Main content -->
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <header class="bg-neumorphic shadow-sm z-10 neumorphic-box">
-                <div class="flex items-center justify-between px-4 py-3 sm:px-6">
+        <!-- Main Content -->
+        <main :class="sidebarOpen ? 'ml-64' : 'ml-0'" class="lg:ml-64 flex-1 transition-all duration-300 ease-in-out">
+            <!-- Top Navigation -->
+            <header class="bg-white bg-opacity-90 backdrop-blur-sm border-b border-brand-gold border-opacity-20 sticky top-0 z-20">
+                <div class="px-6 py-4 flex items-center justify-between">
                     <div class="flex items-center">
-                        <!-- Mobile menu button -->
                         <button 
                             @click="toggleSidebar" 
-                            class="lg:hidden mr-4 text-neumorphic-text hover:text-neumorphic-text-hover"
+                            class="lg:hidden mr-4 text-brand-primary hover:text-brand-gold transition-colors"
                         >
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                             </svg>
                         </button>
                         
-                        <h1 class="text-xl font-semibold text-neumorphic-text capitalize">
-                            {{ $page.component.split('/')[1] || 'Dashboard' }}
-                        </h1>
+                        <h2 class="text-2xl font-bold text-brand-primary font-brand-elegant">
+                            {{ $page.component.split('/').pop() }}
+                        </h2>
                     </div>
 
                     <div class="flex items-center space-x-4">
-                        <!-- Settings Dropdown -->
                         <div class="relative">
-                            <Dropdown align="right" width="48">
-                                <template #trigger>
-                                    <span class="inline-flex rounded-md">
-                                        <button
-                                            type="button"
-                                            class="inline-flex items-center rounded-md border border-transparent bg-neumorphic px-3 py-2 text-sm font-medium leading-4 text-neumorphic-text transition duration-150 ease-in-out hover:text-neumorphic-text-hover neumorphic-btn"
-                                        >
-                                            {{ $page.props.auth.user.name }}
+                            <input 
+                                type="text" 
+                                placeholder="Search..." 
+                                class="pl-10 pr-4 py-2 rounded-lg border border-brand-gold border-opacity-30 focus:outline-none focus:ring-2 focus:ring-brand-gold focus:border-transparent bg-white bg-opacity-50"
+                            >
+                            <svg class="w-5 h-5 text-brand-secondary absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
 
-                                            <svg
-                                                class="-me-0.5 ms-2 h-4 w-4"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                viewBox="0 0 20 20"
-                                                fill="currentColor"
-                                            >
-                                                <path
-                                                    fill-rule="evenodd"
-                                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                    clip-rule="evenodd"
-                                                />
-                                            </svg>
-                                        </button>
-                                    </span>
-                                </template>
+                        <div class="relative">
+                            <button class="p-2 rounded-full hover:bg-brand-gold hover:bg-opacity-10 transition-colors text-brand-primary">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM4 19h6v-6H4v6zM16 3h5v5h-5V3zM4 3h6v6H4V3z"></path>
+                                </svg>
+                            </button>
+                        </div>
 
-                                <template #content>
-                                    <DropdownLink
-                                        :href="route('profile.edit')"
-                                        as="button"
-                                    >
-                                        Profile
-                                    </DropdownLink>
-                                    <DropdownLink
-                                        :href="route('logout')"
-                                        method="post"
-                                        as="button"
-                                    >
-                                        Log Out
-                                    </DropdownLink>
-                                </template>
-                            </Dropdown>
+                        <div class="relative">
+                            <button 
+                                @click="toggleProfileDropdown" 
+                                class="flex items-center space-x-3 profile-button"
+                            >
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-brand-rose to-brand-lavender flex items-center justify-center text-white font-bold">
+                                    {{ $page.props.auth.user.name.charAt(0).toUpperCase() }}
+                                </div>
+                                <div>
+                                    <p class="font-medium text-brand-primary">{{ $page.props.auth.user.name }}</p>
+                                    <p class="text-sm text-brand-secondary">{{ $page.props.auth.user.role }}</p>
+                                </div>
+                                <svg 
+                                    :class="{ 'rotate-180': showProfileDropdown }" 
+                                    class="w-4 h-4 text-brand-secondary transition-transform" 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            
+                            <!-- Profile Dropdown Menu -->
+                            <div 
+                                v-if="showProfileDropdown" 
+                                class="profile-dropdown absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-brand-gold border-opacity-20 z-50 py-2"
+                            >
+                                <Link 
+                                    :href="route('profile.edit')" 
+                                    class="block px-4 py-2 text-sm text-brand-primary hover:bg-brand-gold hover:bg-opacity-10 transition-colors"
+                                    @click="showProfileDropdown = false"
+                                >
+                                    <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                    My Profile
+                                </Link>
+                                <Link 
+                                    :href="route('logout')" 
+                                    method="post" 
+                                    as="button" 
+                                    class="block w-full text-left px-4 py-2 text-sm text-brand-primary hover:bg-brand-gold hover:bg-opacity-10 transition-colors"
+                                    @click="showProfileDropdown = false"
+                                >
+                                    <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                    </svg>
+                                    Sign Out
+                                </Link>
+                            </div>
                         </div>
                     </div>
                 </div>
             </header>
 
-            <!-- Cards Section -->
-            <div class="mx-4 my-4">
-                <div class="grid lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-1 gap-3">
-                    <DashboardCard
-                        route-name="admin.orders.index"
-                        active-component="Admin/Orders"
-                        :icon="IconsOrder"
-                        title="Orders"
-                        :count="orders_count"
-                        class="neumorphic-box"
-                    />
-                    <DashboardCard
-                        route-name="admin.customers.index"
-                        active-component="Admin/Customers"
-                        :icon="IconsUsers"
-                        title="Customers"
-                        :count="customers_count"
-                        class="neumorphic-box"
-                    />
-                    <DashboardCard
-                        route-name="admin.products.index"
-                        active-component="Admin/Tshirts"
-                        :icon="IconsTshirt"
-                        title="T-shirts"
-                        :count="tshirts_count"
-                        class="neumorphic-box"
-                    />
-                    <DashboardChartCard
-                        route-name="admin.revenue.index"
-                        active-component="Admin/Revenue"
-                        :icon="IconsMoney"
-                        title="Revenue"
-                        :count="revenue"
-                        :chartData="[30, 40, 35, 50, 49, 60, 70, 91, 25]"
-                        class="neumorphic-box"
-                    />
-                </div>
-            </div>
-
             <!-- Page Content -->
-            <main class="flex-1 overflow-y-auto p-4 bg-neumorphic">
+            <div class="p-6">
                 <slot />
-            </main>
-        </div>
+            </div>
+        </main>
     </div>
 </template>
-
-<style scoped>
-.bg-neumorphic {
-  background: #e0e5ec;
-}
-
-.neumorphic-box {
-  background: #e0e5ec;
-  border-radius: 15px;
-  box-shadow: 8px 8px 15px #b8bec7, -8px -8px 15px #ffffff;
-  padding: 15px;
-}
-
-.neumorphic-btn {
-  background: #e0e5ec;
-  border-radius: 15px;
-  box-shadow: 5px 5px 10px #b8bec7, -5px -5px 10px #ffffff;
-  transition: all 0.3s ease;
-}
-
-.neumorphic-btn:hover {
-  box-shadow: 2px 2px 5px #b8bec7, -2px -2px 5px #ffffff;
-}
-
-.neumorphic-btn:active {
-  box-shadow: inset 2px 2px 5px #b8bec7, inset -2px -2px 5px #ffffff;
-}
-
-.text-neumorphic-text {
-  color: #6d7587;
-}
-
-.text-neumorphic-text-hover {
-  color: #4a5568;
-}
-
-.bg-neumorphic-active {
-  background: #d2d8e0;
-}
-
-.bg-neumorphic-hover {
-  background: #d9dde5;
-}
-
-.bg-neumorphic-badge {
-  background: #d1d8e0;
-}
-</style>

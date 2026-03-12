@@ -221,4 +221,91 @@ class PaymentController extends Controller
 
         return response('', 200);
     }
+
+    /**
+     * Process bank transfer payment
+     */
+    public function processBankTransfer(Request $request)
+    {
+        // Validate the request
+        $validated = $request->validate([
+            'fullname' => 'required|string|min:2',
+            'email' => 'required|string|email|max:255',
+            'phone' => 'required|string|max:255',
+            'address' => 'required|string|min:2',
+            'zipcode' => 'required|integer',
+            'country' => 'required|array',
+            'reference_number' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0.01',
+            'transfer_date' => 'required|date',
+            'bank_details' => 'nullable|string|max:500',
+        ]);
+
+        // Get the cart items
+        $cart = session()->get('cart', []);
+
+        if (empty($cart)) {
+            return redirect()->back()->with('error', 'Your cart is empty.');
+        }
+
+        // Create Customer
+        $customer = Customer::firstOrCreate([
+            'email' => $validated['email']
+        ], [
+            'name' => $validated['fullname'],
+            'phone' => $validated['phone'],
+            'address' => $validated['address'],
+            'zipcode' => $validated['zipcode'],
+            'country' => $validated['country']['name'],
+        ]);
+
+        // Create an order with bank transfer status
+        $order = Order::create([
+            'customer_id' => $customer->id,
+            'status' => OrderStatus::PENDING,
+            'tracking_number' => rand(10000000, 99999999),
+            'payment_status' => PaymentStatus::PENDING_BANK_TRANSFER,
+            'payment_id' => 'BT_' . uniqid(), // Bank Transfer ID
+        ]);
+
+        // Attach T-shirts from the cart to the order
+        $totalTshirts = 0;
+        $totalAmount = 0;
+
+        foreach ($cart as $item) {
+            $order->tshirts()->attach($item['tshirt_id'], [
+                'quantity' => $item['quantity'],
+                'price' => $item['tshirt_price'],
+                'size' => $item['size'], // Add the size to the pivot table
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Calculate order totals
+            $totalTshirts += $item['quantity'];
+            $totalAmount += $item['quantity'] * $item['tshirt_price'];
+        }
+
+        // Store bank transfer details
+        $order->update([
+            'total_tshirts' => $totalTshirts,
+            'total_amount' => $totalAmount,
+            'reference_number' => $validated['reference_number'],
+            'transfer_date' => $validated['transfer_date'],
+            'bank_details' => $validated['bank_details'] ?? null,
+        ]);
+
+        // Send notification emails for bank transfer
+        SendOrderEmails::dispatch($order);
+
+        // Clear the cart
+        session()->forget('cart');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Bank transfer request received. Your order is pending confirmation.',
+            'order_id' => $order->id,
+            'tracking_number' => $order->tracking_number
+        ]);
+    }
 }

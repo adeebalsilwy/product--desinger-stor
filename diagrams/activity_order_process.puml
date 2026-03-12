@@ -1,0 +1,122 @@
+@startuml
+' Activity Diagram - Customer Order Process
+
+!define START_COLOR #4CAF50
+!define END_COLOR #F44336
+!define PROCESS_COLOR #2196F3
+!define DECISION_COLOR #FFC107
+
+skinparam activity {
+    BackgroundColor #E3F2FD
+    BorderColor #1976D2
+    FontSize 12
+}
+
+skinparam activityStart {
+    BackgroundColor START_COLOR
+    BorderColor START_COLOR
+}
+
+skinparam activityEnd {
+    BackgroundColor END_COLOR
+    BorderColor END_COLOR
+}
+
+skinparam activityBar {
+    BackgroundColor PROCESS_COLOR
+    BorderColor PROCESS_COLOR
+}
+
+title Customer Order Process Flow
+
+start
+:Customer browses products;
+:Customer selects product;
+:Customer customizes design using designer;
+
+if (Customer logged in?) then (yes)
+    :Load customer profile;
+else (no)
+    :Continue as guest;
+    :Collect guest information;
+endif
+
+:Customer adds item to cart;
+:Customer reviews cart;
+
+if (Customer ready to checkout?) then (yes)
+    :Proceed to checkout;
+    
+    if (Customer has account?) then (yes)
+        :Use existing shipping address;
+    else (no)
+        :Enter shipping information;
+        :Enter billing information;
+    endif
+    
+    :Apply coupon if available;
+    :Calculate totals;
+    :Select payment method;
+    
+    if (Payment method selected?) then (credit card)
+        :Process credit card payment;
+        if (Payment successful?) then (yes)
+            :Create order in database;
+            :Update inventory;
+            :Generate order confirmation;
+        else (no)
+            :Show payment error;
+            stop
+        endif
+    elseif (Payment method selected?) then (paypal)
+        :Redirect to PayPal;
+        :Process PayPal payment;
+        if (Payment successful?) then (yes)
+            :Create order in database;
+            :Update inventory;
+            :Generate order confirmation;
+        else (no)
+            :Show payment error;
+            stop
+        endif
+    else
+        :Invalid payment method;
+        stop
+    endif
+    
+    :Send order confirmation email;
+    :Send order notification to admin;
+    :Update order status to processing;
+    :Generate print files for designs;
+    
+    if (Print files generated successfully?) then (yes)
+        :Queue order for production;
+    else (no)
+        :Log print file generation error;
+        :Notify admin of issue;
+    endif
+    
+    :Display order confirmation page;
+    :Provide order tracking information;
+else (no)
+    :Continue shopping;
+endif
+
+stop
+
+note right
+  Order Process Key Points:
+  - Supports guest and registered customers
+  - Real-time inventory checking
+  - Multiple payment methods
+  - Automated print file generation
+  - Order status tracking
+  - Email notifications
+end note
+
+note bottom
+  Success Path: 
+  Browse → Customize → Cart → Checkout → Payment → Order Creation → Production
+end note
+
+@enduml

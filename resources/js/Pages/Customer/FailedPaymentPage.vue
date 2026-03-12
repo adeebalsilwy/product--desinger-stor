@@ -1,5 +1,36 @@
 <script setup>
 import { Head, Link } from "@inertiajs/vue3";
+import { onMounted, nextTick } from "vue";
+
+onMounted(async () => {
+    // Wait for DOM to be ready and handle video autoplay issues
+    await nextTick();
+    
+    // Get all video elements
+    const videos = document.querySelectorAll('video');
+    
+    // Try to play each video with proper error handling
+    videos.forEach(video => {
+        // Add event listener for error handling
+        video.addEventListener('error', (e) => {
+            console.warn('Video failed to play:', e);
+        });
+        
+        // Try to play the video with proper handling
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                // Auto-play was prevented, handle it gracefully
+                console.warn('Autoplay prevented:', error);
+                // Mute the video and try again if needed
+                video.muted = true;
+                video.play().catch(err => {
+                    console.warn('Even muted autoplay failed:', err);
+                });
+            });
+        }
+    });
+});
 </script>
 
 <template>
@@ -7,9 +38,9 @@ import { Head, Link } from "@inertiajs/vue3";
         <Head title="Failed Payment" />
         <!-- Video Background -->
         <video
-            autoplay
             muted
             loop
+            playsinline
             class="absolute w-full h-full top-0 left-0 object-cover -z-10"
         >
             <source

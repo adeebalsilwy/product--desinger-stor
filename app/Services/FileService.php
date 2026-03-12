@@ -5,7 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Http\UploadedFile;
-use Intervention\Image\Facades\Image;
+use Intervention\Image\Laravel\Facades\Image;
 
 class FileService
 {
@@ -60,27 +60,54 @@ class FileService
      */
     public function createThumbnail(string $imagePath, int $width = 150, int $height = 150, string $thumbnailDirectory = null): ?string
     {
-        if (!Storage::exists($imagePath)) {
+        if (!Storage::disk('public')->exists($imagePath)) {
             return null;
         }
 
         // Get the original file
-        $imageData = Storage::get($imagePath);
-        $image = Image::make($imageData);
+        $imageData = Storage::disk('public')->get($imagePath);
+        
+        // Create temporary file to process with Intervention Image
+        $tempFilePath = sys_get_temp_dir() . '/' . uniqid() . '.tmp';
+        file_put_contents($tempFilePath, $imageData);
+        
+        try {
+            $image = Image::read($tempFilePath);
+            
+            // Resize the image
+            $image->cover($width, $height);
 
-        // Resize the image
-        $image->fit($width, $height);
+            // Determine thumbnail path
+            $thumbnailDir = $thumbnailDirectory ?: 'thumbnails';
+            $originalFilename = basename($imagePath);
+            $thumbnailFilename = 'thumb_' . $originalFilename;
+            $thumbnailPath = $thumbnailDir . '/' . $thumbnailFilename;
 
-        // Determine thumbnail path
-        $thumbnailDir = $thumbnailDirectory ?: 'thumbnails';
-        $originalFilename = basename($imagePath);
-        $thumbnailFilename = 'thumb_' . $originalFilename;
-        $thumbnailPath = $thumbnailDir . '/' . $thumbnailFilename;
+            // Ensure the thumbnail directory exists
+            $thumbnailDirPath = 'public/' . dirname($thumbnailPath);
+            if (!Storage::disk('public')->exists(dirname($thumbnailPath))) {
+                Storage::disk('public')->makeDirectory(dirname($thumbnailPath));
+            }
 
-        // Save the thumbnail
-        Storage::put($thumbnailPath, $image->encode(), 'public');
+            // Save the thumbnail to storage
+            Storage::disk('public')->put($thumbnailPath, $image->encode(), 'public');
 
-        return Storage::url($thumbnailPath);
+            // Clean up temp file
+            unlink($tempFilePath);
+            
+            return Storage::url($thumbnailPath);
+        } catch (\Exception $e) {
+            // Clean up temp file in case of error
+            if (file_exists($tempFilePath)) {
+                unlink($tempFilePath);
+            }
+            
+            // Log the error or handle as appropriate
+            \Log::error('Thumbnail creation failed: ' . $e->getMessage());
+            
+            // Return original image URL as fallback
+            return Storage::url($imagePath);
+        }
     }
 
     /**
@@ -140,7 +167,7 @@ class FileService
     private function getImageDimensions(UploadedFile $file): array
     {
         try {
-            $image = Image::make($file);
+            $image = Image::read($file);
             return [
                 'width' => $image->width(),
                 'height' => $image->height(),

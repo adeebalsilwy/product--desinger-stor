@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\DesignTemplate;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -16,6 +17,9 @@ class TemplateSeeder extends Seeder
      */
     public function run(): void
     {
+        // Disable foreign key checks temporarily
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        
         // Get the admin user to assign as creator
         $adminUser = User::where('role', 'admin')->first();
         if (!$adminUser) {
@@ -27,7 +31,9 @@ class TemplateSeeder extends Seeder
         
         // Check if directory exists
         if (!File::exists($templateDir)) {
-            $this->command->error('Template directory does not exist: ' . $templateDir);
+            $this->command->info('Template directory does not exist: ' . $templateDir . '. Skipping template seeding.');
+            // Re-enable foreign key checks
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
             return;
         }
         
@@ -50,7 +56,24 @@ class TemplateSeeder extends Seeder
             
             // Create proper URLs for the files (they will be accessible via /storage/)
             $previewUrl = '/storage/template/' . $fileName;
-            $thumbnailUrl = '/storage/template/thumbnails/' . $fileName;
+            
+            // Create thumbnail if it doesn't exist
+            $thumbnailFileName = 'thumb_' . $fileName;
+            $thumbnailPath = storage_path('app/public/template/thumbnails/' . $thumbnailFileName);
+            
+            // Check if thumbnail directory exists, create if not
+            $thumbnailDir = dirname($thumbnailPath);
+            if (!File::exists($thumbnailDir)) {
+                File::makeDirectory($thumbnailDir, 0755, true);
+            }
+            
+            // Create thumbnail if it doesn't exist
+            if (!File::exists($thumbnailPath)) {
+                // For now, just copy the original as thumbnail since Intervention Image might not be installed
+                File::copy($file->getPathname(), $thumbnailPath);
+            }
+            
+            $thumbnailUrl = '/storage/template/thumbnails/' . $thumbnailFileName;
             
             // Create the template record
             $templatesToInsert[] = [
@@ -69,12 +92,18 @@ class TemplateSeeder extends Seeder
             ];
         }
         
+        // Clear existing templates first to avoid duplicates
+        DesignTemplate::query()->delete();
+        
         // Insert templates in chunks to avoid memory issues
         $chunks = array_chunk($templatesToInsert, 100);
         
         foreach ($chunks as $chunk) {
             DesignTemplate::insert($chunk);
         }
+        
+        // Re-enable foreign key checks
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
         
         $this->command->info(count($templatesToInsert) . ' templates seeded successfully.');
     }
@@ -124,7 +153,7 @@ class TemplateSeeder extends Seeder
         } elseif (str_contains($nameLower, 'hat') || str_contains($nameLower, 'cap')) {
             return 'hat';
         } else {
-            return 't-shirt'; // Default category
+            return 'elegant'; // Default category for Ahlam's Girls
         }
     }
 }

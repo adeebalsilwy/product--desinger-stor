@@ -17,11 +17,16 @@ class DatabaseSeeder extends Seeder
         $this->call([
             GuestAdminSeeder::class,
             CustomerSeeder::class, 
-            TshirtSeeder::class, 
-            OrderSeeder::class,
+            UserSeeder::class,
             ProductTypeSeeder::class,
+            ProductSeeder::class,  // Added template-based products
+            ProductImagesSeeder::class,  // Added images to products using template images
+            TshirtSeeder::class,   // Kept for backward compatibility
+            OrderSeeder::class,
             FontSeeder::class,
+            ClipartSeeder::class,
             TemplateSeeder::class,
+            CompletePermissionsSeeder::class,
         ]);
     }
 }

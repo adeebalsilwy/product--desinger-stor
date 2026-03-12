@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings Update Test Guide</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .step { 
+            background: #ecf0f1; 
+            padding: 15px; 
+            margin: 15px 0; 
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+        }
+        .success { color: #27ae60; font-weight: bold; }
+        .error { color: #e74c3c; font-weight: bold; }
+        .warning { color: #f39c12; font-weight: bold; }
+        code { 
+            background: #2c3e50; 
+            color: #ecf0f1; 
+            padding: 2px 6px; 
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+        .checklist li {
+            padding: 8px 0;
+        }
+        .checklist li:before {
+            content: "☐ ";
+            color: #3498db;
+            font-weight: bold;
+        }
+        .info-box {
+            background: #d6eaf8;
+            border: 1px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #bdc3c7;
+        }
+        th {
+            background: #34495e;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #ecf0f1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Settings Update - Testing & Verification Guide</h1>
+        
+        <div class="info-box">
+            <strong>📋 Summary:</strong> The settings update functionality has been fixed with comprehensive logging and improved error handling. Follow this guide to verify the fix.
+        </div>
+
+        <h2>✅ What Was Fixed</h2>
+        <ul>
+            <li><strong>Form Submission Method:</strong> Changed from <code>form.put()</code> to <code>form.post()</code> with <code>_method</code> override for better compatibility</li>
+            <li><strong>Backend Logging:</strong> Added detailed logging at every step of the update process</li>
+            <li><strong>Frontend Console Logs:</strong> Added comprehensive console logging for debugging</li>
+            <li><strong>Error Handling:</strong> Enhanced error messages with stack traces</li>
+            <li><strong>Diagnostic Tool:</strong> Created <code>diagnose-settings.php</code> for system health checks</li>
+        </ul>
+
+        <h2>📝 Pre-Testing Checklist</h2>
+        <ul class="checklist">
+            <li>Clear all caches (run commands below)</li>
+            <li>Run diagnostic tool to verify system health</li>
+            <li>Open browser console (F12)</li>
+            <li>Navigate to settings page</li>
+        </ul>
+
+        <h2>🚀 Step-by-Step Testing Process</h2>
+
+        <div class="step">
+            <h3>Step 1: Clear Caches</h3>
+            <pre>php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+php artisan cache:clear</pre>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Run Diagnostic Tool</h3>
+            <pre>php diagnose-settings.php</pre>
+            <p><strong>Expected Output:</strong> All tests should pass with ✓ marks</p>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Open Settings Page</h3>
+            <p>Navigate to: <code>http://127.0.0.1:8000/admin/settings</code></p>
+            <p>Open Browser Console: Press <strong>F12</strong></p>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Modify Settings</h3>
+            <ol>
+                <li>Go to the <strong>General</strong> tab</li>
+                <li>Change the <strong>Site Name</strong> to something like "Test Site " + current time</li>
+                <li>Optionally change other fields</li>
+                <li>Click <strong>"Save Settings"</strong> button</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>Step 5: Check Browser Console</h3>
+            <p>You should see logs like:</p>
+            <pre>=== Settings Submit Started ===
+Form data: {...}
+Active tab: general
+Submitting form to route: http://127.0.0.1:8000/admin/settings
+FormData contents:
+  _method: PUT
+  site_name: Test Site 123456
+  brand_primary_color: #1a1a2e
+  ...
+=== Settings Update Success ===
+Success response: {...}
+Form processing finished</pre>
+        </div>
+
+        <div class="step">
+            <h3>Step 6: Check Laravel Logs</h3>
+            <pre>Get-Content storage\logs\laravel.log -Tail 100</pre>
+            <p>Look for entries like:</p>
+            <pre>[timestamp] local.INFO: === Settings Update Started ===
+[timestamp] local.INFO: Request method: POST
+[timestamp] local.INFO: Validation passed successfully
+[timestamp] local.INFO: Settings saved successfully!
+[timestamp] local.INFO: === Settings Update Completed Successfully ===</pre>
+        </div>
+
+        <div class="step">
+            <h3>Step 7: Verify Database Changes</h3>
+            <p>Check if the changes were saved by:</p>
+            <ul>
+                <li>Refreshing the settings page (values should persist)</li>
+                <li>Or running: <code>php artisan tinker</code> then <code>App\Models\Setting::first()->site_name</code></li>
+            </ul>
+        </div>
+
+        <h2>🎯 Expected Results</h2>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>Expected Result</th>
+                    <th>Where to Check</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Submit Form</td>
+                    <td class="success">Console shows success logs</td>
+                    <td>Browser Console</td>
+                </tr>
+                <tr>
+                    <td>Save Operation</td>
+                    <td class="success">Laravel log shows INFO entries</td>
+                    <td>storage/logs/laravel.log</td>
+                </tr>
+                <tr>
+                    <td>Page Reload</td>
+                    <td class="success">New values displayed</td>
+                    <td>Settings Page</td>
+                </tr>
+                <tr>
+                    <td>Database Check</td>
+                    <td class="success">Values persisted</td>
+                    <td>Database</td>
+                </tr>
+                <tr>
+                    <td>Toast Notification</td>
+                    <td class="success">"Settings updated successfully"</td>
+                    <td>Top-right of page</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>⚠️ Troubleshooting</h2>
+
+        <h3>If you see errors in browser console:</h3>
+        <ul>
+            <li><strong>404 Error:</strong> Check if route exists: <code>php artisan route:list | findstr settings</code></li>
+            <li><strong>419 Error (CSRF):</strong> Clear browser cache and cookies</li>
+            <li><strong>500 Error:</strong> Check Laravel logs for details</li>
+            <li><strong>No response:</strong> Check Network tab in DevTools</li>
+        </ul>
+
+        <h3>If settings don't save:</h3>
+        <ol>
+            <li>Check Laravel logs: <code>Get-Content storage\logs\laravel.log -Tail 100</code></li>
+            <li>Verify database connection</li>
+            <li>Run diagnostic tool again</li>
+            <li>Check validation errors in console</li>
+        </ol>
+
+        <h2>📊 Log Locations</h2>
+        <ul>
+            <li><strong>Laravel Log:</strong> <code>storage/logs/laravel.log</code></li>
+            <li><strong>Browser Console:</strong> Press F12 → Console tab</li>
+            <li><strong>Network Requests:</strong> Press F12 → Network tab</li>
+        </ul>
+
+        <h2>🔍 Key Files Modified</h2>
+        <ul>
+            <li><code>app/Http/Controllers/Admin/SettingsController.php</code> - Backend controller with logging</li>
+            <li><code>resources/js/Pages/Admin/Settings/Index.vue</code> - Frontend form with console logs</li>
+            <li><code>diagnose-settings.php</code> - Diagnostic tool (NEW)</li>
+            <li><code>SETTINGS_UPDATE_FIX_COMPLETE.md</code> - Complete documentation (NEW)</li>
+        </ul>
+
+        <div class="info-box">
+            <strong>💡 Tip:</strong> Keep the browser console open while testing. All form submissions will be logged for easy debugging.
+        </div>
+
+        <h2>✅ Verification Complete</h2>
+        <p>If all steps above work correctly, you should see:</p>
+        <ul>
+            <li class="success">✓ Toast notification appears</li>
+            <li class="success">✓ Console shows success logs</li>
+            <li class="success">✓ Laravel logs show successful update</li>
+            <li class="success">✓ Settings values persist after refresh</li>
+            <li class="success">✓ Database contains new values</li>
+        </ul>
+
+        <hr>
+        <p style="text-align: center; color: #7f8c8d; margin-top: 30px;">
+            <em>For detailed technical information, see SETTINGS_UPDATE_FIX_COMPLETE.md</em>
+        </p>
+    </div>
+</body>
+</html>

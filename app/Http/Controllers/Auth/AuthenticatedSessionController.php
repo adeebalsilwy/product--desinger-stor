@@ -18,6 +18,11 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): Response
     {
+        // Check if it's a customer login request
+        if (request()->query('customer')) {
+            return Inertia::render('Auth/CustomerLogin');
+        }
+        
         return Inertia::render('Auth/Login');
     }
 
@@ -30,6 +35,16 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $user = Auth::user();
+        
+        // Redirect based on user role
+        if ($user->isAdmin() || $user->isStaff()) {
+            return redirect()->intended(route('admin.dashboard', absolute: false));
+        } elseif ($user->isCustomer()) {
+            return redirect()->intended(route('customer.dashboard', absolute: false));
+        }
+        
+        // Default redirect
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

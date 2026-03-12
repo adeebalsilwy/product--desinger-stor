@@ -9,6 +9,7 @@ import EditOrder from "@/Components/EditOrder.vue";
 import Popover from "primevue/popover";
 import Copy from "@/Icons/Copy.vue";
 import PaymentStatus from "@/Components/PaymentStatus.vue";
+import FileUpload from "primevue/fileupload";
 
 defineOptions({ layout: Admin });
 
@@ -19,6 +20,11 @@ const props = defineProps({
     },
     currentFilter: String,
 });
+
+// State for receipt upload
+const showReceiptUpload = ref(false);
+const selectedOrderId = ref(null);
+const receiptFile = ref(null);
 
 // Keep track of expanded rows
 const expandedRows = ref(new Set());
@@ -32,6 +38,49 @@ const toggleRow = (orderId) => {
     }
 };
 
+// Toggle receipt upload modal
+const toggleReceiptUpload = (orderId) => {
+    selectedOrderId.value = orderId;
+    showReceiptUpload.value = true;
+};
+
+// Handle receipt file upload
+const handleReceiptUpload = () => {
+    if (!receiptFile.value) {
+        alert('Please select a receipt image to upload.');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('receipt', receiptFile.value);
+
+    // Get CSRF token from meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    fetch(`/admin/orders/${selectedOrderId.value}/upload-receipt`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Receipt uploaded successfully!');
+            showReceiptUpload.value = false;
+            // Refresh the page to see the updated order
+            window.location.reload();
+        } else {
+            alert('Failed to upload receipt: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error uploading receipt:', error);
+        alert('Error uploading receipt. Please try again.');
+    });
+};
+
 const textHelper = useTextHelpers();
 
 const op = ref();
@@ -41,13 +90,13 @@ const toggleAddressPopOver = (event, customer) => {
 
     // Create an object with the order details
     const orderDetails = {
-        id: customer.id,
-        country: customer.country,
-        zipcode: customer.zipcode,
-        address: customer.address,
+        id: customer?.id,
+        country: customer?.country,
+        zipcode: customer?.zipcode,
+        address: customer?.address,
     };
 
-    if (selectedOrder.value?.id === customer.id) {
+    if (selectedOrder.value?.id === customer?.id) {
         selectedOrder.value = null;
     } else {
         selectedOrder.value = orderDetails;
@@ -65,13 +114,45 @@ const copyAddress = () => {
 const selectedFilter = ref(props.currentFilter);
 
 watch(selectedFilter, (newFilter) => {
-    router.get(route("orders"), {
+    router.get(route("admin.orders.index"), {
         filter: newFilter,
     });
 });
+
+// Add the setDefaultImage function
+const setDefaultImage = (event) => {
+    event.target.src = '/images/logo.jpeg';
+};
 </script>
 
 <template>
+    <!-- Receipt Upload Modal -->
+    <div v-if="showReceiptUpload" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-1/3">
+            <h3 class="text-lg font-bold mb-4">Upload Receipt</h3>
+            <input 
+                type="file" 
+                accept="image/*" 
+                @change="receiptFile = $event.target.files[0]" 
+                class="mb-4 w-full"
+            />
+            <div class="flex justify-end gap-2">
+                <button 
+                    @click="showReceiptUpload = false" 
+                    class="px-4 py-2 bg-gray-300 rounded"
+                >
+                    Cancel
+                </button>
+                <button 
+                    @click="handleReceiptUpload" 
+                    class="px-4 py-2 bg-blue-500 text-white rounded"
+                >
+                    Upload
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Table -->
     <div class="pb-12">
         <Head title="Orders" />
@@ -227,7 +308,7 @@ watch(selectedFilter, (newFilter) => {
                         </th>
                         <th
                             scope="col"
-                            class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase text-nowrap"
+                            class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase"
                         >
                             Items
                         </th>
@@ -317,7 +398,7 @@ watch(selectedFilter, (newFilter) => {
                                 <p class="font-bold">
                                     {{
                                         textHelper.limitText(
-                                            order.customer.name,
+                                            order.customer?.name,
                                             20
                                         )
                                     }}
@@ -325,7 +406,7 @@ watch(selectedFilter, (newFilter) => {
                                 <p class="text-sm">
                                     {{
                                         textHelper.limitText(
-                                            order.customer.email,
+                                            order.customer?.email,
                                             35
                                         )
                                     }}
@@ -343,7 +424,7 @@ watch(selectedFilter, (newFilter) => {
                                     class="bg-slate-200 p-1 rounded-md text-slate-600 hover:bg-slate-300 smooth"
                                 >
                                     {{textHelper.limitText(
-                                            order.customer.country,
+                                            order.customer?.country,
                                             15
                                         )}}
                                 </div>
@@ -352,17 +433,17 @@ watch(selectedFilter, (newFilter) => {
                             <td
                                 class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 text-center align-middle"
                             >
-                                {{ order.total_tshirts }}
+                                {{ order.total_tshirts || order.total_products || 0 }}
                             </td>
                             <td
                                 class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold text-center align-middle"
                             >
-                                {{ order.total_amount + " $" ?? 0 }}
+                                {{ (order.total_amount || 0) + " $" }}
                             </td>
                             <td
                                 class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 align-middle"
                             >
-                                <Status :type="order.status" />
+                                <Status :status="order.status" />
                             </td>
                             <td class=" ">
                                 <div class="flex justify-center">
@@ -381,7 +462,16 @@ watch(selectedFilter, (newFilter) => {
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 align-middle">
-                                <PaymentStatus :type=" order.payment_status" />
+                                <div class="flex items-center justify-between">
+                                    <PaymentStatus :type=" order.payment_status" />
+                                    <button 
+                                        v-if="order.payment_status === 'pending_bank_transfer'" 
+                                        @click.stop="toggleReceiptUpload(order.id)"
+                                        class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200"
+                                    >
+                                        Upload Receipt
+                                    </button>
+                                </div>
                             </td>
                             <td
                                 class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 align-middle"
@@ -393,11 +483,12 @@ watch(selectedFilter, (newFilter) => {
                             </td>
                             <td class="">
                                 <div class="flex justify-center">
-                                    <EditOrder
-                                        :order-id="order.id"
-                                        :status="order.status"
-                                        :tracking-number="order.tracking_number"
-                                    />
+                                    <Link 
+                                        :href="route('admin.orders.show', order.id)"
+                                        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    >
+                                        View Details
+                                    </Link>
                                 </div>
                             </td>
                         </tr>
@@ -417,11 +508,12 @@ watch(selectedFilter, (newFilter) => {
                                             <img
                                                 class="w-1/2 object-cover"
                                                 :src="
-                                                    tshirt.images.find(
-                                                        (img) => img.order === 1
-                                                    ).url
+                                                    tshirt.images && tshirt.images.length > 0 
+                                                        ? (tshirt.images.find(img => img.order === 1)?.url || '/images/logo.jpeg')
+                                                        : '/images/logo.jpeg'
                                                 "
                                                 alt=""
+                                                @error="setDefaultImage"
                                             />
                                             <div
                                                 class="w-full text-center flex flex-col justify-center items-center"
@@ -429,12 +521,12 @@ watch(selectedFilter, (newFilter) => {
                                                 <p class="font-bold">
                                                     {{
                                                         textHelper.limitText(
-                                                            tshirt.title,
+                                                            tshirt.title || 'Untitled Product',
                                                             30
                                                         )
                                                     }}
                                                 </p>
-                                                <p class="my-2">size: <span class="font-semibold bg-white py-1 px-2 rounded  shadow-md border border-slate-600">{{ tshirt.pivot.size }}</span></p>
+                                                <p class="my-2">size: <span class="font-semibold bg-white py-1 px-2 rounded  shadow-md border border-slate-600">{{ tshirt.pivot?.size || 'N/A' }}</span></p>
                                                 <div
                                                     class="flex justify-between items-center gap-4 mt-1 w-full"
                                                 >
@@ -446,8 +538,8 @@ watch(selectedFilter, (newFilter) => {
                                                             class="font-bold w-full text-center"
                                                         >
                                                             {{
-                                                                "$" +
-                                                                tshirt.price
+                                                                '$' +
+                                                                (tshirt.price || 0)
                                                             }}
                                                         </p>
                                                     </div>
@@ -459,8 +551,7 @@ watch(selectedFilter, (newFilter) => {
                                                             class="font-bold w-full text-center"
                                                         >
                                                             {{
-                                                                tshirt.pivot
-                                                                    .quantity
+                                                                tshirt.pivot?.quantity || 0
                                                             }}
                                                         </p>
                                                     </div>

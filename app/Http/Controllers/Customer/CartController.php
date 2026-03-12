@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-
-
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Redirect;
 
 class CartController extends Controller
 {
@@ -18,7 +18,7 @@ class CartController extends Controller
     public function addToCart(Request $request)
     {
         $validated = $request->validate([
-            'tshirtId' => 'required|exists:tshirts,id',
+            'tshirtId' => 'required|exists:products,id',
             'tshirtTitle' => 'required|string',
             'tshirtPrice' => 'required|numeric|min:0',
             'tshirtImage' => 'required|string',
@@ -33,7 +33,7 @@ class CartController extends Controller
         $isDuplicate = collect($cart)->contains('item_id', $uniqueId);
 
         if ($isDuplicate) {
-            return redirect()->back()->withErrors(['cart' => '"' . $request->size . '"' . ' size of this t-shirt is already in your cart']);
+            return back()->withErrors(['cart' => '"' . $request->size . '"' . ' size of this product is already in your cart']);
         }
 
         $cart[] = [
@@ -47,7 +47,7 @@ class CartController extends Controller
         ];
 
         session()->put('cart', $cart);
-        return redirect()->back();
+        return back();
     }
 
     public function increaseQuantity(Request $request)
@@ -59,11 +59,11 @@ class CartController extends Controller
             if ($item['item_id'] === $item_id && $item['quantity'] < 10) {
                 $cart[$key]['quantity']++;
                 session()->put('cart', $cart);
-                return redirect()->back();
+                return back();
             }
         }
 
-        return redirect()->back();
+        return back();
     }
 
     public function decreaseQuantity(Request $request)
@@ -75,11 +75,11 @@ class CartController extends Controller
             if ($item['item_id'] === $item_id && $item['quantity'] > 1) {
                 $cart[$key]['quantity']--;
                 session()->put('cart', $cart);
-                return redirect()->back();
+                return back();
             }
         }
 
-        return redirect()->back();
+        return back();
     }
 
     public function removeFromCart(Request $request)
@@ -95,6 +95,6 @@ class CartController extends Controller
 
         session()->put('cart', $cart_after);
 
-        return redirect()->back();
+        return back();
     }
 }

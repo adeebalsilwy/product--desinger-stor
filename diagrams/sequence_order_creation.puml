@@ -1,0 +1,73 @@
+@startuml
+' Sequence Diagram - Order Creation Process
+
+actor "Customer" as customer
+participant "Web Browser" as browser
+participant "API Controller" as api
+participant "Order Service" as orderService
+participant "Payment Service" as payment
+participant "Database" as db
+participant "Email Service" as email
+participant "Print Service" as print
+
+customer -> browser: Navigate to checkout
+browser -> api: POST /api/orders
+activate api
+
+api -> orderService: validateOrderData()
+activate orderService
+orderService -> db: Check product inventory
+activate db
+db --> orderService: Inventory levels
+deactivate db
+orderService -> orderService: Calculate totals
+orderService --> api: Validated order data
+deactivate orderService
+
+api -> payment: processPayment(orderData)
+activate payment
+payment -> payment: Connect to payment gateway
+payment -> payment: Charge customer card
+payment --> api: Payment result
+deactivate payment
+
+alt Payment Successful
+    api -> db: Begin transaction
+    activate db
+    db -> db: Create order record
+    db -> db: Create order items
+    db -> db: Update inventory
+    db -> db: Create payment record
+    db --> api: Transaction complete
+    deactivate db
+    
+    api -> email: Queue order confirmation
+    activate email
+    email --> api: Email queued
+    deactivate email
+    
+    api -> print: Queue print file generation
+    activate print
+    print --> api: Print job queued
+    deactivate print
+    
+    api --> browser: Order created successfully
+    browser --> customer: Show order confirmation
+else Payment Failed
+    api --> browser: Payment failed
+    browser --> customer: Show payment error
+end
+
+deactivate api
+
+note over customer, print
+  Order Creation Flow:
+  1. Customer submits order
+  2. System validates data
+  3. Payment is processed
+  4. Order is saved to database
+  5. Emails are sent
+  6. Print files are generated
+end note
+
+@enduml

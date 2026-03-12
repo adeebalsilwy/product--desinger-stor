@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Tshirt;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Number;
@@ -36,6 +37,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $cart = session()->get('cart', []);
+        $settings = Setting::getSettings();
         if (Auth::check()) {
             return [
                 ...parent::share($request),
@@ -43,9 +45,10 @@ class HandleInertiaRequests extends Middleware
                     'user' => $request->user(),
                 ],
 
+                'settings' => $settings,
                 'orders_count' => Order::count(),
                 'customers_count' => Customer::count(),
-                'tshirts_count' => Tshirt::count(),
+                'products_count' => Tshirt::count(),
                 'revenue' => Number::currency(
                     Order::where('payment_status', '=', 'paid')
                         ->where('status', '!=', 'cancelled')
@@ -59,8 +62,9 @@ class HandleInertiaRequests extends Middleware
             ];
         }
         return [
-            parent::share($request),
-            'cart' => fn() => session('cart', []),
+            ...parent::share($request),
+            'settings' => $settings,
+            'cart' => $cart,
         ];
     }
 }

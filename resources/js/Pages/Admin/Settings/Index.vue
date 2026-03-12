@@ -1,8 +1,9 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { useForm, Head } from '@inertiajs/vue3';
+import { useForm, Head, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/Admin.vue';
 import { useToast } from 'primevue/usetoast';
+import CSRFService from '@/Services/CSRFService';
 
 const props = defineProps({
     settings: Object,
@@ -46,6 +47,20 @@ const form = useForm({
     brand_script_font: props.settings?.brand_script_font || 'brand-script',
     brand_regular_font: props.settings?.brand_regular_font || 'brand-elegant',
 });
+
+// Watch for form changes and clean up empty objects
+watch(() => form.data(), (newData) => {
+    // Clean up empty objects for file fields
+    if (newData.site_logo && typeof newData.site_logo === 'object' && Object.keys(newData.site_logo).length === 0) {
+        form.site_logo = null;
+    }
+    if (newData.site_favicon && typeof newData.site_favicon === 'object' && Object.keys(newData.site_favicon).length === 0) {
+        form.site_favicon = null;
+    }
+    if (newData.brand_logo_woman && typeof newData.brand_logo_woman === 'object' && Object.keys(newData.brand_logo_woman).length === 0) {
+        form.brand_logo_woman = null;
+    }
+}, { deep: true });
 
 // Settings categories for tab navigation
 const activeTab = ref('general');
@@ -130,48 +145,156 @@ const handleSiteFaviconUpload = (event) => {
     }
 };
 
-const submit = () => {
-    // Create FormData for file uploads
-    const formData = new FormData();
+const submit = async () => {
+    console.log('=== Settings Submit Started ===');
+    console.log('Form data():', form.data());
+    console.log('Active tab:', activeTab.value);
+    console.log('Form has errors:', Object.keys(form.errors).length > 0);
     
-    // Add all form fields
-    Object.keys(form.data()).forEach(key => {
-        // Skip preview fields
-        if (!key.endsWith('_preview')) {
-            const value = form[key];
+    // Clean up empty objects before validation
+    if (form.site_logo && typeof form.site_logo === 'object' && Object.keys(form.site_logo).length === 0) {
+        form.site_logo = null;
+    }
+    if (form.site_favicon && typeof form.site_favicon === 'object' && Object.keys(form.site_favicon).length === 0) {
+        form.site_favicon = null;
+    }
+    if (form.brand_logo_woman && typeof form.brand_logo_woman === 'object' && Object.keys(form.brand_logo_woman).length === 0) {
+        form.brand_logo_woman = null;
+    }
+    
+    // Validate that required fields have values before submitting
+    if (!form.site_name || form.site_name.trim() === '') {
+        console.error('Validation failed: Site name is required');
+        toast.add({
+            severity: 'warn',
+            summary: 'Validation Error',
+            detail: 'Site name is required',
+            life: 3000
+        });
+        return;
+    }
+    
+    if (!form.products_per_page) {
+        console.error('Validation failed: Products per page field is required');
+        toast.add({
+            severity: 'warn',
+            summary: 'Validation Error',
+            detail: 'Products per page field is required',
+            life: 3000
+        });
+        return;
+    }
+    
+    console.log('Submitting form with Inertia...');
+    console.log('Cleaned form data():', form.data());
+    
+    try {
+        // For file uploads with PUT, we need to use POST with explicit _method
+        // because browsers don't support PUT with multipart/form-data natively
+        const formData = new FormData();
+        
+        // Add all form fields
+        Object.keys(form.data()).forEach(key => {
+            const value = form.data()[key];
+            // Skip preview fields
+            if (key.endsWith('_preview')) return;
+            
             if (value !== null && value !== undefined) {
-                if ((key === 'brand_logo_woman' || key === 'site_logo' || key === 'site_favicon') && value instanceof File) {
-                    // Handle file uploads
-                    formData.append(key, value);
-                } else if (typeof value === 'boolean') {
-                    formData.append(key, value ? '1' : '0');
-                } else {
-                    formData.append(key, value);
-                }
+                formData.append(key, value);
             }
-        }
-    });
-    
-    form.post(route('admin.settings.update'), {
-        data: formData,
-        forceFormData: true,
-        onSuccess: () => {
+        });
+        
+        // Explicitly add _method for Laravel method spoofing
+        formData.append('_method', 'PUT');
+        
+        console.log('Custom FormData created with _method=PUT');
+        
+        // Use CSRF Service for fetch request
+        const response = await CSRFService.csrfFetch(route('admin.settings.update'), {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('=== Settings Update Success ===');
+            console.log('Success response:', result);
             toast.add({
                 severity: 'success',
                 summary: 'Success',
                 detail: 'Settings updated successfully',
                 life: 3000
             });
-        },
-        onError: (errors) => {
+        } else {
+            // Handle error response - might be HTML error page or JSON
+            const contentType = response.headers.get('content-type');
+            let errorData;
+            
+            if (contentType && contentType.includes('application/json')) {
+                errorData = await response.json();
+            } else {
+                // If not JSON, it's likely an HTML error page (like 419 CSRF)
+                const text = await response.text();
+                console.error('Non-JSON response:', text.substring(0, 500));
+                
+                // Check if it's a CSRF error
+                if (response.status === 419) {
+                    errorData = {
+                        errors: {
+                            _token: ['Session expired. Please refresh the page and try again.']
+                        }
+                    };
+                } else {
+                    errorData = {
+                        errors: {
+                            general: ['An error occurred while saving settings. Please try again.']
+                        }
+                    };
+                }
+            }
+            
+            console.error('=== Settings Update Error ===');
+            console.error('Status:', response.status);
+            console.error('Error object:', errorData.errors);
+            
+            Object.values(errorData.errors || {}).forEach(error => {
+                toast.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: Array.isArray(error) ? error[0] : error,
+                    life: 5000
+                });
+            });
+        }
+    } catch (error) {
+        console.error('=== Form Submission Exception ===');
+        console.error('Error details:', error);
+        console.error('Stack trace:', error.stack);
+        
+        // Handle specific CSRF token expiration error
+        if (error.message && error.message.includes('CSRF Token Expired')) {
+            toast.add({
+                severity: 'warn',
+                summary: 'Session Expired',
+                detail: 'Your session has expired. Please refresh the page and try again.',
+                life: 8000
+            });
+            
+            // Show refresh button after a delay
+            setTimeout(() => {
+                if (confirm('Would you like to refresh the page now to restore your session?')) {
+                    window.location.reload();
+                }
+            }, 2000);
+        } else {
             toast.add({
                 severity: 'error',
-                summary: 'Error',
-                detail: 'Failed to update settings',
+                summary: 'Submission Error',
+                detail: 'An unexpected error occurred while saving settings',
                 life: 3000
             });
         }
-    });
+    }
 };
 </script>
 
@@ -186,7 +309,7 @@ const submit = () => {
                         <p class="text-brand-rose text-sm">Manage your Ahlam's Girls boutique configuration</p>
                     </div>
                     
-                    <form @submit.prevent="submit" class="p-6">
+                    <form @submit.prevent="submit" class="p-6" novalidate>
                         <!-- Tab Navigation -->
                         <div class="mb-8 border-b border-brand-gold border-opacity-20">
                             <nav class="flex space-x-8 overflow-x-auto pb-2">
@@ -219,6 +342,7 @@ const submit = () => {
                                         <input
                                             v-model="form.site_name"
                                             type="text"
+                                            name="site_name"
                                             placeholder="Enter your site name"
                                             class="w-full px-4 py-3 border border-brand-gold border-opacity-30 rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent bg-neumorphic text-brand-primary transition-all"
                                             required
@@ -347,6 +471,7 @@ const submit = () => {
                                                     <div class="flex-1">
                                                         <input
                                                             type="file"
+                                                            name="site_logo_input"
                                                             accept="image/*"
                                                             @change="handleSiteLogoUpload"
                                                             class="w-full px-4 py-3 border border-brand-gold border-opacity-30 rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent bg-neumorphic text-brand-primary transition-all"
@@ -366,6 +491,7 @@ const submit = () => {
                                                     <div class="flex-1">
                                                         <input
                                                             type="file"
+                                                            name="brand_logo_input"
                                                             accept="image/*"
                                                             @change="handleBrandLogoUpload"
                                                             class="w-full px-4 py-3 border border-brand-gold border-opacity-30 rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent bg-neumorphic text-brand-primary transition-all"
@@ -385,6 +511,7 @@ const submit = () => {
                                                     <div class="flex-1">
                                                         <input
                                                             type="file"
+                                                            name="site_favicon_input"
                                                             accept="image/*,.ico"
                                                             @change="handleSiteFaviconUpload"
                                                             class="w-full px-4 py-3 border border-brand-gold border-opacity-30 rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent bg-neumorphic text-brand-primary transition-all"

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\DesignController;
 use App\Http\Controllers\Api\AssetController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\SettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,46 +19,49 @@ use App\Http\Controllers\Api\OrderController;
 |
 */
 
+// Design management - PUBLIC ACCESS
+Route::prefix('designs')->group(function () {
+    Route::get('/', [DesignController::class, 'index']);
+    Route::post('/', [DesignController::class, 'store']);
+    Route::get('/{design}', [DesignController::class, 'show']);
+    Route::put('/{design}', [DesignController::class, 'update']);
+    Route::delete('/{design}', [DesignController::class, 'destroy']);
+    Route::post('/{design}/duplicate', [DesignController::class, 'duplicate']);
+    Route::post('/{design}/export', [DesignController::class, 'export']);
+    Route::post('/{design}/preview', [DesignController::class, 'generatePreview']);
+    Route::post('/{design}/save-as-template', [DesignController::class, 'saveAsTemplate']);
+});
+
+// Asset management - PUBLIC ACCESS
+Route::prefix('assets')->group(function () {
+    Route::get('/', [AssetController::class, 'index']);
+    Route::post('/upload', [AssetController::class, 'upload']);
+    Route::get('/{asset}', [AssetController::class, 'show']);
+    Route::delete('/{asset}', [AssetController::class, 'destroy']);
+    Route::post('/bulk-delete', [AssetController::class, 'bulkDelete']);
+});
+
+// Orders - PUBLIC ACCESS
+Route::apiResource('orders', OrderController::class);
+Route::get('orders/{order}/invoice', [OrderController::class, 'invoice']);
+
+// User profile - requires auth
 Route::middleware(['auth:sanctum'])->group(function () {
-    
-    // User profile
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-    
-    // Design management
-    Route::prefix('designs')->group(function () {
-        Route::get('/', [DesignController::class, 'index']);
-        Route::post('/', [DesignController::class, 'store']);
-        Route::get('/{design}', [DesignController::class, 'show']);
-        Route::put('/{design}', [DesignController::class, 'update']);
-        Route::delete('/{design}', [DesignController::class, 'destroy']);
-        Route::post('/{design}/duplicate', [DesignController::class, 'duplicate']);
-        Route::post('/{design}/export', [DesignController::class, 'export']);
-        Route::post('/{design}/preview', [DesignController::class, 'generatePreview']);
-        Route::post('/{design}/save-as-template', [DesignController::class, 'saveAsTemplate']);
-    });
-    
-    // Asset management
-    Route::prefix('assets')->group(function () {
-        Route::get('/', [AssetController::class, 'index']);
-        Route::post('/upload', [AssetController::class, 'upload']);
-        Route::get('/{asset}', [AssetController::class, 'show']);
-        Route::delete('/{asset}', [AssetController::class, 'destroy']);
-        Route::post('/bulk-delete', [AssetController::class, 'bulkDelete']);
-    });
-    
-    // Orders
-    Route::apiResource('orders', OrderController::class);
-    Route::get('orders/{order}/invoice', [OrderController::class, 'invoice']);
 });
 
 // Public API routes
+Route::get('/settings', [SettingsController::class, 'index']);
+
 Route::prefix('v1')->group(function () {
     
     // Products (public)
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{slug}', [ProductController::class, 'show']);
+    Route::get('/product-categories', [ProductController::class, 'productTypes']);
+    Route::get('/design-templates', [ProductController::class, 'designTemplates']);
     
     // Templates (public)
     Route::get('/templates', [\App\Http\Controllers\Api\TemplateController::class, 'index']);

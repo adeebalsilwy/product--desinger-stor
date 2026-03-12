@@ -40,8 +40,10 @@ onMounted(() => {
         item && 
         item[props.xKey] !== undefined && 
         item[props.xKey] !== null &&
+        item[props.xKey] !== '' &&
         item[props.yKey] !== undefined && 
-        item[props.yKey] !== null
+        item[props.yKey] !== null &&
+        item[props.yKey] !== ''
     );
     
     if (validItems.length === 0) {
@@ -54,8 +56,17 @@ onMounted(() => {
         const value = item[props.yKey];
         // Convert to number and handle edge cases
         const numValue = parseFloat(value);
-        return isNaN(numValue) ? 0 : numValue;
+        return isNaN(numValue) || !isFinite(numValue) ? 0 : numValue;
     });
+    
+    // Check if all values are 0 or invalid
+    const hasValidValues = seriesData.some(val => val !== 0);
+    if (!hasValidValues && seriesData.length > 0) {
+        // Provide a default value to avoid NaN issues
+        for (let i = 0; i < seriesData.length; i++) {
+            seriesData[i] = 0.001; // Small value to avoid zero division issues
+        }
+    }
     
     const options = {
         chart: {
@@ -63,6 +74,12 @@ onMounted(() => {
             height: props.height,
             animations: { enabled: false },
             toolbar: { show: false },
+            // Prevent NaN issues
+            defaults: {
+                xaxis: {
+                    type: 'category'
+                }
+            }
         },
         plotOptions: {
             bar: {
@@ -85,11 +102,17 @@ onMounted(() => {
         }],
         xaxis: {
             categories: categories,
+            // Ensure axis is valid
+            min: 0,
+            tickAmount: 'dataPoints'
         },
         yaxis: {
             labels: {
                 formatter: props.formatter,
             },
+            // Ensure y-axis is valid
+            min: 0,
+            forceNiceScale: true
         },
         fill: {
             opacity: 1,
@@ -101,8 +124,12 @@ onMounted(() => {
         },
     };
 
-    chartInstance = new ApexCharts(chartRef.value, options);
-    chartInstance.render();
+    try {
+        chartInstance = new ApexCharts(chartRef.value, options);
+        chartInstance.render();
+    } catch (error) {
+        console.error('Error rendering chart:', error);
+    }
 });
 
 onUnmounted(() => {

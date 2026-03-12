@@ -2,19 +2,31 @@
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
 use App\Http\Controllers\Admin\OrdersController;
 use App\Http\Controllers\Admin\CustomersController;
 use App\Http\Controllers\Admin\RevenueController;
-use App\Http\Controllers\Admin\TshirtsController;
+use App\Http\Controllers\Admin\ProductsController;
 use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\HomePageController;
 use App\Http\Controllers\Customer\PaymentController;
-use App\Http\Controllers\Customer\TshirtsController as CustomerTshirtsController;
+use App\Http\Controllers\Customer\ProductsController as CustomerProductsController;
 use App\Http\Controllers\Customer\DesignerController;
+use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
 
 
 // ################################ Customer Routes ################################
 Route::get('/', [HomePageController::class, 'index'])->name('home');
+
+// Customer Dashboard Routes
+Route::middleware(['auth', 'role:customer'])->group(function () {
+    Route::get('/customer/dashboard', [CustomerDashboardController::class, 'index'])->name('customer.dashboard');
+});
+
+// Customer Login Route
+Route::get('/customer/login', function () {
+    return redirect()->route('login', ['customer' => true]);
+})->name('customer.login');
 
 Route::get('/privacy-policy', function () {
     return Inertia::render('Customer/PrivacyPolicy');
@@ -24,8 +36,39 @@ Route::get('/terms-of-use', function () {
     return Inertia::render('Customer/TermsOfUse');
 })->name('terms-of-use');
 
+Route::get('/about', function () {
+    return Inertia::render('Customer/About');
+})->name('about');
+
+Route::get('/contact', function () {
+    return Inertia::render('Customer/Contact');
+})->name('contact');
+
+Route::get('/faq', function () {
+    return Inertia::render('Customer/FAQ');
+})->name('faq');
+
+Route::get('/shipping-policy', function () {
+    return Inertia::render('Customer/ShippingPolicy');
+})->name('shipping-policy');
+
+Route::get('/returns', function () {
+    return Inertia::render('Customer/Returns');
+})->name('returns');
+
+Route::get('/cookie-policy', function () {
+    return Inertia::render('Customer/CookiePolicy');
+})->name('cookie-policy');
+
+Route::redirect('/product', '/');
+
+// Keep backward compatibility
 Route::redirect('/t-shirt', '/');
-Route::get('/t-shirt/{slug}', [CustomerTshirtsController::class, 'tshirtPage'])->name('tshirt.page');
+Route::get('/t-shirt/{slug}', [CustomerProductsController::class, 'tshirtPage'])->name('tshirt.page');
+
+// Generalized product routes
+Route::get('/products', [CustomerProductsController::class, 'index'])->name('products.index');
+Route::get('/product/{slug}', [CustomerProductsController::class, 'tshirtPage'])->name('product.page');
 
 Route::get('/cart', [CartController::class, 'cartPage'])->name('cart');
 Route::post('/cart', [CartController::class, 'addToCart'])->name('cart.add');
@@ -34,6 +77,7 @@ Route::post('/cart/increaseQuantity', [CartController::class, 'increaseQuantity'
 Route::post('/cart/decreaseQuantity', [CartController::class, 'decreaseQuantity'])->name('cart.decreaseQuantity');
 
 Route::post('/cart/checkout', [PaymentController::class, 'checkout'])->name('cart.checkout');
+Route::post('/cart/checkout-bank-transfer', [PaymentController::class, 'processBankTransfer'])->name('cart.bank.transfer');
 Route::get('/thank-you', [PaymentController::class, 'thankYouPage'])->name('thankYou');
 Route::get('/failed-payment', [PaymentController::class, 'failedPaymentPage'])->name('failedPayment');
 Route::post('/webhook', [PaymentController::class, 'webhook'])->name('webhook');
@@ -43,6 +87,7 @@ Route::prefix('admin')->middleware(['auth', 'role:admin,staff'])->group(function
     // Dashboard
     Route::get('/', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('analytics', [\App\Http\Controllers\Admin\DashboardController::class, 'analytics'])->name('admin.analytics');
+
     
     // Users
     Route::get('users', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('admin.users.index');
@@ -65,16 +110,21 @@ Route::prefix('admin')->middleware(['auth', 'role:admin,staff'])->group(function
     
     // Orders
     Route::get('orders', [\App\Http\Controllers\Admin\OrdersController::class, 'index'])->name('admin.orders.index');
+    Route::get('orders/{order}', [\App\Http\Controllers\Admin\OrdersController::class, 'show'])->name('admin.orders.show');
     Route::put('orders/{order}', [\App\Http\Controllers\Admin\OrdersController::class, 'update'])->name('admin.orders.update');
+    Route::post('orders/{order}/upload-receipt', [\App\Http\Controllers\Admin\OrdersController::class, 'uploadReceipt'])->name('admin.orders.upload_receipt');
 
     // Customers
     Route::get('customers', [\App\Http\Controllers\Admin\CustomersController::class, 'index'])->name('admin.customers.index');
 
-    // Products
-    Route::get('t-shirts', [\App\Http\Controllers\Admin\TshirtsController::class, 'index'])->name('admin.products.index');
-    Route::post('t-shirts', [\App\Http\Controllers\Admin\TshirtsController::class, 'store'])->name('admin.products.store');
-    Route::post('t-shirts/{tshirt}', [\App\Http\Controllers\Admin\TshirtsController::class, 'update'])->name('admin.products.update');
-    Route::delete('t-shirts/{tshirt}', [\App\Http\Controllers\Admin\TshirtsController::class, 'destroy'])->name('admin.products.destroy');
+    // Products - Updated to be more generic
+    Route::get('products', [\App\Http\Controllers\Admin\ProductsController::class, 'index'])->name('admin.products.index');
+    Route::get('products/create', [\App\Http\Controllers\Admin\ProductsController::class, 'create'])->name('admin.products.create');
+    Route::post('products', [\App\Http\Controllers\Admin\ProductsController::class, 'store'])->name('admin.products.store');
+    Route::get('products/{product}', [\App\Http\Controllers\Admin\ProductsController::class, 'show'])->name('admin.products.show');
+    Route::get('products/{product}/edit', [\App\Http\Controllers\Admin\ProductsController::class, 'edit'])->name('admin.products.edit');
+    Route::match(['put', 'patch'], 'products/{product}', [\App\Http\Controllers\Admin\ProductsController::class, 'update'])->name('admin.products.update');
+    Route::delete('products/{product}', [\App\Http\Controllers\Admin\ProductsController::class, 'destroy'])->name('admin.products.destroy');
 
     // Revenue
     Route::get('revenue', [\App\Http\Controllers\Admin\RevenueController::class, 'index'])->name('admin.revenue.index');
@@ -85,6 +135,9 @@ Route::prefix('admin')->middleware(['auth', 'role:admin,staff'])->group(function
     Route::put('roles/{role}', [\App\Http\Controllers\Admin\RolesController::class, 'update'])->name('admin.roles.update');
     Route::delete('roles/{role}', [\App\Http\Controllers\Admin\RolesController::class, 'destroy'])->name('admin.roles.destroy');
     Route::patch('roles/{role}/toggle-status', [\App\Http\Controllers\Admin\RolesController::class, 'toggleStatus'])->name('admin.roles.toggle-status');
+    Route::post('roles/{role}/grant-permissions', [\App\Http\Controllers\Admin\RolesController::class, 'grantPermissions'])->name('admin.roles.grant-permissions');
+    Route::delete('roles/{role}/revoke-permission/{permission}', [\App\Http\Controllers\Admin\RolesController::class, 'revokePermission'])->name('admin.roles.revoke-permission');
+    Route::delete('roles/{role}/revoke-all-permissions', [\App\Http\Controllers\Admin\RolesController::class, 'revokeAllPermissions'])->name('admin.roles.revoke-all-permissions');
     
     // Permissions
     Route::get('permissions', [\App\Http\Controllers\Admin\PermissionsController::class, 'index'])->name('admin.permissions.index');
@@ -97,15 +150,43 @@ Route::prefix('admin')->middleware(['auth', 'role:admin,staff'])->group(function
     Route::get('templates', [\App\Http\Controllers\Admin\TemplatesController::class, 'index'])->name('admin.templates.index');
     Route::post('templates', [\App\Http\Controllers\Admin\TemplatesController::class, 'store'])->name('admin.templates.store');
     Route::delete('templates/{template}', [\App\Http\Controllers\Admin\TemplatesController::class, 'destroy'])->name('admin.templates.destroy');
+    
+    // Designer
+    Route::get('designer/create', [\App\Http\Controllers\Admin\DesignManagementController::class, 'create'])->name('admin.designer.create');
+    
+    // Settings
+    Route::get('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])->name('admin.settings.index');
+    Route::put('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('admin.settings.update');
 });
 Route::redirect('/dashboard', '/admin')->name('dashboard');
 
 // ############################### Designer Routes ###############################
-Route::prefix('designer')->middleware('auth')->group(function () {
-    Route::get('{productType}/{product?}', [DesignerController::class, 'create'])->name('designer.create');
-    Route::get('edit/{design}', [DesignerController::class, 'edit'])->name('designer.edit');
-    Route::get('my-designs', [DesignerController::class, 'myDesigns'])->name('designer.my-designs');
+Route::prefix('designer')->group(function () {
+    Route::get('{productType}/{product?}', [\App\Http\Controllers\Designer\DesignerController::class, 'create'])->name('designer.create');
+    Route::get('edit/{design}', [\App\Http\Controllers\Designer\DesignerController::class, 'edit'])->name('designer.edit');
+    Route::get('my-designs', [\App\Http\Controllers\Designer\DesignerController::class, 'myDesigns'])->name('designer.my-designs');
+});
+
+// ############################### Admin Designer Routes ###############################
+Route::prefix('admin')->middleware(['auth', 'role:admin,staff'])->group(function () {
+    Route::prefix('designer')->group(function () {
+        Route::get('my-designs', function () {
+            // Admin can view all designs
+            $query = \App\Models\SavedDesign::with(['user', 'productType'])->latest();
+            
+            $designs = $query->paginate(20);
+            
+            return Inertia\Inertia::render('Customer/Designer/MyDesigns', [
+                'designs' => $designs,
+            ]);
+        })->name('admin.designer.my-designs');
+    });
 });
 
 // ################################ Auth Routes ################################
 require __DIR__ . '/auth.php';
+
+// API route for getting CSRF token
+Route::get('/api/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
+})->middleware('web')->name('api.csrf.token');

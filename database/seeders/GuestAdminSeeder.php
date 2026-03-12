@@ -13,11 +13,13 @@ class GuestAdminSeeder extends Seeder
      */
     public function run(): void
     {
-        User::create([
-            'name' => 'Admin',
-            'email' => 'guest-admin@guest-admin.com',
-            'password' => '00000000',
-            'role' => 'admin',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'guest-admin@guest-admin.com'],
+            [
+                'name' => 'Admin',
+                'password' => '00000000',
+                'role' => 'admin',
+            ]
+        );
     }
 }

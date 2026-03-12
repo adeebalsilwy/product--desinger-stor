@@ -17,7 +17,7 @@ class RevenueController extends Controller
         $monthlyQuery = Order::select(
             DB::raw('DATE_FORMAT(created_at, "%Y-%m") as date'),
             DB::raw('SUM(total_amount) as income'),
-            DB::raw('SUM(total_tshirts) as tshirts'),
+            DB::raw('SUM(total_products) as products'),
             DB::raw('COUNT(*) as orders'),
             DB::raw('SUM(SUM(total_amount)) OVER (ORDER BY DATE_FORMAT(created_at, "%Y-%m")) as cumulative_income')
         )
@@ -29,7 +29,7 @@ class RevenueController extends Controller
         $dailyQuery = Order::select(
             DB::raw('DATE(created_at) as date'),
             DB::raw('SUM(total_amount) as income'),
-            DB::raw('SUM(total_tshirts) as tshirts'),
+            DB::raw('SUM(total_products) as products'),
             DB::raw('COUNT(*) as orders'),
             DB::raw('SUM(SUM(total_amount)) OVER (ORDER BY DATE(created_at)) as cumulative_income')
         )
@@ -59,7 +59,7 @@ class RevenueController extends Controller
                 ->get(),
             'orders_count' => Order::count(),
             'customers_count' => \App\Models\Customer::count(),
-            'tshirts_count' => \App\Models\Product::count(),
+            'products_count' => \App\Models\Product::count(),
             'revenue' => Order::sum('total_amount'),
         ]);
     }

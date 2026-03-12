@@ -3,12 +3,14 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Models\Setting;
 use App\Services\FileService;
 use App\Services\TemplateService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\View;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,6 +38,12 @@ class AppServiceProvider extends ServiceProvider
         Model::shouldBeStrict();
         Gate::define('super_admin', function (User $user) {
             return $user->role === 'super_admin';
+        });
+
+        // Share settings with all views
+        View::composer('*', function ($view) {
+            $settings = Setting::getSettings();
+            $view->with('site_settings', $settings);
         });
     }
 }

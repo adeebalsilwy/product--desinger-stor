@@ -96,105 +96,109 @@
 
       <!-- Users Table -->
       <div class="bg-white rounded-lg shadow-md overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
-                <input 
-                  type="checkbox" 
-                  @change="selectAll"
-                  :checked="selectedUsers.length === users.data.length && users.data.length > 0"
-                  class="rounded"
-                />
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orders</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="user in users.data" :key="user.id">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <input 
-                  type="checkbox" 
-                  :value="user.id"
-                  v-model="selectedUsers"
-                  class="rounded"
-                />
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0 h-10 w-10">
-                    <div class="bg-gray-200 border-2 border-dashed rounded-xl w-10 h-10" />
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50 sticky top-0 z-10">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                  <input 
+                    type="checkbox" 
+                    @change="selectAll"
+                    :checked="selectedUsers.length === users.data.length && users.data.length > 0"
+                    class="rounded"
+                  />
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orders</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-for="user in users.data" :key="user.id">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <input 
+                    type="checkbox" 
+                    :value="user.id"
+                    v-model="selectedUsers"
+                    class="rounded"
+                  />
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10">
+                      <div class="bg-gray-200 border-2 border-dashed rounded-xl w-10 h-10" />
+                    </div>
+                    <div class="ml-4">
+                      <div class="text-sm font-medium text-gray-900">{{ user.name }}</div>
+                    </div>
                   </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">{{ user.name }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.email }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {{ user.role }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <StatusBadge :status="user.is_active ? 'active' : 'inactive'" />
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.total_orders || 0 }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(user.created_at) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div class="flex flex-wrap gap-2">
+                    <Link 
+                      :href="route('admin.users.show', user.id)"
+                      class="text-indigo-600 hover:text-indigo-900"
+                    >
+                      View
+                    </Link>
+                    <Link 
+                      :href="route('admin.users.edit', user.id)"
+                      class="text-green-600 hover:text-green-900"
+                    >
+                      Edit
+                    </Link>
+                    <button 
+                      @click="toggleUserStatus(user)"
+                      class="text-yellow-600 hover:text-yellow-900"
+                      :disabled="user.id === $page.props.auth.user.id"
+                    >
+                      {{ user.is_active ? 'Deactivate' : 'Activate' }}
+                    </button>
+                    <button 
+                      @click="deleteUser(user)"
+                      class="text-red-600 hover:text-red-900"
+                      :disabled="user.id === $page.props.auth.user.id"
+                    >
+                      Delete
+                    </button>
                   </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.email }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  {{ user.role }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <StatusBadge :status="user.is_active ? 'active' : 'inactive'" />
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.total_orders || 0 }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(user.created_at) }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <div class="flex space-x-2">
-                  <Link 
-                    :href="route('admin.users.show', user.id)"
-                    class="text-indigo-600 hover:text-indigo-900"
-                  >
-                    View
-                  </Link>
-                  <Link 
-                    :href="route('admin.users.edit', user.id)"
-                    class="text-green-600 hover:text-green-900"
-                  >
-                    Edit
-                  </Link>
-                  <button 
-                    @click="toggleUserStatus(user)"
-                    class="text-yellow-600 hover:text-yellow-900"
-                    :disabled="user.id === $page.props.auth.user.id"
-                  >
-                    {{ user.is_active ? 'Deactivate' : 'Activate' }}
-                  </button>
-                  <button 
-                    @click="deleteUser(user)"
-                    class="text-red-600 hover:text-red-900"
-                    :disabled="user.id === $page.props.auth.user.id"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <!-- Pagination -->
         <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
           <div class="flex-1 flex justify-between sm:hidden">
             <Link 
-              :href="users.prev_page_url" 
+              :href="users.prev_page_url || '#'" 
               :class="{'opacity-50 cursor-not-allowed': !users.prev_page_url}"
               class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              :disabled="!users.prev_page_url"
             >
               Previous
             </Link>
             <Link 
-              :href="users.next_page_url" 
+              :href="users.next_page_url || '#'" 
               :class="{'opacity-50 cursor-not-allowed': !users.next_page_url}"
               class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              :disabled="!users.next_page_url"
             >
               Next
             </Link>
@@ -211,11 +215,13 @@
                   v-for="(link, index) in users.links.slice(1, -1)"
                   :key="index"
                   :href="link.url || '#'"
+                  :disabled="!link.url"
                   :class="[
                     'relative inline-flex items-center px-4 py-2 border text-sm font-medium',
                     link.active 
                       ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' 
-                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50',
+                    !link.url ? 'opacity-50 cursor-not-allowed' : ''
                   ]"
                   v-html="link.label"
                 />
@@ -244,13 +250,17 @@ export default {
   
   props: {
     users: Object,
-    filters: Object,
+    initialFilters: Object,
     roles: Array,
   },
   
   data() {
     return {
-      filters: { ...this.filters },
+      filters: { 
+        search: this.initialFilters?.search || '',
+        role: this.initialFilters?.role || '',
+        status: this.initialFilters?.status || '',
+      },
       selectedUsers: [],
       selectedRoleForBulk: '',
     };

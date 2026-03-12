@@ -1,6 +1,7 @@
 <script setup>
 import Footer from "@/Components/HomePage/Footer.vue";
 import Cart from "@/Components/Cart.vue";
+import Navbar from "@/Components/Customer/Navbar.vue";
 import { router } from '@inertiajs/vue3';
 
 router.on('navigate', () => {
@@ -11,16 +12,23 @@ router.on('navigate', () => {
 </script>
 
 <template>
-    <div class="bg-[#f5f5f5] relative">
-
+    <div class="bg-gradient-to-br from-gray-50 to-gray-100 relative min-h-screen">
+        <!-- Navigation -->
+        <div class="sticky top-0 z-50 shadow-xl">
+            <Navbar />
+        </div>
+        
+        <!-- Cart (for mobile overlay) -->
         <Cart />
 
         <!-- Page Content -->
-        <div class="bg-slate-200 mx-auto min-h-screen">
+        <main class="bg-white mx-auto shadow-lg">
             <slot />
-        </div>
+        </main>
 
         <!-- Footer -->
-        <Footer />
+        <div class="mt-16">
+            <Footer />
+        </div>
     </div>
 </template>

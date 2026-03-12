@@ -40,8 +40,8 @@ class TemplateService
         // Create thumbnail
         $thumbnailUrl = $this->fileService->createThumbnail($uploadResult['file_path'], 300, 300, 'template/thumbnails');
 
-        // Prepare template data
-        $templateData = [
+        // Create the design template record
+        return DesignTemplate::create([
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
             'category' => $data['category'] ?? null,
@@ -49,10 +49,7 @@ class TemplateService
             'preview_url' => $uploadResult['file_url'],
             'design_data' => $data['design_data'] ?? [], // Can be populated with design elements
             'created_by' => $userId,
-        ];
-
-        // Create the design template record
-        return DesignTemplate::create($templateData);
+        ]);
     }
 
     /**
@@ -124,15 +121,27 @@ class TemplateService
     private function deleteTemplateFiles(DesignTemplate $template): void
     {
         if ($template->preview_url) {
+            // Extract the file path from the URL
             $filePath = str_replace(Storage::url(''), '', $template->preview_url);
-            if (Storage::exists($filePath)) {
+            // Remove the leading slash if present
+            if (strpos($filePath, '/') === 0) {
+                $filePath = substr($filePath, 1);
+            }
+            
+            if (Storage::disk('public')->exists($filePath)) {
                 $this->fileService->deleteFile($filePath);
             }
         }
 
         if ($template->thumbnail_url) {
+            // Extract the thumbnail path from the URL
             $thumbnailPath = str_replace(Storage::url(''), '', $template->thumbnail_url);
-            if (Storage::exists($thumbnailPath)) {
+            // Remove the leading slash if present
+            if (strpos($thumbnailPath, '/') === 0) {
+                $thumbnailPath = substr($thumbnailPath, 1);
+            }
+            
+            if (Storage::disk('public')->exists($thumbnailPath)) {
                 $this->fileService->deleteFile($thumbnailPath);
             }
         }

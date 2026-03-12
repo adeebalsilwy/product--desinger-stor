@@ -7,7 +7,36 @@ use Illuminate\Database\Eloquent\Model;
 
 class Tshirt extends Model
 {
-    protected $fillable = ['title', 'slug', 'description', 'price', 'listed', 'images_folder_name'];
+    protected $table = 'products'; // Map Tshirt model to products table
+    protected $fillable = ['name', 'slug', 'description', 'price', 'is_active', 'images_folder_name', 'title'];
+    
+    protected $casts = [
+        'price' => 'decimal:2',  // Ensure price is cast to decimal
+    ];
+
+    // Accessor to map 'name' to 'title' for backward compatibility
+    public function getTitleAttribute()
+    {
+        return $this->attributes['name'] ?? $this->attributes['title'] ?? null;
+    }
+
+    // Mutator to map 'title' to 'name'
+    public function setTitleAttribute($value)
+    {
+        $this->attributes['name'] = $value;
+    }
+
+    // Accessor to map 'is_active' to 'listed' for backward compatibility
+    public function getListedAttribute()
+    {
+        return $this->attributes['is_active'] ?? null;
+    }
+
+    // Mutator to map 'listed' to 'is_active'
+    public function setListedAttribute($value)
+    {
+        $this->attributes['is_active'] = $value;
+    }
 
     public function images()
     {
@@ -16,8 +45,8 @@ class Tshirt extends Model
 
     public function orders()
     {
-        return $this->belongsToMany(Order::class)
-            ->withPivot('quantity', 'price')
+        return $this->belongsToMany(Order::class, 'order_product', 'product_id', 'order_id')
+            ->withPivot('quantity', 'price', 'size')
             ->withTimestamps();
     }
 
@@ -34,16 +63,19 @@ class Tshirt extends Model
 
     public function getImagesFolderName()
     {
-        return $this->images_folder_name ?? TitleToFolderName::convert($this->title) ;
+        return $this->images_folder_name ?? TitleToFolderName::convert($this->getTitleAttribute()) ;
     }
 
     public function getTotalSales()
     {
         // Calculate total sales, excluding canceled orders
-        return $this->orders()
+        // Join orders and order_product tables to get the quantity
+        return \DB::table('orders')
+            ->join('order_product', 'orders.id', '=', 'order_product.order_id')
+            ->where('order_product.product_id', $this->id)  // Use product_id instead of tshirt_id
             ->where('status', '!=', 'cancelled')  // Exclude canceled orders
             ->where('payment_status', '=', 'paid') // Only include paid orders
-            ->sum('order_tshirt.quantity');      // Sum the quantity from the pivot table
+            ->sum('order_product.quantity');      // Sum the quantity from the pivot table
     }
 
     public function getTotalRevenue()

@@ -120,33 +120,74 @@ class UserManagementController extends Controller
 
     public function destroy(User $user)
     {
-        if ($user->id === auth()->id()) {
-            return redirect()->back()->withErrors(['error' => 'You cannot delete your own account.']);
+        try {
+            if ($user->id === auth()->id()) {
+                return redirect()->back()->withErrors(['error' => 'You cannot delete your own account.']);
+            }
+
+            $user->delete();
+
+            return redirect()->route('admin.users.index')->with('message', 'User deleted successfully.');
+        } catch (\Exception $e) {
+            \Log::error('Failed to delete user ' . $user->id . ': ' . $e->getMessage());
+            return redirect()->back()->withErrors(['error' => 'Failed to delete user.']);
         }
-
-        $user->delete();
-
-        return redirect()->route('admin.users.index')->with('message', 'User deleted successfully.');
     }
 
     public function show(User $user)
     {
-        $user->load(['orders', 'savedDesigns', 'roles', 'permissions']);
+        try {
+            $user->loadMissing(['orders', 'savedDesigns', 'roles']);
+            
+            // Safely load permissions with fallback
+            try {
+                $user->loadMissing('permissions');
+            } catch (\Exception $e) {
+                \Log::warning('Failed to load permissions for user ' . $user->id . ': ' . $e->getMessage());
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to load user data ' . $user->id . ': ' . $e->getMessage());
+        }
+
+        // Safely load orders
+        $orders = [];
+        $designs = [];
+        $orders_count = 0;
+        $designs_count = 0;
+        
+        try {
+            $orders = $user->orders()->with('items')->latest()->paginate(10);
+            $orders_count = $user->orders()->count();
+        } catch (\Exception $e) {
+            \Log::warning('Failed to load orders for user ' . $user->id . ': ' . $e->getMessage());
+        }
+        
+        try {
+            $designs = $user->savedDesigns()->with(['user', 'productType'])->latest()->paginate(10);
+            $designs_count = $user->savedDesigns()->count();
+        } catch (\Exception $e) {
+            \Log::warning('Failed to load designs for user ' . $user->id . ': ' . $e->getMessage());
+        }
 
         return Inertia::render('Admin/Users/Show', [
             'user' => $user,
-            'orders' => $user->orders()->with('items')->latest()->paginate(10),
-            'designs' => $user->savedDesigns()->latest()->paginate(10),
-            'orders_count' => $user->orders()->count(),
-            'designs_count' => $user->savedDesigns()->count(),
+            'orders' => $orders,
+            'designs' => $designs,
+            'authUser' => auth()->user(),
+            'orders_count' => $orders_count,
+            'designs_count' => $designs_count,
         ]);
     }
 
     public function toggleStatus(User $user)
     {
-        $user->update(['is_active' => !$user->is_active]);
-
-        return redirect()->back()->with('message', 'User status updated successfully.');
+        try {
+            $user->update(['is_active' => !$user->is_active]);
+            return redirect()->back()->with('message', 'User status updated successfully.');
+        } catch (\Exception $e) {
+            \Log::error('Failed to toggle user status ' . $user->id . ': ' . $e->getMessage());
+            return redirect()->back()->withErrors(['error' => 'Failed to update user status.']);
+        }
     }
 
     public function bulkAssignRole(Request $request)

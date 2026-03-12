@@ -19,6 +19,17 @@ export default {
                 secondary: ["secondary", ...defaultTheme.fontFamily.sans],
             },
             colors: {
+                // Ahlam's Girls Brand Colors - Professional Elegant Palette
+                brand: {
+                    primary: '#1a1a2e',      // Deep navy blue - elegance, sophistication
+                    secondary: '#16213e',    // Rich navy - depth, professionalism
+                    accent: '#e94560',       // Rose pink - feminine, energetic accent
+                    bg: '#0f3460',           // Midnight blue - background depth
+                    text: '#ffffff',         // Pure white - clarity, purity
+                    gold: '#d4af37',         // Luxury gold - premium feel
+                    rose: '#f8b4c8',         // Soft rose - gentle feminine touch
+                    lavender: '#b19cd9',     // Soft lavender - creativity, imagination
+                },
                 green: {
                     50: "#ECFDF5",
                     100: "#D1FAE5",

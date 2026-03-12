@@ -107,12 +107,14 @@
                 @click="toggleStatus"
                 class="w-full px-4 py-2 rounded neumorphic-btn"
                 :class="user.is_active ? 'bg-red-500 text-white' : 'bg-green-500 text-white'"
+                :disabled="!user.id"
               >
                 {{ user.is_active ? 'Deactivate User' : 'Activate User' }}
               </button>
               <button
                 @click="deleteUser"
                 class="w-full px-4 py-2 bg-red-500 text-white rounded neumorphic-btn"
+                :disabled="!user.id || user.id === authUser.id"
               >
                 Delete User
               </button>
@@ -207,7 +209,7 @@
                 </tr>
               </thead>
               <tbody class="bg-neumorphic divide-y divide-gray-200">
-                <tr v-for="order in user.orders.data" :key="order.id">
+                <tr v-for="order in orders?.data || []" :key="order.id">
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-neumorphic-text">
                     {{ order.id }}
                   </td>
@@ -226,7 +228,7 @@
                 </tr>
               </tbody>
             </table>
-            <div v-if="user.orders.data.length === 0" class="text-center py-4 text-gray-500">
+            <div v-if="!orders || !orders.data || orders.data.length === 0" class="text-center py-4 text-gray-500">
               No orders found
             </div>
           </div>
@@ -254,7 +256,7 @@
                 </tr>
               </thead>
               <tbody class="bg-neumorphic divide-y divide-gray-200">
-                <tr v-for="design in user.designs.data" :key="design.id">
+                <tr v-for="design in designs?.data || []" :key="design.id">
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-neumorphic-text">
                     {{ design.id }}
                   </td>
@@ -281,7 +283,7 @@
                 </tr>
               </tbody>
             </table>
-            <div v-if="user.designs.data.length === 0" class="text-center py-4 text-gray-500">
+            <div v-if="!designs || !designs.data || designs.data.length === 0" class="text-center py-4 text-gray-500">
               No designs found
             </div>
           </div>
@@ -305,12 +307,31 @@ export default {
   
   props: {
     user: Object,
+    orders: Object,
+    designs: Object,
+    authUser: Object,
   },
   
   data() {
     return {
       activeTab: 'orders',
     };
+  },
+  
+  mounted() {
+    // Ensure user data exists
+    if (!this.user) {
+      console.error('User data not loaded properly');
+      return;
+    }
+    
+    // Initialize user data if needed
+    if (!this.user.orders) {
+      this.user.orders = { data: [] };
+    }
+    if (!this.user.designs) {
+      this.user.designs = { data: [] };
+    }
   },
   
   methods: {
@@ -343,20 +364,44 @@ export default {
     },
     
     toggleStatus() {
+      if (!this.user || !this.user.id) {
+        alert('User data not available');
+        return;
+      }
+      
       router.patch(`/admin/users/${this.user.id}/toggle-status`, {}, {
         onSuccess: () => {
           // Reload the user data
           router.reload();
+        },
+        onError: (errors) => {
+          console.error('Status update error:', errors);
+          alert('Error updating user status');
         }
       });
     },
     
     deleteUser() {
+      // Check if user exists and prevent self-deletion
+      if (!this.user || !this.user.id) {
+        alert('User data not available');
+        return;
+      }
+      
+      if (this.user.id === this.authUser?.id) {
+        alert('You cannot delete your own account');
+        return;
+      }
+      
       if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
         router.delete(`/admin/users/${this.user.id}`, {
           onSuccess: () => {
             // Go back to the users list
             router.visit('/admin/users');
+          },
+          onError: (errors) => {
+            console.error('Delete error:', errors);
+            alert('Error deleting user');
           }
         });
       }

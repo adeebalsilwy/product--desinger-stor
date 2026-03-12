@@ -1,0 +1,489 @@
+@startuml
+' Class Diagram for Ahlam’s Girls    Laravel Project
+
+!define MODEL_COLOR #E3F2FD
+!define CONTROLLER_COLOR #F3E5F5
+!define SERVICE_COLOR #E8F5E8
+!define JOB_COLOR #FFF3E0
+
+skinparam class {
+    BackgroundColor MODEL_COLOR
+    BorderColor #1976D2
+    AttributeFontColor #333333
+    AttributeFontSize 10
+}
+
+skinparam interface {
+    BackgroundColor #F5F5F5
+    BorderColor #757575
+}
+
+skinparam package {
+    BackgroundColor #EEEEEE
+    BorderColor #616161
+}
+
+package "Models" {
+    class User {
+        +int id
+        +string name
+        +string email
+        +string password
+        +string role
+        +string phone
+        +string address
+        +string city
+        +string country
+        +string zip_code
+        +boolean is_active
+        +datetime email_verified_at
+        +string remember_token
+        +datetime created_at
+        +datetime updated_at
+        --
+        +hasMany(Order) orders()
+        +hasMany(SavedDesign) savedDesigns()
+        +belongsToMany(Role) roles()
+        +belongsToMany(Permission) permissions()
+        +scopeActive() scopeActive()
+        +scopeInactive() scopeInactive()
+        +scopeByRole() scopeByRole()
+        +hasRole() hasRole()
+        +hasPermission() hasPermission()
+        +isAdmin() isAdmin()
+        +isStaff() isStaff()
+        +isCustomer() isCustomer()
+        +getFullNameAttribute() getFullNameAttribute()
+        +getTotalOrdersAttribute() getTotalOrdersAttribute()
+        +getTotalSpentAttribute() getTotalSpentAttribute()
+    }
+
+    class Customer {
+        +int id
+        +string name
+        +string email
+        +string phone
+        +string country
+        +string address
+        +string zipcode
+        +datetime created_at
+        +datetime updated_at
+        --
+        +hasMany(Order) orders()
+        +totalSpent() totalSpent()
+        +total_orders() total_orders()
+        +totalTshirtsBought() totalTshirtsBought()
+    }
+
+    class Order {
+        +int id
+        +int customer_id
+        +int number_of_items
+        +string status
+        +string tracking_number
+        +int total_tshirts
+        +decimal total_amount
+        +string payment_status
+        +string payment_id
+        +json design_data
+        +json shipping_address
+        +json billing_address
+        +text notes
+        +string coupon_code
+        +decimal discount_amount
+        +decimal shipping_cost
+        +decimal tax_amount
+        +datetime created_at
+        +datetime updated_at
+        --
+        +belongsTo(Customer) customer()
+        +belongsToMany(Tshirt) tshirts()
+        +hasMany(OrderItem) items()
+        +hasMany(OrderHistory) histories()
+        +getTotalTshirts() getTotalTshirts()
+        +getTotalAmount() getTotalAmount()
+    }
+
+    class OrderItem {
+        +int id
+        +int order_id
+        +int product_id
+        +int product_type_id
+        +int saved_design_id
+        +int quantity
+        +decimal unit_price
+        +decimal total_price
+        +json customization_data
+        +string print_file_url
+        +string status
+        +datetime created_at
+        +datetime updated_at
+        --
+        +belongsTo(Order) order()
+        +belongsTo(Product) product()
+        +belongsTo(ProductType) productType()
+        +belongsTo(SavedDesign) savedDesign()
+        +getCustomizationsAttribute() getCustomizationsAttribute()
+        +hasCustomDesign() hasCustomDesign()
+        +getDesignDataAttribute() getDesignDataAttribute()
+        +updateStatus() updateStatus()
+        +generatePrintFile() generatePrintFile()
+        +scopeByOrder() scopeByOrder()
+        +scopeByStatus() scopeByStatus()
+    }
+
+    class Product {
+        +int id
+        +int product_type_id
+        +string name
+        +string slug
+        +text description
+        +string sku
+        +decimal price
+        +decimal sale_price
+        +int inventory_count
+        +boolean is_active
+        +string thumbnail_url
+        +int design_template_id
+        +json template_data
+        +boolean is_template_based
+        +string template_category
+        +datetime created_at
+        +datetime updated_at
+        --
+        +belongsTo(ProductType) productType()
+        +hasMany(ProductVariant) variants()
+        +hasMany(OrderItem) orderItems()
+        +belongsTo(DesignTemplate) designTemplate()
+        +scopeActive() scopeActive()
+        +scopeAvailable() scopeAvailable()
+        +scopeTemplateBased() scopeTemplateBased()
+        +scopeByTemplateCategory() scopeByTemplateCategory()
+        +getFinalPriceAttribute() getFinalPriceAttribute()
+        +hasDiscount() hasDiscount()
+        +getDiscountPercentageAttribute() getDiscountPercentageAttribute()
+    }
+
+    class ProductType {
+        +int id
+        +string name
+        +string slug
+        +text description
+        +decimal base_price
+        +boolean is_active
+        +datetime created_at
+        +datetime updated_at
+        --
+        +hasMany(Product) products()
+        +hasMany(PrintArea) printAreas()
+        +hasMany(DesignTemplate) templates()
+        +hasMany(SavedDesign) savedDesigns()
+        +scopeActive() scopeActive()
+    }
+
+    class SavedDesign {
+        +int id
+        +int user_id
+        +string session_id
+        +int product_type_id
+        +string name
+        +json design_data
+        +string thumbnail_url
+        +string preview_url
+        +json print_files
+        +boolean is_public
+        +boolean is_template
+        +datetime created_at
+        +datetime updated_at
+        --
+        +belongsTo(User) user()
+        +belongsTo(ProductType) productType()
+        +hasMany(OrderItem) orderItems()
+        +getCanvasDataAttribute() getCanvasDataAttribute()
+        +updateLayer() updateLayer()
+        +generateThumbnail() generateThumbnail()
+        +exportHighRes() exportHighRes()
+        +duplicate() duplicate()
+        +scopeByUser() scopeByUser()
+        +scopeBySession() scopeBySession()
+        +scopePublic() scopePublic()
+    }
+
+    class DesignTemplate {
+        +int id
+        +string name
+        +text description
+        +int product_type_id
+        +string category
+        +json tags
+        +string thumbnail_url
+        +string preview_url
+        +json design_data
+        +boolean is_premium
+        +decimal price
+        +int usage_count
+        +int created_by
+        +datetime created_at
+        +datetime updated_at
+        --
+        +belongsTo(ProductType) productType()
+        +belongsTo(User) creator()
+        +scopeByCategory() scopeByCategory()
+        +scopePremium() scopePremium()
+        +scopeFree() scopeFree()
+        +scopePopular() scopePopular()
+        +useByUser() useByUser()
+        +addTags() addTags()
+    }
+
+    class Tshirt {
+        +int id
+        +string title
+        +string slug
+        +text description
+        +decimal price
+        +boolean listed
+        +string images_folder_name
+        +datetime created_at
+        +datetime updated_at
+        --
+        +hasMany(ShirtImage) images()
+        +belongsToMany(Order) orders()
+        +getMainImage() getMainImage()
+        +getOtherImages() getOtherImages()
+        +getImagesFolderName() getImagesFolderName()
+        +getTotalSales() getTotalSales()
+        +getTotalRevenue() getTotalRevenue()
+    }
+
+    class Role {
+        +int id
+        +string name
+        +string slug
+        +text description
+        +json permissions
+        +boolean is_active
+        +datetime created_at
+        +datetime updated_at
+        --
+        +belongsToMany(User) users()
+        +belongsToMany(Permission) permissions()
+        +scopeActive() scopeActive()
+        +hasPermission() hasPermission()
+        +assignPermission() assignPermission()
+        +revokePermission() revokePermission()
+        +getPermissionNamesAttribute() getPermissionNamesAttribute()
+    }
+
+    class Permission {
+        +int id
+        +string name
+        +string slug
+        +text description
+        +string resource
+        +string action
+        +boolean is_active
+        +datetime created_at
+        +datetime updated_at
+        --
+        +belongsToMany(Role) roles()
+        +scopeActive() scopeActive()
+        +scopeForResource() scopeForResource()
+        +scopeForAction() scopeForAction()
+        +scopeForResourceAction() scopeForResourceAction()
+    }
+
+    class UserAsset {
+        +int id
+        +int user_id
+        +string session_id
+        +string original_filename
+        +string stored_filename
+        +string file_path
+        +string file_url
+        +string thumbnail_url
+        +string file_type
+        +int file_size
+        +string mime_type
+        +int width
+        +int height
+        +string storage_disk
+        +datetime created_at
+        +datetime updated_at
+        --
+        +belongsTo(User) user()
+        +getUrlAttribute() getUrlAttribute()
+        +getThumbnailUrlAttribute() getThumbnailUrlAttribute()
+        +isImage() isImage()
+        +isSvg() isSvg()
+        +deleteFile() deleteFile()
+        +isInUse() isInUse()
+        +scopeBySession() scopeBySession()
+        +scopeByType() scopeByType()
+        +scopeImages() scopeImages()
+    }
+}
+
+package "Controllers" {
+    class Controller {
+        --
+        +__construct()
+    }
+
+    class DesignController {
+        -ExportService exportService
+        --
+        +index() index()
+        +show() show()
+        +store() store()
+        +update() update()
+        +destroy() destroy()
+        +duplicate() duplicate()
+        +export() export()
+        +useTemplate() useTemplate()
+        +saveAsTemplate() saveAsTemplate()
+        +generatePreview() generatePreview()
+        -canAccessDesign() canAccessDesign()
+        -getGuestIdentifier() getGuestIdentifier()
+    }
+
+    class OrderController {
+        --
+        +index() index()
+        +show() show()
+        +store() store()
+        +cancel() cancel()
+        +invoice() invoice()
+    }
+
+    class AssetController {
+        --
+        +index() index()
+        +upload() upload()
+        +show() show()
+        +destroy() destroy()
+        +bulkDelete() bulkDelete()
+    }
+}
+
+package "Services" {
+    class ExportService {
+        --
+        +exportHighRes() exportHighRes()
+        +generatePreview() generatePreview()
+        +exportToPdf() exportToPdf()
+        +exportLayers() exportLayers()
+        +generatePrintFile() generatePrintFile()
+    }
+
+    class ImageService {
+        --
+        +resize() resize()
+        +crop() crop()
+        +optimize() optimize()
+        +generateThumbnail() generateThumbnail()
+    }
+
+    class FileService {
+        --
+        +upload() upload()
+        +delete() delete()
+        +getFileInfo() getFileInfo()
+        +validateFile() validateFile()
+    }
+
+    class TemplateService {
+        --
+        +applyTemplate() applyTemplate()
+        +saveAsTemplate() saveAsTemplate()
+        +getTemplateData() getTemplateData()
+    }
+}
+
+package "Jobs" {
+    class GenerateDesignPreview {
+        --
+        +handle() handle()
+    }
+
+    class SendOrderEmails {
+        --
+        +handle() handle()
+    }
+}
+
+package "Enums" {
+    enum OrderStatus {
+        PENDING
+        PROCESSING
+        SHIPPED
+        DELIVERED
+        CANCELLED
+    }
+
+    enum PaymentStatus {
+        UNPAID
+        PAID
+        FAILED
+        REFUNDED
+    }
+}
+
+' Inheritance relationships
+Controller <|-- DesignController
+Controller <|-- OrderController
+Controller <|-- AssetController
+
+' Dependency relationships
+DesignController --> ExportService
+DesignController --> GenerateDesignPreview
+OrderController --> SendOrderEmails
+
+' Model relationships
+User "1" -- "0..*" Order : places >
+Customer "1" -- "0..*" Order : places >
+Order "1" -- "0..*" OrderItem : contains >
+Order "0..*" -- "0..*" Tshirt : includes >
+Product "1" -- "0..*" OrderItem : included in >
+ProductType "1" -- "0..*" Product : categorizes >
+SavedDesign "1" -- "0..*" OrderItem : used in >
+User "1" -- "0..*" SavedDesign : creates >
+User "1" -- "0..*" UserAsset : uploads >
+Role "0..*" -- "0..*" User : assigned to >
+Role "0..*" -- "0..*" Permission : has >
+DesignTemplate "1" -- "0..*" SavedDesign : creates >
+ProductType "1" -- "0..*" DesignTemplate : categorizes >
+
+note right of User
+  User extends 
+  Authenticatable
+  Uses traits:
+  - HasFactory
+  - Notifiable
+  - HasApiTokens
+end note
+
+note right of Order
+  Status management:
+  - pending → processing → shipped → delivered
+  - Any status can go to cancelled
+  Payment integration with Stripe
+end note
+
+note right of SavedDesign
+  Design system core:
+  - JSON-based design data storage
+  - Preview generation
+  - Export functionality
+  - Template integration
+end note
+
+note right of Product
+  Product management:
+  - Template-based or regular products
+  - Variant support (size, color)
+  - Inventory tracking
+  - Discount system
+end note
+
+@enduml

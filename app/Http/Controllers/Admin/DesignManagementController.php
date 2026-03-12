@@ -76,6 +76,13 @@ class DesignManagementController extends Controller
         return redirect()->route('admin.designs.index')->with('message', 'Design deleted successfully.');
     }
 
+    public function create()
+    {
+        // For admin, we can redirect to the same designer page but with admin context
+        // or return a specific admin designer view
+        return redirect()->route('designer.create', ['productType' => 't-shirt']);
+    }
+
     public function toggleVisibility(SavedDesign $design)
     {
         $design->update(['is_public' => !$design->is_public]);

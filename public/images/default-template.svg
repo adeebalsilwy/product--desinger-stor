@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="#2c3e50" opacity="0.1"/>
+  
+  <!-- Elegant woman silhouette -->
+  <g fill="#2c3e50">
+    <!-- Head -->
+    <circle cx="100" cy="70" r="20" fill="#2c3e50"/>
+    
+    <!-- Flower hat -->
+    <path d="M85 55 Q90 45 95 50 Q100 40 105 50 Q110 45 115 55 Q110 60 100 60 Q90 60 85 55" fill="#e74c3c"/>
+    <circle cx="95" cy="48" r="3" fill="#e74c3c"/>
+    <circle cx="105" cy="48" r="3" fill="#e74c3c"/>
+    
+    <!-- Body (black dress) -->
+    <path d="M75 90 L125 90 L135 200 L120 220 L80 220 L65 200 Z" fill="#2c3e50"/>
+    
+    <!-- Dress details -->
+    <path d="M85 120 L115 120 M85 150 L115 150 M85 180 L115 180" stroke="#34495e" stroke-width="1" fill="none"/>
+    
+    <!-- Arms -->
+    <path d="M75 110 L55 130 L60 140 L80 125 Z" fill="#2c3e50"/>
+    <path d="M125 110 L145 130 L140 140 L120 125 Z" fill="#2c3e50"/>
+    
+    <!-- Transparent flowers around -->
+    <g opacity="0.3">
+      <circle cx="40" cy="80" r="8" fill="#e74c3c"/>
+      <circle cx="160" cy="80" r="8" fill="#e74c3c"/>
+      <circle cx="30" cy="150" r="6" fill="#e74c3c"/>
+      <circle cx="170" cy="150" r="6" fill="#e74c3c"/>
+      <circle cx="50" cy="230" r="5" fill="#e74c3c"/>
+      <circle cx="150" cy="230" r="5" fill="#e74c3c"/>
+    </g>
+  </g>
+  
+  <!-- Brand text -->
+  <text x="100" y="250" font-family="serif" font-size="24" text-anchor="middle" fill="#2c3e50" font-weight="bold">Ahlam's</text>
+  <text x="100" y="275" font-family="sans-serif" font-size="16" text-anchor="middle" fill="#34495e" font-weight="600">GIRLS</text>
+  <text x="100" y="290" font-family="serif" font-size="10" text-anchor="middle" fill="#e74c3c" font-style="italic">Elegance, Sewn to Perfection</text>
+</svg>

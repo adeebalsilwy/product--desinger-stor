@@ -13,7 +13,6 @@ const types = {
         darkText: "text-yellow-300",
         emoji: "⌛",
     },
-
     paid: {
         label: "Paid",
         bg: "bg-green-100",
@@ -23,10 +22,28 @@ const types = {
         darkText: "text-green-300",
         emoji: "✅",
     },
+    bank_transfer: {
+        label: "Bank Transfer",
+        bg: "bg-blue-100",
+        text: "text-blue-800",
+        border: "border-blue-400",
+        darkBg: "bg-blue-900",
+        darkText: "text-blue-300",
+        emoji: "🏦",
+    },
+    pending_bank_transfer: {
+        label: "Pending Bank Transfer",
+        bg: "bg-orange-100",
+        text: "text-orange-800",
+        border: "border-orange-400",
+        darkBg: "bg-orange-900",
+        darkText: "text-orange-300",
+        emoji: "⏳",
+    },
 };
 
 // Dynamically select the current type based on the prop
-const currentType = types[props.type] || types.pending; // Default to 'idea' if type is not provided
+const currentType = types[props.type] || types.unpaid; // Default to 'unpaid' if type is not provided
 </script>
 
 <template>

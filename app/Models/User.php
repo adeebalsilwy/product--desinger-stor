@@ -6,11 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -28,6 +29,7 @@ class User extends Authenticatable
         'country',
         'zip_code',
         'is_active',
+        'zipcode', // For customer compatibility
     ];
 
     /**
@@ -59,6 +61,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class, 'customer_id');
     }
+    
+    // Alias for customer relationship
+    public function customerOrders()
+    {
+        return $this->hasMany(Order::class, 'customer_id');
+    }
 
     public function savedDesigns()
     {
@@ -70,9 +78,21 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class, 'user_roles');
     }
 
+    // Get permissions through assigned roles
     public function permissions()
     {
-        return $this->belongsToMany(Permission::class, 'user_permissions');
+        return $this->belongsToMany(Permission::class, 'user_permissions')
+                    ->withTimestamps();
+    }
+    
+    // Alternative method to get all permissions through roles
+    public function getAllPermissionsAttribute()
+    {
+        $permissions = collect();
+        foreach ($this->roles as $role) {
+            $permissions = $permissions->merge($role->permissions);
+        }
+        return $permissions->unique('id');
     }
 
     public function scopeActive($query)

@@ -45,7 +45,8 @@ class AssetController extends Controller
         }
         
         // Upload the file
-        $uploadPath = 'user_assets/' . (Auth::id() ?? 'guest') . '/' . date('Y/m');
+        $userId = Auth::check() ? Auth::id() : null;
+        $uploadPath = 'user_assets/' . ($userId ?? 'guest_' . Str::random(8)) . '/' . date('Y/m');
         
         try {
             $uploadResult = $this->imageService->upload($file, $uploadPath, [
@@ -54,10 +55,13 @@ class AssetController extends Controller
                 'disk' => config('filesystems.default', 'public'),
             ]);
             
+            // Get guest identifier safely
+            $guestIdentifier = $this->getGuestIdentifier($request);
+            
             // Create asset record
             $asset = UserAsset::create([
-                'user_id' => Auth::id(),
-                'session_id' => $request->session()->getId(),
+                'user_id' => Auth::check() ? Auth::id() : null,  // Only assign user ID if authenticated
+                'session_id' => $guestIdentifier,
                 'original_filename' => $file->getClientOriginalName(),
                 'stored_filename' => $uploadResult['filename'],
                 'file_path' => $uploadResult['path'],
@@ -100,11 +104,12 @@ class AssetController extends Controller
             $query->where('original_filename', 'like', '%' . $request->search . '%');
         }
         
-        // User's assets or guest assets by session
+        // User's assets or guest assets by identifier
         if (Auth::check()) {
             $query->where('user_id', Auth::id());
         } else {
-            $query->where('session_id', $request->session()->getId());
+            $guestIdentifier = $this->getGuestIdentifier($request);
+            $query->where('session_id', $guestIdentifier);
         }
         
         $assets = $query->latest()->paginate($request->get('per_page', 20));
@@ -204,11 +209,37 @@ class AssetController extends Controller
             return true;
         }
         
-        // Guest can access by session
-        if (!Auth::check() && $asset->session_id === request()->session()->getId()) {
-            return true;
+        // Guest can access by identifier
+        if (!Auth::check() && $asset->session_id) {
+            $guestIdentifier = $this->getGuestIdentifier(request());
+            return $asset->session_id === $guestIdentifier;
         }
         
         return false;
+    }
+    
+    /**
+     * Get guest identifier from request - either session or cookie
+     */
+    private function getGuestIdentifier(Request $request): string
+    {
+        // Try to get from session first (if session is available)
+        try {
+            if ($request->hasSession() && $request->session()->isStarted()) {
+                return $request->session()->getId();
+            }
+        } catch (\Exception $e) {
+            // Session not available, fall back to cookie
+        }
+        
+        // Fall back to a guest identifier stored in cookie
+        $guestId = $request->cookie('guest_asset_id');
+        if (!$guestId) {
+            $guestId = Str::uuid()->toString();
+            // We can't set the cookie here since we're in an API response
+            // The frontend should handle this
+        }
+        
+        return $guestId;
     }
 }

@@ -1,128 +1,74 @@
 <script setup>
-import { Head } from "@inertiajs/vue3";
-import Customer from "@/Layouts/Customer.vue";
+import CustomerLayout from '@/Layouts/Customer.vue';
+import { inject } from 'vue';
 
-defineOptions({ layout: Customer });
-
-const terms = [
-    {
-        title: "1. Use of the Website",
-        content: "By accessing or using our website, you agree to:",
-        notes: [
-            "Use this site for lawful purposes only.",
-            "Refrain from misusing the site for fraudulent activities.",
-        ],
-    },
-    {
-        title: "2. Account Responsibility",
-        content: "You are responsible for:",
-        notes: [
-            "Maintaining the confidentiality of your account login credentials.",
-            "Notifying us immediately of unauthorized account access or breaches.",
-        ],
-    },
-    {
-        title: "3. Product Information",
-        content: "All T-shirts displayed on our website are subject to:",
-        notes: [
-            "Availability and may go out of stock without notice.",
-            "Changes in product prices and descriptions without prior notice.",
-        ],
-    },
-    {
-        title: "4. Payment Terms",
-        content:
-            "All payments must be made in full before we process and ship your order. We accept:",
-        notes: [
-            "Visa, MasterCard, PayPal.",
-        ],
-    },
-    {
-        title: "5. Return and Refund Policy",
-        content:
-            "You can return items within 30 days of delivery if they meet our return criteria:",
-        notes: [
-            "Refunds will be processed within 7–10 business days upon approval.",
-            "Return shipping costs may apply unless otherwise specified.",
-        ],
-    },
-    {
-        title: "6. Intellectual Property",
-        content:
-            "All content on this website (logos, images, text, etc.) is owned by D-Shirts and:",
-        notes: [
-            "Protected by intellectual property laws.",
-            "May not be reproduced or redistributed without explicit consent.",
-        ],
-    },
-    {
-        title: "7. Limitation of Liability",
-        content: "We are not responsible for:",
-        notes: [
-            "Errors in product descriptions or pricing.",
-            "Delays caused by third-party services like shipping carriers.",
-        ],
-    },
-    {
-        title: "8. Changes to Terms",
-        content:
-            "We may update these terms periodically. Continued use of the website indicates acceptance of:",
-        notes: [
-            "The updated terms and conditions.",
-            "Any policy changes posted on this website.",
-        ],
-    },
-    {
-        title: "9. Governing Law",
-        content:
-            "These terms are governed by and construed in accordance with the laws of:",
-        notes: ["The Internet"],
-    },
-    {
-        title: "10. Contact Us",
-        content:
-            "For questions or concerns regarding these Terms of Use, contact us at:",
-        notes: ["Email: support@d-shirt.com", "Phone: +123 4567 89"],
-    },
-];
+// Use the global settings provided by the plugin
+const settings = inject('brandSettings');
+const siteName = settings ? settings.value?.site_name : "Ahlam's Girls";
 </script>
 
 <template>
-    <div class="container mx-auto px-4 py-16 max-w-4xl">
-        <Head title="Terms Of Use" />
-        <div class="mb-12 space-y-2 text-center">
-            <h1 class="text-5xl font-bold text-gray-800 font-main">
-                Terms Of Use
-            </h1>
-            <h2>
-                Effective Date:
-                <span class="font-bold font-secondary">November 28, 2024</span>
-            </h2>
-            <p class="font-main">
-                Welcome to <span class="font-semibold">D-shirts</span>! By
-                accessing or using our website, you agree to the following terms
-                and conditions:
-            </p>
+  <CustomerLayout>
+    <div class="min-h-screen bg-gradient-to-br from-brand-bg to-brand-primary py-12 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-12">
+          <h1 class="font-brand-elegant text-4xl text-white mb-4">Terms of Use</h1>
+          <p class="text-brand-gold text-xl">Understanding your agreement with {{ siteName || "Ahlam's Girls" }}</p>
         </div>
 
-        <section
-            v-for="term in terms"
-            :key="term.title"
-            class="bg-white shadow-md rounded-lg p-6 mb-4"
-        >
-            <h2 class="text-xl font-semibold text-gray-700 mb-4 font-second">
-                {{ term.title }}
-            </h2>
-            <p class="text-gray-600 leading-relaxed">
-                {{ term.content }}
+        <div class="bg-white bg-opacity-90 backdrop-blur-sm rounded-2xl p-8 border border-brand-gold border-opacity-20">
+          <div class="prose prose-lg max-w-none">
+            <h2 class="font-brand-elegant text-2xl text-brand-primary mb-6">Welcome to {{ siteName || "Ahlam's Girls" }}</h2>
+            
+            <p class="text-brand-secondary mb-6">
+              These terms and conditions outline the rules and regulations for the use of {{ siteName || "Ahlam's Girls" }}'s Website, located at {{ window.location.origin }}.
             </p>
-            <div>
-                <ul class="list-disc list-inside text-gray-600 space-y-2">
-                    <li v-for="note in term.notes" :key="note">{{ note }}</li>
-                </ul>
-            </div>
-        </section>
-    </div>
-</template>
+            
+            <p class="text-brand-secondary mb-6">
+              By accessing this website we assume you accept these terms and conditions. Do not continue to use {{ siteName || "Ahlam's Girls" }} if you do not agree to take all of the terms and conditions stated on this page.
+            </p>
 
-<style scoped></style>
+            <h3 class="font-brand-elegant text-xl text-brand-primary mt-8 mb-4">Cookies</h3>
+            <p class="text-brand-secondary mb-6">
+              We employ the use of cookies. By accessing {{ siteName || "Ahlam's Girls" }}, you agreed to use cookies in agreement with the {{ siteName || "Ahlam's Girls" }}'s Privacy Policy.
+            </p>
+
+            <h3 class="font-brand-elegant text-xl text-brand-primary mt-8 mb-4">License</h3>
+            <p class="text-brand-secondary mb-6">
+              Unless otherwise stated, {{ siteName || "Ahlam's Girls" }} and/or its licensors own the intellectual property rights for all material on {{ siteName || "Ahlam's Girls" }}. All intellectual property rights are reserved. You may access this from {{ siteName || "Ahlam's Girls" }} for your own personal use subjected to restrictions set in these terms and conditions.
+            </p>
+
+            <h3 class="font-brand-elegant text-xl text-brand-primary mt-8 mb-4">User Responsibilities</h3>
+            <ul class="list-disc pl-6 text-brand-secondary mb-6 space-y-2">
+              <li>You must not republish material from {{ siteName || "Ahlam's Girls" }}</li>
+              <li>You must not sell, rent or sub-license material from {{ siteName || "Ahlam's Girls" }}</li>
+              <li>You must not reproduce, duplicate or copy material from {{ siteName || "Ahlam's Girls" }}</li>
+              <li>You must not engage in any data mining or similar extraction activities</li>
+            </ul>
+
+            <h3 class="font-brand-elegant text-xl text-brand-primary mt-8 mb-4">Intellectual Property Rights</h3>
+            <p class="text-brand-secondary mb-6">
+              "All content on this website (logos, images, text, etc.) is owned by {{ siteName || "Ahlam's Girls" }} and:" is proprietary to {{ siteName || "Ahlam's Girls" }} or its content suppliers and is protected by international copyright laws. Your use of any content on this website is governed by these Terms of Use and applicable law.
+            </p>
+
+            <h3 class="font-brand-elegant text-xl text-brand-primary mt-8 mb-4">Limitation of Liability</h3>
+            <p class="text-brand-secondary mb-6">
+              In no event shall {{ siteName || "Ahlam's Girls" }}, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the service.
+            </p>
+
+            <h3 class="font-brand-elegant text-xl text-brand-primary mt-8 mb-4">Changes to These Terms</h3>
+            <p class="text-brand-secondary mb-6">
+              We reserve the right, at our sole discretion, to modify or replace these terms at any time. By continuing to access or use our service after those revisions become effective, you agree to be bound by the revised terms.
+            </p>
+
+            <div class="mt-12 pt-8 border-t border-brand-gold border-opacity-20">
+              <p class="text-brand-secondary text-sm">
+                If you have any questions about these Terms of Use, please contact us at {{ settings?.site_email || 'contact@ahlamsgirls.com' }}.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </CustomerLayout>
+</template>

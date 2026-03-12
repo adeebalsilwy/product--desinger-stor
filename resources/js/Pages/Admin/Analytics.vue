@@ -112,7 +112,7 @@
 
 <script>
 import AdminLayout from '@/Layouts/Admin.vue';
-import StatCard from '@/Components/DashboardCard.vue';
+import StatCard from '@/Components/StatCard.vue';
 import LineChart from '@/Components/DashboardChartCard.vue';
 
 export default {

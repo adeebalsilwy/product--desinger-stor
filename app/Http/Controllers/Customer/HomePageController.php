@@ -9,8 +9,8 @@ class HomePageController extends Controller
 {
     public function index()
     {
-        $tshirts = Tshirt::where('listed', true)->select('id', 'title', 'slug', 'price')->with(['images' => function ($query) {
-            $query->where('order', 1)->select('tshirt_id', 'url');
+        $tshirts = Tshirt::where('is_active', true)->with(['images' => function ($query) {
+            $query->where('order', 1);
         }])->get();
         return inertia('Customer/HomePage', compact('tshirts'));
     }

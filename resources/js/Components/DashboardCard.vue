@@ -22,54 +22,39 @@ defineProps({
         type: [Number, String],
         required: true,
     },
+    color: {
+        type: String,
+        default: 'accent', // Default to accent for brand consistency
+    },
 });
 </script>
 
 <template>
-    <Link :href="route(routeName)" preserve-scroll>
-        <div
-            class="flex justify-between bg-neumorphic p-4 rounded-lg h-32 hover:scale-[0.99] smooth neumorphic"
-            :class="{
-                'border-neumorphic-accent border-2 bg-neumorphic-active hover:border-neumorphic-accent shadow-none scale-[0.99]':
-                    $page.component.startsWith(activeComponent),
-            }"
-        >
-            <div
-                class="w-1/2 flex flex-col justify-end items-start h-full gap-y-3"
-            >
-                <component
-                    :is="icon"
-                    class="text-neumorphic-text"
-                    :class="{
-                        'text-neumorphic-accent':
-                            $page.component.startsWith(activeComponent),
-                    }"
-                />
-                <p
-                    class="text-neumorphic-text font-bold text-2xl"
-                    :class="{
-                        'text-neumorphic-accent':
-                            $page.component.startsWith(activeComponent),
-                    }"
-                >
-                    {{ title }}
-                </p>
-            </div>
-            <div
-                class="w-1/2 flex flex-col justify-center items-end pe-8 h-full gap-y-3"
-            >
-                <p
-                    class="text-neumorphic-text font-bold text-4xl"
-                    :class="{
-                        'text-neumorphic-accent':
-                            $page.component.startsWith(activeComponent),
-                    }"
-                >
-                    {{ count }}
-                </p>
-            </div>
-        </div>
-    </Link>
+  <div class="bg-white bg-opacity-70 backdrop-blur-sm rounded-2xl p-6 border border-brand-gold border-opacity-20 transition-all duration-300 hover:scale-[1.02]">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-2xl font-bold text-brand-primary">{{ title }}</p>
+        <p class="text-3xl font-bold text-brand-gold mt-2">{{ value }}</p>
+      </div>
+      <div class="text-4xl" :class="iconClass">{{ icon }}</div>
+    </div>
+    <div class="mt-4">
+      <p class="text-sm text-brand-secondary">{{ description }}</p>
+    </div>
+  </div>
 </template>
+
+<script setup>
+defineProps({
+  title: String,
+  value: [String, Number],
+  description: String,
+  icon: String,
+  iconClass: {
+    type: String,
+    default: 'text-brand-rose'
+  }
+});
+</script>
 
 <style scoped></style>

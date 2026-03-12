@@ -1,0 +1,76 @@
+@startuml
+' Sequence Diagram - Design Creation and Export Process
+
+actor "User" as user
+participant "Designer Interface" as designer
+participant "Design Controller" as controller
+participant "Export Service" as export
+participant "Storage Service" as storage
+participant "Database" as db
+participant "Job Queue" as queue
+
+user -> designer: Create/modify design
+activate designer
+
+designer -> controller: Save design (POST /api/designs)
+activate controller
+
+controller -> db: Validate user/session
+activate db
+db --> controller: User/session valid
+deactivate db
+
+controller -> db: Store design data
+activate db
+db -> db: Create saved_designs record
+db --> controller: Design saved
+deactivate db
+
+controller -> queue: Queue preview generation
+activate queue
+queue --> controller: Job queued
+deactivate queue
+
+controller --> designer: Design saved successfully
+deactivate controller
+
+designer --> user: Show design saved confirmation
+
+user -> designer: Request export
+designer -> controller: Export design (POST /api/designs/{id}/export)
+activate controller
+
+controller -> export: Generate export (format: high_res)
+activate export
+
+export -> export: Process design data
+export -> export: Apply print specifications
+export -> storage: Save exported file
+activate storage
+storage --> export: File stored successfully
+deactivate storage
+
+export -> db: Update design with preview URL
+activate db
+db --> export: Record updated
+deactivate db
+
+export --> controller: Export completed
+deactivate export
+
+controller --> designer: Export URL provided
+deactivate controller
+
+designer --> user: Provide download link
+
+note over user, queue
+  Design Process Flow:
+  1. User creates/modifies design
+  2. Design is saved to database
+  3. Preview generation is queued
+  4. User requests export
+  5. Export service processes design
+  6. File is stored and URL provided
+end note
+
+@enduml

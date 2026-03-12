@@ -8,6 +8,7 @@ use App\Services\TemplateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Pagination\Paginator;
+use Inertia\Inertia;
 
 class TemplatesController extends Controller
 {
@@ -27,7 +28,7 @@ class TemplatesController extends Controller
         
         $templates = $this->templateService->getTemplates($filters, 20);
         
-        return response()->json([
+        return Inertia::render('Admin/Templates/Index', [
             'templates' => $templates->items(),
             'pagination' => [
                 'current_page' => $templates->currentPage(),
@@ -36,7 +37,8 @@ class TemplatesController extends Controller
                 'total' => $templates->total(),
                 'from' => $templates->firstItem(),
                 'to' => $templates->lastItem(),
-            ]
+            ],
+            'filters' => $filters
         ]);
     }
 

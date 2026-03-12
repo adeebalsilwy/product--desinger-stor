@@ -32,9 +32,9 @@ onMounted(() => {
     let hasValidData = false;
     
     for (const [key, value] of Object.entries(props.data)) {
-        if (value !== null && value !== undefined) {
+        if (value !== null && value !== undefined && value !== '') {
             const numValue = parseFloat(value);
-            if (!isNaN(numValue)) {
+            if (!isNaN(numValue) && isFinite(numValue)) {
                 validData[key] = numValue;
                 hasValidData = true;
             }
@@ -50,14 +50,19 @@ onMounted(() => {
     const labels = Object.keys(validData);
     const series = Object.values(validData);
     
+    // Ensure all values are positive for pie chart
+    const positiveSeries = series.map(val => Math.abs(val));
+    
     const options = {
         chart: {
             type: 'pie',
             height: props.height,
             animations: { enabled: false },
+            // Prevent NaN issues
+            toolbar: { show: false }
         },
         labels: labels,
-        series: series,
+        series: positiveSeries,
         responsive: [{
             breakpoint: 480,
             options: {
@@ -74,10 +79,19 @@ onMounted(() => {
                 formatter: props.formatter,
             },
         },
+        plotOptions: {
+            pie: {
+                expandOnClick: false
+            }
+        }
     };
 
-    chartInstance = new ApexCharts(chartRef.value, options);
-    chartInstance.render();
+    try {
+        chartInstance = new ApexCharts(chartRef.value, options);
+        chartInstance.render();
+    } catch (error) {
+        console.error('Error rendering pie chart:', error);
+    }
 });
 
 onUnmounted(() => {

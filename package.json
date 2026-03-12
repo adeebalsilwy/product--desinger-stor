@@ -19,10 +19,16 @@
         "vue": "^3.4.0"
     },
     "dependencies": {
+        "@heroicons/vue": "^2.2.0",
         "@primevue/themes": "^4.2.1",
-        "apexcharts": "^4.0.0",
+        "apexcharts": "^5.10.3",
+        "cropperjs": "^2.1.0",
         "fabric": "^5.5.2",
+        "konva": "^9.3.22",
         "primevue": "^4.2.1",
-        "vue-toastification": "^2.0.0-rc.5"
+        "three": "^0.183.2",
+        "vue-konva": "^3.4.0",
+        "vue-toastification": "^2.0.0-rc.5",
+        "vue3-apexcharts": "^1.11.1"
     }
 }

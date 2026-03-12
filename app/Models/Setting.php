@@ -39,6 +39,10 @@ class Setting extends Model
         'brand_tagline',
         'brand_script_font',
         'brand_regular_font',
+        // Preview fields (for mass assignment)
+        'site_logo_preview',
+        'site_favicon_preview',
+        'brand_logo_woman_preview',
     ];
 
     protected $casts = [

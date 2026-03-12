@@ -50,4 +50,34 @@ class ProductController extends Controller
             'data' => $product,
         ]);
     }
+
+    /**
+     * Get product types
+     */
+    public function productTypes()
+    {
+        try {
+            $productTypes = \App\Models\ProductType::where('is_active', true)->get();
+            
+            return response()->json($productTypes);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching product types: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch product types'], 500);
+        }
+    }
+
+    /**
+     * Get design templates
+     */
+    public function designTemplates()
+    {
+        try {
+            $designTemplates = \App\Models\DesignTemplate::all();
+            
+            return response()->json($designTemplates);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching design templates: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch design templates'], 500);
+        }
+    }
 }

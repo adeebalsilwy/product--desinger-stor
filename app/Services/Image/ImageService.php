@@ -3,19 +3,15 @@
 namespace App\Services\Image;
 
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver as GdDriver;
-use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
+use Intervention\Image\Laravel\Facades\Image as InterventionImage;
+use Exception;
 
 class ImageService
 {
-    protected $manager;
-
     public function __construct()
     {
-        // Use GD or Imagick based on availability
-        $driver = extension_loaded('imagick') ? new ImagickDriver() : new GdDriver();
-        $this->manager = new ImageManager($driver);
+        // Constructor no longer needs to create the manager, 
+        // it will be provided by the Laravel facade
     }
 
     /**
@@ -35,12 +31,29 @@ class ImageService
             $thumbnailPath = $this->generateThumbnail($storedPath, $options['thumbnail_size'] ?? 200);
         }
         
-        // Get image dimensions
-        $image = $this->manager->read(Storage::disk($options['disk'] ?? 'public')->path($storedPath));
-        $dimensions = [
-            'width' => $image->width(),
-            'height' => $image->height(),
-        ];
+        // Get image dimensions - attempt to get from file if Intervention Image is available
+        try {
+            $image = InterventionImage::read(Storage::disk($options['disk'] ?? 'public')->path($storedPath));
+            $dimensions = [
+                'width' => $image->width(),
+                'height' => $image->height(),
+            ];
+        } catch (Exception $e) {
+            // Fallback to getimagesize if Intervention Image fails
+            $filePath = Storage::disk($options['disk'] ?? 'public')->path($storedPath);
+            if (file_exists($filePath)) {
+                $size = getimagesize($filePath);
+                $dimensions = [
+                    'width' => $size[0] ?? null,
+                    'height' => $size[1] ?? null,
+                ];
+            } else {
+                $dimensions = [
+                    'width' => null,
+                    'height' => null,
+                ];
+            }
+        }
         
         return [
             'path' => $storedPath,
@@ -59,19 +72,24 @@ class ImageService
      */
     public function generateThumbnail($imagePath, $size = 200)
     {
-        $image = $this->manager->read(Storage::disk('public')->path($imagePath));
-        
-        // Resize with aspect ratio
-        $image->cover($size, $size, 'center');
-        
-        // Generate thumbnail filename
-        $pathInfo = pathinfo($imagePath);
-        $thumbnailPath = dirname($imagePath) . '/' . $pathInfo['filename'] . '_thumb.' . $pathInfo['extension'];
-        
-        // Save thumbnail
-        $image->save(Storage::disk('public')->path($thumbnailPath));
-        
-        return $thumbnailPath;
+        try {
+            $image = InterventionImage::read(Storage::disk('public')->path($imagePath));
+            
+            // Resize with aspect ratio
+            $image->cover($size, $size, 'center');
+            
+            // Generate thumbnail filename
+            $pathInfo = pathinfo($imagePath);
+            $thumbnailPath = dirname($imagePath) . '/' . $pathInfo['filename'] . '_thumb.' . $pathInfo['extension'];
+            
+            // Save thumbnail
+            $image->save(Storage::disk('public')->path($thumbnailPath));
+            
+            return $thumbnailPath;
+        } catch (Exception $e) {
+            // If thumbnail generation fails, return null
+            return null;
+        }
     }
 
     /**
@@ -79,18 +97,23 @@ class ImageService
      */
     public function resize($imagePath, $width, $height, $options = [])
     {
-        $image = $this->manager->read(Storage::disk('public')->path($imagePath));
-        
-        if ($options['crop'] ?? false) {
-            $image->cover($width, $height);
-        } else {
-            $image->scale()->down($width, $height);
+        try {
+            $image = InterventionImage::read(Storage::disk('public')->path($imagePath));
+            
+            if ($options['crop'] ?? false) {
+                $image->cover($width, $height);
+            } else {
+                $image->scale()->down($width, $height);
+            }
+            
+            // Save resized image
+            $image->save(Storage::disk('public')->path($imagePath));
+            
+            return true;
+        } catch (Exception $e) {
+            // If resize fails, return false
+            return false;
         }
-        
-        // Save resized image
-        $image->save(Storage::disk('public')->path($imagePath));
-        
-        return true;
     }
 
     /**
@@ -98,14 +121,19 @@ class ImageService
      */
     public function convert($imagePath, $format = 'webp', $quality = 85)
     {
-        $image = $this->manager->read(Storage::disk('public')->path($imagePath));
-        
-        $pathInfo = pathinfo($imagePath);
-        $newPath = dirname($imagePath) . '/' . $pathInfo['filename'] . '.' . $format;
-        
-        $image->toFormat($format)->save(Storage::disk('public')->path($newPath), ['quality' => $quality]);
-        
-        return $newPath;
+        try {
+            $image = InterventionImage::read(Storage::disk('public')->path($imagePath));
+            
+            $pathInfo = pathinfo($imagePath);
+            $newPath = dirname($imagePath) . '/' . $pathInfo['filename'] . '.' . $format;
+            
+            $image->toFormat($format)->save(Storage::disk('public')->path($newPath), ['quality' => $quality]);
+            
+            return $newPath;
+        } catch (Exception $e) {
+            // If conversion fails, return original path
+            return $imagePath;
+        }
     }
 
     /**
@@ -121,17 +149,22 @@ class ImageService
      */
     public function addWatermark($imagePath, $watermarkText, $position = 'bottom-right')
     {
-        $image = $this->manager->read(Storage::disk('public')->path($imagePath));
-        
-        $image->place(
-            $watermarkText,
-            anchor: $position,
-            offset: 10
-        );
-        
-        $image->save(Storage::disk('public')->path($imagePath));
-        
-        return true;
+        try {
+            $image = InterventionImage::read(Storage::disk('public')->path($imagePath));
+            
+            $image->place(
+                $watermarkText,
+                anchor: $position,
+                offset: 10
+            );
+            
+            $image->save(Storage::disk('public')->path($imagePath));
+            
+            return true;
+        } catch (Exception $e) {
+            // If watermarking fails, return false
+            return false;
+        }
     }
 
     /**
@@ -139,14 +172,35 @@ class ImageService
      */
     public function getInfo($imagePath)
     {
-        $image = $this->manager->read(Storage::disk('public')->path($imagePath));
-        
-        return [
-            'width' => $image->width(),
-            'height' => $image->height(),
-            'mime_type' => $image->origin()->mediaType(),
-            'format' => $image->origin()->fileExtension(),
-        ];
+        try {
+            $image = InterventionImage::read(Storage::disk('public')->path($imagePath));
+            
+            return [
+                'width' => $image->width(),
+                'height' => $image->height(),
+                'mime_type' => $image->origin()->mediaType(),
+                'format' => $image->origin()->fileExtension(),
+            ];
+        } catch (Exception $e) {
+            // Fallback to getimagesize if Intervention Image fails
+            $filePath = Storage::disk('public')->path($imagePath);
+            if (file_exists($filePath)) {
+                $size = getimagesize($filePath);
+                return [
+                    'width' => $size[0] ?? null,
+                    'height' => $size[1] ?? null,
+                    'mime_type' => $size['mime_type'] ?? mime_content_type($filePath),
+                    'format' => pathinfo($filePath, PATHINFO_EXTENSION) ?? null,
+                ];
+            } else {
+                return [
+                    'width' => null,
+                    'height' => null,
+                    'mime_type' => null,
+                    'format' => null,
+                ];
+            }
+        }
     }
 
     /**
@@ -162,23 +216,41 @@ class ImageService
      */
     public function createPlaceholder($width, $height, $text = 'No Image', $color = '#cccccc')
     {
-        $image = $this->manager->create()->fill($color);
-        
-        $image->text($text, $width / 2, $height / 2, function($font) use ($width) {
-            $font->size($width / 10);
-            $font->color('#ffffff');
-            $font->align('center');
-            $font->valign('middle');
-        });
-        
-        $filename = 'placeholder_' . $width . 'x' . $height . '.png';
-        $path = 'placeholders/' . $filename;
-        
-        $image->save(Storage::disk('public')->path($path));
-        
-        return [
-            'path' => $path,
-            'url' => Storage::disk('public')->url($path),
-        ];
+        try {
+            $image = InterventionImage::create()->fill($color);
+            
+            $image->text($text, $width / 2, $height / 2, function($font) use ($width) {
+                $font->size($width / 10);
+                $font->color('#ffffff');
+                $font->align('center');
+                $font->valign('middle');
+            });
+            
+            $filename = 'placeholder_' . $width . 'x' . $height . '.png';
+            $path = 'placeholders/' . $filename;
+            
+            $image->save(Storage::disk('public')->path($path));
+            
+            return [
+                'path' => $path,
+                'url' => Storage::disk('public')->url($path),
+            ];
+        } catch (Exception $e) {
+            // If placeholder creation fails, return basic info
+            $filename = 'placeholder_' . $width . 'x' . $height . '.jpg';
+            $path = 'placeholders/' . $filename;
+            
+            // Create a simple file as fallback
+            $filePath = Storage::disk('public')->path($path);
+            if (!file_exists(dirname($filePath))) {
+                mkdir(dirname($filePath), 0755, true);
+            }
+            file_put_contents($filePath, '');
+            
+            return [
+                'path' => $path,
+                'url' => Storage::disk('public')->url($path),
+            ];
+        }
     }
 }

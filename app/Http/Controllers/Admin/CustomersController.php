@@ -23,7 +23,7 @@ class CustomersController extends Controller
             ->withQueryString()
             ->through(function ($customer) {
                 $customer->total_orders = $customer->total_orders();
-                $customer->total_tshirts_bought = $customer->totalTshirtsBought();
+                $customer->total_products_bought = $customer->totalProductsBought();
                 $customer->total_spent = $customer->totalSpent();
                 return $customer;
             });
@@ -33,7 +33,7 @@ class CustomersController extends Controller
             'searchTerm' => $searchTerm,
             'orders_count' => \App\Models\Order::count(),
             'customers_count' => \App\Models\Customer::count(),
-            'tshirts_count' => \App\Models\Product::count(),
+            'products_count' => \App\Models\Product::count(),
             'revenue' => \App\Models\Order::sum('total_amount'),
         ]);
     }
