@@ -1,474 +1,112 @@
 <template>
   <div class="designer-container">
-    <!-- Toolbar -->
-    <div class="toolbar neumorphic">
-      <!-- Selection Tool -->
-      <button @click="setActiveTool('select')" :class="{ 'active-tool': activeTool === 'select' }" class="tool-btn neumorphic-btn" title="Selection Tool">
-        🖱️ Select
-      </button>
-      
-      <!-- Text Tool -->
-      <button @click="setActiveTool('text'); addText()" :class="{ 'active-tool': activeTool === 'text' }" class="tool-btn neumorphic-btn" title="Add Text">
-        <span>T</span> Text
-      </button>
-      
-      <!-- Image Tool -->
-      <button @click="setActiveTool('image'); triggerImageUpload()" :class="{ 'active-tool': activeTool === 'image' }" class="tool-btn neumorphic-btn" title="Upload Image">
-       📷 Image
-      </button>
-      <input 
-        ref="imageInput" 
-        type="file" 
-        accept="image/*" 
-        style="display: none"
-        @change="handleImageUpload"
-      />
-      
-      <!-- Brush Tool -->
-      <button @click="setActiveTool('brush'); toggleBrushMode()" :class="{ 'active-tool': activeTool === 'brush' }" class="tool-btn neumorphic-btn" title="Brush Tool">
-       ✏️ Brush
-      </button>
-      
-      <!-- Eraser Tool -->
-      <button @click="setActiveTool('eraser'); toggleEraserMode()" :class="{ 'active-tool': activeTool === 'eraser' }" class="tool-btn neumorphic-btn" title="Eraser Tool">
-       🧽 Eraser
-      </button>
-      
-      <!-- Shape Tool -->
-      <button @click="showShapes = true" class="tool-btn neumorphic-btn" title="Shapes">
-       🔺 Shapes
-      </button>
-      
-      <!-- Clipart Tool -->
-      <button @click="setActiveTool('clipart'); showCliparts = true" :class="{ 'active-tool': activeTool === 'clipart' }" class="tool-btn neumorphic-btn" title="Cliparts">
-        🎨 Cliparts
-      </button>
-      
-      <!-- Advanced Tools -->
-      <button @click="showEffects = true" class="tool-btn neumorphic-btn" title="Effects">
-        ⚡ Effects
-      </button>
-      
-      <!-- Save & Export -->
-      <button @click="saveDesign" class="tool-btn primary neumorphic-btn" title="Save Design">
-       💾 Save
-      </button>
-      <button @click="exportDesign" class="tool-btn success neumorphic-btn" title="Export">
-       📤 Export
-      </button>
-    </div>
 
-    <!-- Main Canvas Area -->
-    <div class="canvas-wrapper neumorphic">
-      <canvas ref="canvas"></canvas>
-    </div>
 
-    <!-- Brush Settings Panel -->
-    <div v-if="activeTool === 'brush' || activeTool === 'eraser'" class="brush-panel neumorphic">
-      <h4 class="text-neumorphic-text">{{ activeTool === 'eraser' ? 'Eraser' : 'Brush' }} Settings</h4>
-      
-      <div class="brush-controls">
-        <!-- Brush Size -->
-        <div class="control-group">
-          <label class="text-neumorphic-text">{{ activeTool === 'eraser' ? 'Eraser' : 'Brush' }} Size: {{ brushSize }}px</label>
-          <input 
-            type="range" 
-            v-model.number="brushSize" 
-            min="1" 
-            max="100"
-            @input="updateBrushSettings"
-            class="w-full mb-3"
-          >
+    <!-- Main Design Area -->
+    <div class="design-area">
+      <!-- Main Canvas -->
+      <div class="canvas-container">
+        <div class="canvas-wrapper">
+          <canvas ref="canvas"></canvas>
         </div>
-        
-        <!-- Brush Color (hidden for eraser) -->
-        <div v-if="activeTool !== 'eraser'" class="control-group">
-          <label class="text-neumorphic-text">Brush Color:</label>
-          <div class="color-picker-container">
-            <input 
-              type="color" 
-              v-model="brushColor" 
-              @change="updateBrushSettings"
-              class="w-full h-10 mb-3 rounded cursor-pointer"
+      </div>
+    </div>
+
+
+
+    <!-- Modals -->
+    <div v-if="showCliparts" class="modal-overlay" @click.self="showCliparts = false">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Choose Clipart</h3>
+          <button @click="showCliparts = false" class="close-btn">×</button>
+        </div>
+        <div class="modal-content">
+          <div class="clipart-grid">
+            <div 
+              v-for="clipart in cliparts" 
+              :key="clipart.id"
+              class="clipart-item"
+              @click="addClipart(clipart)"
             >
-            <!-- Professional Color Palette - Full Display -->
-            <div class="color-palette-grid">
-              <div 
-                v-for="color in colorPalette" 
-                :key="color"
-                class="color-swatch-large"
-                :style="{ backgroundColor: color }"
-                @click="selectColor(color)"
-                :class="{ 'active': brushColor === color }"
-              ></div>
+              <img :src="clipart.image_url" :alt="clipart.title">
             </div>
           </div>
         </div>
-        
-        <!-- Brush Opacity -->
-        <div v-if="activeTool !== 'eraser'" class="control-group">
-          <label class="text-neumorphic-text">Opacity: {{ Math.round(brushOpacity * 100) }}%</label>
-          <input 
-            type="range" 
-            v-model.number="brushOpacity" 
-            min="0.1" 
-            max="1"
-            step="0.1"
-            @input="updateBrushSettings"
-            class="w-full mb-3"
-          >
-        </div>
-        
-        <!-- Brush Type -->
-        <div v-if="activeTool === 'brush'" class="control-group">
-          <label class="text-neumorphic-text">Brush Type:</label>
-          <div class="brush-type-selector">
-            <button 
-              v-for="brush in brushTypes" 
-              :key="brush.value"
-              @click="setBrushType(brush.value)"
-              :class="{ 'active-brush-type': brushType === brush.value }"
-              class="brush-type-btn neumorphic-btn"
-            >
-              <span class="text-lg">{{ brush.icon }}</span>
-              <span class="text-xs">{{ brush.name }}</span>
-            </button>
-          </div>
-        </div>
-        
-        <!-- Actions -->
-        <div class="brush-actions">
-          <button @click="clearCanvas" class="tool-btn danger neumorphic-btn w-full mb-2">Clear Canvas</button>
-          <button @click="undoBrushStroke" class="tool-btn neumorphic-btn w-full mb-2" :disabled="!canUndoBrush">Undo Stroke</button>
-          <button @click="redoBrushStroke" class="tool-btn neumorphic-btn w-full" :disabled="!canRedoBrush">Redo Stroke</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Properties Panel (when object selected) -->
-    <div v-if="selectedObject" class="properties-panel neumorphic">
-      <h4 class="text-neumorphic-text">Properties</h4>
-      
-      <!-- Text Properties -->
-      <div v-if="selectedObject.type === 'i-text'">
-        <label class="text-neumorphic-text">Font Family:</label>
-        <select v-model="selectedObject.fontFamily" @change="updateCanvas" class="neumorphic-btn w-full p-2 mb-2">
-          <option v-for="font in fonts" :key="font" :value="font">
-            {{ font }}
-          </option>
-        </select>
-        
-        <label class="text-neumorphic-text">Text Content:</label>
-        <textarea 
-          v-model="selectedObject.text" 
-          @input="updateCanvas" 
-          class="neumorphic-btn w-full p-2 mb-2 h-16 resize-none"
-          placeholder="Enter text..."
-        ></textarea>
-        
-        <label class="text-neumorphic-text">Color:</label>
-        <div class="color-picker-container">
-          <input type="color" v-model="selectedObject.fill" @change="updateCanvas" class="neumorphic-btn w-full p-1 mb-2">
-          <!-- Professional Color Palette -->
-          <div class="color-palette">
-            <div 
-              v-for="color in colorPalette" 
-              :key="color"
-              class="color-swatch"
-              :style="{ backgroundColor: color }"
-              @click="selectedObject.fill = color; updateCanvas()"
-              :class="{ 'active': selectedObject.fill === color }"
-            ></div>
-          </div>
-        </div>
-        
-        <label class="text-neumorphic-text">Font Size: {{ selectedObject.fontSize }}</label>
-        <input 
-          type="range" 
-          v-model.number="selectedObject.fontSize" 
-          min="8" 
-          max="200"
-          @input="updateCanvas"
-          class="w-full mb-2"
-        >
-        
-        <label class="text-neumorphic-text">Line Height: {{ selectedObject.lineHeight.toFixed(2) }}</label>
-        <input 
-          type="range" 
-          v-model.number="selectedObject.lineHeight" 
-          min="0.5" 
-          max="3"
-          step="0.1"
-          @input="updateCanvas"
-          class="w-full mb-2"
-        >
-        
-        <label class="text-neumorphic-text">Bold:</label>
-        <input 
-          type="checkbox" 
-          :checked="selectedObject.fontWeight === 'bold'" 
-          @change="toggleBold"
-          class="ml-2 mb-2"
-        >
-        
-        <label class="text-neumorphic-text">Italic:</label>
-        <input 
-          type="checkbox" 
-          :checked="selectedObject.fontStyle === 'italic'" 
-          @change="toggleItalic"
-          class="ml-2 mb-2"
-        >
-        
-        <label class="text-neumorphic-text">Underline:</label>
-        <input 
-          type="checkbox" 
-          :checked="selectedObject.underline" 
-          @change="toggleUnderline"
-          class="ml-2 mb-2"
-        >
-      </div>
-      
-      <!-- Common Properties -->
-      <label class="text-neumorphic-text">Opacity: {{ Math.round(selectedObject.opacity * 100) }}%</label>
-      <input 
-        type="range" 
-        v-model.number="selectedObject.opacity" 
-        min="0" 
-        max="1" 
-        step="0.1"
-        @input="updateCanvas"
-        class="w-full mb-4"
-      >
-      
-      <!-- Rotation Control -->
-      <label class="text-neumorphic-text">Rotation: {{ Math.round(selectedObject.angle || 0) }}°</label>
-      <input 
-        type="range" 
-        v-model.number="selectedObject.angle" 
-        min="0" 
-        max="360"
-        @input="updateCanvas"
-        class="w-full mb-4"
-      >
-      
-      <!-- Size Controls for all objects -->
-      <div v-if="selectedObject.width || selectedObject.radius">
-        <label class="text-neumorphic-text">Width Scale: {{ Math.round((selectedObject.scaleX || 1) * 100) }}%</label>
-        <input 
-          type="range" 
-          v-model.number="selectedObject.scaleX" 
-          min="0.1" 
-          max="5" 
-          step="0.1"
-          @input="updateCanvas"
-          class="w-full mb-4"
-        >
-        
-        <label class="text-neumorphic-text">Height Scale: {{ Math.round((selectedObject.scaleY || 1) * 100) }}%</label>
-        <input 
-          type="range" 
-          v-model.number="selectedObject.scaleY" 
-          min="0.1" 
-          max="5" 
-          step="0.1"
-          @input="updateCanvas"
-          class="w-full mb-4"
-        >
-      </div>
-      
-      <!-- Position Controls -->
-      <label class="text-neumorphic-text">Position X: {{ Math.round(selectedObject.left || 0) }}</label>
-      <input 
-        type="number"
-        v-model.number="selectedObject.left" 
-        @input="updateCanvas"
-        class="neumorphic-btn w-full p-2 mb-4"
-      >
-      
-      <label class="text-neumorphic-text">Position Y: {{ Math.round(selectedObject.top || 0) }}</label>
-      <input 
-        type="number"
-        v-model.number="selectedObject.top" 
-        @input="updateCanvas"
-        class="neumorphic-btn w-full p-2 mb-4"
-      >
-      
-      <!-- Color Control for shapes -->
-      <div v-if="selectedObject.type && ['rect', 'circle', 'triangle', 'polygon'].includes(selectedObject.type)">
-        <label class="text-neumorphic-text">Fill Color:</label>
-        <div class="color-picker-container">
-          <input 
-            type="color" 
-            v-model="selectedObject.fill" 
-            @change="updateCanvas"
-            class="w-full p-1 mb-2"
-          >
-          <!-- Professional Color Palette -->
-          <div class="color-palette">
-            <div 
-              v-for="color in colorPalette" 
-              :key="color"
-              class="color-swatch"
-              :style="{ backgroundColor: color }"
-              @click="selectedObject.fill = color; updateCanvas()"
-              :class="{ 'active': selectedObject.fill === color }"
-            ></div>
-          </div>
-        </div>
-        
-        <label class="text-neumorphic-text">Stroke Color:</label>
-        <div class="color-picker-container">
-          <input 
-            type="color" 
-            v-model="selectedObject.stroke" 
-            @change="updateCanvas"
-            class="w-full p-1 mb-2"
-          >
-          <!-- Professional Color Palette -->
-          <div class="color-palette">
-            <div 
-              v-for="color in colorPalette" 
-              :key="color"
-              class="color-swatch"
-              :style="{ backgroundColor: color }"
-              @click="selectedObject.stroke = color; updateCanvas()"
-              :class="{ 'active': selectedObject.stroke === color }"
-            ></div>
-          </div>
-        </div>
-        
-        <label class="text-neumorphic-text">Stroke Width: {{ selectedObject.strokeWidth || 0 }}</label>
-        <input 
-          type="range" 
-          v-model.number="selectedObject.strokeWidth" 
-          min="0" 
-          max="20"
-          @input="updateCanvas"
-          class="w-full mb-4"
-        >
-      </div>
-      
-      <!-- Image-specific controls -->
-      <div v-if="selectedObject.type === 'image' || selectedObject.src">
-        <label class="text-neumorphic-text">Brightness: {{ Math.round(((selectedObject.brightness || 0) + 0.5) * 100) }}%</label>
-        <input 
-          type="range" 
-          v-model.number="selectedObject.brightness" 
-          min="-0.5" 
-          max="0.5" 
-          step="0.1"
-          @input="adjustImageFilters"
-          class="w-full mb-4"
-        >
-        
-        <label class="text-neumorphic-text">Contrast: {{ Math.round(((selectedObject.contrast || 0) + 0.5) * 100) }}%</label>
-        <input 
-          type="range" 
-          v-model.number="selectedObject.contrast" 
-          min="-0.5" 
-          max="0.5" 
-          step="0.1"
-          @input="adjustImageFilters"
-          class="w-full mb-4"
-        >
-        
-        <label class="text-neumorphic-text">Saturation: {{ Math.round(((selectedObject.saturation || 0) + 0.5) * 100) }}%</label>
-        <input 
-          type="range" 
-          v-model.number="selectedObject.saturation" 
-          min="-0.5" 
-          max="0.5" 
-          step="0.1"
-          @input="adjustImageFilters"
-          class="w-full mb-4"
-        >
-        
-        <!-- Professional Image Editing Button -->
-        <button 
-          @click="openImageEditing(selectedObject)"
-          class="w-full py-2 px-4 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors mb-4"
-        >
-         🖼 Advanced Image Editing
-        </button>
-      </div>
-      
-      <div class="layer-controls">
-        <button @click="bringForward" class="neumorphic-btn w-full mb-2">↑ Bring Forward</button>
-        <button @click="sendBackwards" class="neumorphic-btn w-full mb-2">↓ Send Backward</button>
-        <button @click="bringToFront" class="neumorphic-btn w-full mb-2">⇈ Bring to Front</button>
-        <button @click="sendToBack" class="neumorphic-btn w-full mb-2">⇊ Send to Back</button>
-        <button @click="deleteObject" class="danger neumorphic-btn w-full bg-red-500 text-white">🗑️ Delete Object</button>
-      </div>
-    </div>
-
-    <!-- Clipart Modal -->
-    <div v-if="showCliparts" class="modal-overlay" @click.self="showCliparts = false">
-      <div class="modal neumorphic">
-        <h3 class="text-neumorphic-text">Choose Clipart</h3>
-        <div class="clipart-grid">
-          <div 
-            v-for="clipart in cliparts" 
-            :key="clipart.id"
-            class="clipart-item neumorphic-btn"
-            @click="addClipart(clipart)"
-          >
-            <img :src="clipart.image_url" :alt="clipart.title" class="w-full h-20 object-contain">
-          </div>
-        </div>
-        <button @click="showCliparts = false" class="close-btn neumorphic-btn">Close</button>
       </div>
     </div>
     
-    <!-- Shapes Modal -->
     <div v-if="showShapes" class="modal-overlay" @click.self="showShapes = false">
-      <div class="modal neumorphic">
-        <h3 class="text-neumorphic-text">Choose Shape</h3>
-        <div class="shape-grid">
-          <div 
-            v-for="shape in shapes" 
-            :key="shape.type"
-            class="shape-item neumorphic-btn"
-            @click="addShape(shape.type)"
-            :title="shape.type"
-          >
-            <span class="text-2xl">{{ shape.icon }}</span>
-            <span class="text-xs mt-1">{{ shape.type }}</span>
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Choose Shape</h3>
+          <button @click="showShapes = false" class="close-btn">×</button>
+        </div>
+        <div class="modal-content">
+          <div class="shape-grid">
+            <div 
+              v-for="shape in shapes" 
+              :key="shape.type"
+              class="shape-item"
+              @click="addShape(shape.type)"
+            >
+              <span class="shape-icon">{{ shape.icon }}</span>
+              <span class="shape-name">{{ shape.name || shape.type }}</span>
+            </div>
           </div>
         </div>
-        <button @click="showShapes = false" class="close-btn neumorphic-btn">Close</button>
       </div>
     </div>
     
     <!-- Effects Modal -->
     <div v-if="showEffects" class="modal-overlay" @click.self="showEffects = false">
-      <div class="modal neumorphic">
-        <h3 class="text-neumorphic-text">Apply Effect</h3>
-        <div class="effects-grid">
-          <div 
-            v-for="effect in effects" 
-            :key="effect.type"
-            class="effect-item neumorphic-btn"
-            @click="applyEffect(effect.type)"
-            :title="effect.name"
-          >
-            <span class="text-2xl">{{ effect.icon }}</span>
-            <span class="text-xs mt-1">{{ effect.name }}</span>
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Apply Effect</h3>
+          <button @click="showEffects = false" class="close-btn">×</button>
+        </div>
+        <div class="modal-content">
+          <div class="effects-grid">
+            <div 
+              v-for="effect in effects" 
+              :key="effect.type"
+              class="effect-item"
+              @click="applyEffect(effect.type)"
+            >
+              <span class="effect-icon">{{ effect.icon }}</span>
+              <span class="effect-name">{{ effect.name }}</span>
+            </div>
           </div>
         </div>
-        <button @click="showEffects = false" class="close-btn neumorphic-btn">Close</button>
       </div>
     </div>
     
     <!-- Professional Image Editing Panel -->
-    <div v-if="showImageEditing" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <ImageEditingPanel
-        :image-object="editingImage"
-        :image-src="editingImageSrc"
-        @update="updateImageEditing"
-        @image-updated="imageUpdated"
-        @close="closeImageEditing"
-      />
+    <div v-if="showImageEditing" class="modal-overlay" @click.self="closeImageEditing">
+      <div class="modal modal-large">
+        <div class="modal-header">
+          <h3>Edit Image</h3>
+          <button @click="closeImageEditing" class="close-btn">×</button>
+        </div>
+        <div class="modal-content">
+          <ImageEditingPanel
+            :image-object="editingImage"
+            :image-src="editingImageSrc"
+            @update="updateImageEditing"
+            @image-updated="imageUpdated"
+            @close="closeImageEditing"
+          />
+        </div>
+      </div>
     </div>
+    
+    <input 
+      ref="imageInput" 
+      type="file" 
+      accept="image/*" 
+      style="display: none"
+      @change="handleImageUpload"
+    />
   </div>
 </template>
 
@@ -499,15 +137,16 @@ export default {
   data() {
     return {
       canvas: null,
+      // Removed previewCanvas since preview panel is removed
       selectedObject: null,
       fonts: [],
       cliparts: [],
       shapes: [
-        { type: 'rectangle', icon: '⬜' },
-        { type: 'circle', icon: '⭕' },
-        { type: 'triangle', icon: '🔺' },
-        { type: 'polygon', icon: '🔷' },
-        { type: 'line', icon: '📏' },
+        { type: 'rectangle', icon: '⬜', name: 'Rectangle' },
+        { type: 'circle', icon: '⭕', name: 'Circle' },
+        { type: 'triangle', icon: '🔺', name: 'Triangle' },
+        { type: 'polygon', icon: '🔷', name: 'Polygon' },
+        { type: 'line', icon: '📏', name: 'Line' },
       ],
       effects: [
         { type: 'blur', name: 'Blur', icon: '🌫️' },
@@ -515,10 +154,7 @@ export default {
         { type: 'glow', name: 'Glow', icon: '✨' },
         { type: 'outline', name: 'Outline', icon: '⭕' },
       ],
-      showCliparts: false,
-      showShapes: false,
-      showEffects: false,
-      activeTool: 'select', // Track active tool
+      // Tool state management
       isDirty: false,
       currentDesignId: null,
       saveTimeout: null,
@@ -526,30 +162,59 @@ export default {
       editingImage: null,
       editingImageSrc: null,
       
-      // Brush Tool Data
-      isDrawing: false,
-      brushSize: 5,
-      brushColor: '#000000',
-      brushOpacity: 1,
-      brushType: 'pencil',
-      brushHistory: [],
+      // Color Palette Tabs
+      activeColorTab: 'basic',
+      colorPaletteTabs: [
+        { id: 'basic', name: 'Basic' },
+        { id: 'advanced', name: 'Advanced' },
+        { id: 'gradient', name: 'Gradients' },
+        { id: 'metallic', name: 'Metallic' }
+      ],
       
-      // Professional Color Palette - Expanded to include more colors
-      colorPalette: [
+      // Basic Colors - Simplified palette
+      basicColors: [
         '#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF',
         '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080',
         '#FFC0CB', '#A52A2A', '#808080', '#C0C0C0', '#800000',
-        '#008000', '#000080', '#808000', '#800080', '#008080',
+        '#008000', '#000080', '#808000', '#008080'
+      ],
+      
+      // Advanced Colors - Extended palette
+      advancedColors: [
         '#FFB6C1', '#FFD700', '#FF6347', '#40E0D0', '#9370DB',
         '#2F4F4F', '#000080', '#4B0082', '#8B0000', '#006400',
         '#DC143C', '#008B8B', '#483D8B', '#FF8C00', '#FF1493',
-        '#00BFFF', '#1E90FF', '#9ACD32', '#FFD700', '#FFA07A',
-        '#20B2AA', '#87CEEB', '#DDA0DD', '#F0E68C', '#98FB98',
-        '#F5DEB3', '#DEB887', '#FA8072', '#E6E6FA', '#FFFACD'
+        '#00BFFF', '#1E90FF', '#9ACD32', '#FFA07A', '#20B2AA',
+        '#87CEEB', '#DDA0DD', '#F0E68C', '#98FB98', '#F5DEB3',
+        '#DEB887', '#FA8072', '#E6E6FA', '#FFFACD', '#FFE4C4'
       ],
       
-      // Brush Tool Data
-      isDrawing: false,
+      // Gradient Colors
+      gradientColors: [
+        'linear-gradient(45deg, #ff0000, #ffff00)',
+        'linear-gradient(45deg, #ff00ff, #00ffff)',
+        'linear-gradient(45deg, #00ff00, #0000ff)',
+        'linear-gradient(45deg, #ff6b6b, #feca57)',
+        'linear-gradient(45deg, #5f27cd, #00d2d3)',
+        'linear-gradient(45deg, #ee5a24, #f368e0)',
+        'linear-gradient(45deg, #10ac84, #1dd1a1)',
+        'linear-gradient(45deg, #54a0ff, #5f27cd)',
+        'linear-gradient(to bottom, #ff0000, #0000ff)',
+        'linear-gradient(to bottom, #ffd700, #ff8c00)'
+      ],
+      
+      // Metallic Colors
+      metallicColors: [
+        '#D4AF37', // Gold
+        '#C0C0C0', // Silver
+        '#CD7F32', // Bronze
+        '#E5E4E2', // Platinum
+        '#B5A642', // Old Gold
+        '#D3D3D3', // Light Silver
+        '#CFB53B', // Old Brass
+        '#DA8A67'  // Copper
+      ],
+      
       brushSize: 5,
       brushColor: '#000000',
       brushOpacity: 1,
@@ -565,25 +230,147 @@ export default {
         { value: 'marker', name: 'Marker', icon: '🖊️' },
         { value: 'soft', name: 'Soft Brush', icon: '🖌️' },
         { value: 'eraser', name: 'Eraser', icon: '🧽' }
-      ]
+      ],
+      
+      // General history for all canvas operations
+      generalHistory: [],
+      generalHistoryIndex: -1,
+      maxGeneralHistory: 50,
+      
+      // Reactive properties for parent component access
+      canUndoValue: false,
+      canRedoValue: false,
+      canUndoBrushValue: false,
+      canRedoBrushValue: false,
+      
+      // Tool state management
+      activeTool: 'select',
+      showCliparts: false,
+      showShapes: false,
+      showEffects: false
     };
   },
   
   async mounted() {
+    console.log('ProductDesigner mounted');
     this.initializeCanvas();
+    // Removed preview canvas initialization since preview panel is removed
     await this.loadAssets();
     
     if (this.initialDesign) {
       this.currentDesignId = this.initialDesign.id;
       this.loadDesign(this.initialDesign);
+    } else {
+      // Initialize history for empty canvas
+      this.$nextTick(() => {
+        this.saveToGeneralHistory();
+      });
     }
+    
+    // Initialize reactive properties
+    this.updateReactiveProperties();
+    
+    // Set up interval to periodically update reactive properties
+    setInterval(() => {
+      this.updateReactiveProperties();
+    }, 100); // Update every 100ms
+    
+    // Add event listener for window resize to handle responsiveness
+    window.addEventListener('resize', this.handleResize);
+    
+    console.log('ProductDesigner initialized with canvas:', this.canvas);
   },
   
   methods: {
+    // Public API methods for parent component access
+    getCanUndo() {
+      return this.canUndoGeneral();
+    },
+    
+    getCanRedo() {
+      return this.canRedoGeneral();
+    },
+    
+    getCanUndoBrush() {
+      return this.canUndoBrush;
+    },
+    
+    getCanRedoBrush() {
+      return this.canRedoBrush;
+    },
+    
+    // Debug method to expose canvas
+    getCanvas() {
+      return this.canvas;
+    },
+    
+    getActiveTool() {
+      return this.activeTool;
+    },
+    
+    // Wrapper methods for parent component access
+    handleUndo() {
+      this.undo();
+    },
+    
+    handleRedo() {
+      this.redo();
+    },
+    
+    handleUndoBrush() {
+      this.undoBrushStroke();
+    },
+    
+    handleRedoBrush() {
+      this.redoBrushStroke();
+    },
+    
+    // Direct method implementations for parent component access
+    canUndo() {
+      return this.canUndoGeneral();
+    },
+    
+    canRedo() {
+      return this.canRedoGeneral();
+    },
+    
+    canUndoBrush() {
+      return this.brushHistory && this.brushHistory.length > 0 && this.brushHistoryIndex > 0;
+    },
+    
+    canRedoBrush() {
+      return this.brushHistory && this.brushHistory.length > 0 && this.brushHistoryIndex < this.brushHistory.length - 1;
+    },
+    
+    updateReactiveProperties() {
+      this.canUndoValue = this.canUndoGeneral();
+      this.canRedoValue = this.canRedoGeneral();
+      this.canUndoBrushValue = this.brushHistory && this.brushHistory.length > 0 && this.brushHistoryIndex > 0;
+      this.canRedoBrushValue = this.brushHistory && this.brushHistory.length > 0 && this.brushHistoryIndex < this.brushHistory.length - 1;
+    },
+    
+    updatePreviewCanvas() {
+      // Preview functionality removed - no preview panel
+      // This method is kept for compatibility but does nothing
+    },
+    
+    initializePreviewCanvas() {
+      // Preview functionality removed - no preview panel
+      // This method is kept for compatibility but does nothing
+    },
+    
     initializeCanvas() {
-      // Fixed canvas size
-      const width = 800;
-      const height = 600;
+      // Use responsive canvas sizing
+      const container = this.$refs.canvas?.parentElement;
+      let width = 800;
+      let height = 600;
+      
+      // If container exists, try to get responsive dimensions
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        width = Math.min(rect.width || 800, 800);
+        height = Math.min(rect.height || 600, 600);
+      }
       
       this.canvas = new fabric.Canvas(this.$refs.canvas, {
         width: width,
@@ -625,19 +412,41 @@ export default {
       this.canvas.on('selection:updated', (e) => this.handleSelection(e));
       this.canvas.on('selection:cleared', () => {
         this.selectedObject = null;
-        this.activeTool = 'select';
+        // Only change to select tool if not in brush/eraser mode
+        if (this.activeTool !== 'brush' && this.activeTool !== 'eraser') {
+          this.activeTool = 'select';
+        }
       });
+      
+      // Initialize default tool state
+      this.canvas.isDrawingMode = false;
+      this.activeTool = 'select';
+      this.updateCanvasCursor();
       this.canvas.on('object:modified', (e) => {
         this.isDirty = true;
+        // Save to general history for any object modification
+        this.saveToGeneralHistory();
         // Update selected object properties after modification
         if (this.selectedObject && e.target) {
           // Sync the selected object reference with the modified object
           this.selectedObject = e.target;
           this.$forceUpdate();
         }
+        this.updateReactiveProperties(); // Update reactive properties
+        this.updatePreviewCanvas(); // Update preview
       });
-      this.canvas.on('object:added', () => this.isDirty = true);
-      this.canvas.on('object:removed', () => this.isDirty = true);
+      this.canvas.on('object:added', (e) => {
+        this.isDirty = true;
+        this.saveToGeneralHistory();
+        this.updateReactiveProperties(); // Update reactive properties
+        this.updatePreviewCanvas(); // Update preview
+      });
+      this.canvas.on('object:removed', (e) => {
+        this.isDirty = true;
+        this.saveToGeneralHistory();
+        this.updateReactiveProperties(); // Update reactive properties
+        this.updatePreviewCanvas(); // Update preview
+      });
       
       // Update properties panel when object changes
       this.canvas.on('object:modified', () => {
@@ -647,21 +456,40 @@ export default {
         }
       });
       
+      // Listen for path creation events to save brush history
+      this.canvas.on('path:created', (opt) => {
+        this.saveBrushHistory();
+        this.saveToGeneralHistory(); // Also save to general history
+        this.updateReactiveProperties(); // Update reactive properties
+      });
+      
+      // Listen for mouse up to save state after drawing
+      this.canvas.on('mouse:up', () => {
+        if (this.canvas.isDrawingMode) {
+          this.saveToGeneralHistory();
+          this.updateReactiveProperties(); // Update reactive properties
+        }
+      });
+      
       // Keyboard shortcuts
       document.addEventListener('keydown', this.handleKeyDown);
       
       // Enable drawing mode for freehand
       this.canvas.isDrawingMode = false;
+      
+      // Initialize history with the initial canvas state
+      this.$nextTick(() => {
+        this.saveToGeneralHistory();
+      });
     },
     
     handleSelection(e) {
       if (e.selected && e.selected.length > 0) {
         const selected = e.selected[0];
-        // Clone the object to avoid direct reference issues
         this.selectedObject = selected;
         
         // Ensure proper initialization of properties and controls
-        selected.set({
+        const commonProperties = {
           hasControls: true,
           hasBorders: true,
           selectable: true,
@@ -673,34 +501,40 @@ export default {
           cornerStrokeColor: '#007AFF',
           transparentCorners: false,
           borderScaleFactor: 1.5,
-        });
+          hasRotatingPoint: true
+        };
         
+        selected.set(commonProperties);
+        
+        // Type-specific initialization
         if (selected.type === 'i-text') {
-          // Initialize fontWeight if not set
-          if (!selected.fontWeight) {
-            selected.set({ fontWeight: 'normal' });
-          }
-          // Ensure text is editable
-          selected.set({
-            editable: true,
+          // Text properties
+          if (!selected.fontWeight) selected.fontWeight = 'normal';
+          if (!selected.fontSize) selected.fontSize = 32;
+          if (!selected.lineHeight) selected.lineHeight = 1.2;
+          selected.editable = true;
+          
+          // Force text to be editable immediately
+          this.$nextTick(() => {
+            selected.enterEditing();
           });
         } else if (selected.type === 'image' || selected.src) {
-          // Ensure image has proper scaling
-          if (!selected.scaleX) {
-            selected.set({ scaleX: 1, scaleY: 1 });
-          }
+          // Image properties
+          if (!selected.scaleX) selected.scaleX = 1;
+          if (!selected.scaleY) selected.scaleY = 1;
+          if (!selected.opacity) selected.opacity = 1;
         } else if (['rect', 'circle', 'triangle', 'polygon'].includes(selected.type)) {
-          // Ensure shapes have proper properties
-          selected.set({
-            hasRotatingPoint: true,
-          });
+          // Shape properties
+          if (!selected.fill) selected.fill = '#FF0000';
+          if (!selected.stroke) selected.stroke = '#000000';
+          if (!selected.strokeWidth) selected.strokeWidth = 2;
         }
         
-        // Force render to update controls
+        // Update object coordinates and render
+        selected.setCoords();
         this.canvas.requestRenderAll();
-        
-        // Force Vue reactivity update
-        this.$forceUpdate();
+        this.isDirty = true;
+        this.$emit('changed');
       } else {
         this.selectedObject = null;
       }
@@ -717,7 +551,9 @@ export default {
         lineHeight: 1.2,
         hasControls: true,
         hasBorders: true,
+        selectable: true,
         editable: true,
+        evented: true,
         cornerStyle: 'circle',
         cornerSize: 10,
         borderColor: '#007AFF',
@@ -725,6 +561,7 @@ export default {
         cornerStrokeColor: '#007AFF',
         transparentCorners: false,
         borderScaleFactor: 1.5,
+        hasRotatingPoint: true,
       });
       
       this.canvas.add(text);
@@ -732,16 +569,77 @@ export default {
       this.isDirty = true;
       this.$emit('changed');
       
-      // Auto-select the text for immediate editing
-      setTimeout(() => {
-        this.canvas.setActiveObject(text);
-        text.enterEditing();
-        text.selectAll();
-      }, 100);
+      // Force immediate edit mode
+      this.$nextTick(() => {
+        if (this.canvas.getActiveObject() === text) {
+          text.enterEditing();
+          text.selectAll();
+        }
+      });
     },
     
     setActiveTool(tool) {
+      console.log('Setting active tool:', tool, 'current tool:', this.activeTool);
+      
+      // Save current state to general history before switching tools
+      this.saveToGeneralHistory();
+      
+      // Disable current drawing mode
+      this.canvas.isDrawingMode = false;
+      
       this.activeTool = tool;
+      
+      // Update canvas cursor
+      this.updateCanvasCursor();
+      
+      // Enable appropriate mode based on tool
+      if (tool === 'brush') {
+        this.canvas.isDrawingMode = true;
+        this.updateBrushSettings();
+        this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
+        this.canvas.freeDrawingBrush.width = this.brushSize;
+        this.canvas.freeDrawingBrush.color = this.brushColor;
+        this.canvas.freeDrawingBrush.opacity = this.brushOpacity;
+        console.log('Brush mode activated with size:', this.brushSize, 'color:', this.brushColor);
+      } else if (tool === 'eraser') {
+        this.canvas.isDrawingMode = true;
+        // Check if EraserBrush is available
+        if (fabric.EraserBrush) {
+          this.canvas.freeDrawingBrush = new fabric.EraserBrush(this.canvas);
+          this.canvas.freeDrawingBrush.width = this.brushSize;
+        } else {
+          // Fallback: use regular brush with white color
+          this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
+          this.canvas.freeDrawingBrush.width = this.brushSize;
+          this.canvas.freeDrawingBrush.color = '#FFFFFF';
+        }
+        this.canvas.freeDrawingBrush.opacity = this.brushOpacity;
+        console.log('Eraser mode activated with size:', this.brushSize);
+      } else if (tool === 'text') {
+        // Text tool mode - add text immediately
+        console.log('Text tool activated - adding text to canvas');
+        this.addText();
+      } else if (tool === 'image') {
+        // Image tool mode - trigger image upload
+        console.log('Image tool activated - triggering image upload');
+        this.triggerImageUpload();
+      } else {
+        console.log('Selection mode activated');
+      }
+      
+      this.$emit('changed');
+      this.updateReactiveProperties();
+    },
+    
+    updateCanvasCursor() {
+      const canvasElement = this.$refs.canvas;
+      if (canvasElement) {
+        if (this.canvas.isDrawingMode) {
+          canvasElement.classList.add('drawing-mode');
+        } else {
+          canvasElement.classList.remove('drawing-mode');
+        }
+      }
     },
     
     triggerImageUpload() {
@@ -1161,6 +1059,9 @@ export default {
     },
     
     async saveDesign() {
+      // Ensure we have the current state in history
+      this.saveToGeneralHistory();
+      
       const designData = this.canvas.toJSON();
       
       try {
@@ -1261,8 +1162,14 @@ export default {
     },
     
     loadDesign(design) {
+      // Clear any existing history before loading new design
+      this.generalHistory = [];
+      this.generalHistoryIndex = -1;
+      
       this.canvas.loadFromJSON(design.design_data, () => {
         this.canvas.renderAll();
+        // Initialize history after loading the design
+        this.saveToGeneralHistory();
       });
     },
     
@@ -1273,12 +1180,18 @@ export default {
         
         // Check if template has design_data property (JSON format)
         if (template.design_data && Array.isArray(template.design_data) && template.design_data.length > 0) {
+          // Clear any existing history before loading new template
+          this.generalHistory = [];
+          this.generalHistoryIndex = -1;
+          
           // Load the full design data
           console.log('Loading design data from template');
           this.canvas.loadFromJSON(template.design_data, () => {
             this.canvas.renderAll();
             this.isDirty = true;
             this.$emit('changed');
+            // Initialize history after loading the template
+            this.saveToGeneralHistory();
             console.log('Template design loaded successfully');
           });
         } else if (template.preview_url) {
@@ -1324,6 +1237,8 @@ export default {
             
             this.isDirty = true;
             this.$emit('changed');
+            // Initialize history after adding template image
+            this.saveToGeneralHistory();
             console.log('Template image loaded successfully');
           }, { 
             crossOrigin: 'anonymous',
@@ -1352,13 +1267,7 @@ export default {
     toggleBrushMode() {
       if (this.activeTool === 'brush') {
         this.canvas.isDrawingMode = true;
-        this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
         this.updateBrushSettings();
-        
-        // Add event listener to save brush strokes for undo/redo
-        this.canvas.on('path:created', (opt) => {
-          this.saveBrushHistory();
-        });
       } else {
         this.canvas.isDrawingMode = false;
       }
@@ -1367,22 +1276,7 @@ export default {
     toggleEraserMode() {
       if (this.activeTool === 'eraser') {
         this.canvas.isDrawingMode = true;
-        
-        // Check if EraserBrush is available, otherwise use regular brush with white color
-        if (fabric.EraserBrush) {
-          this.canvas.freeDrawingBrush = new fabric.EraserBrush(this.canvas);
-          this.canvas.freeDrawingBrush.width = this.brushSize;
-        } else {
-          // Fallback: use regular brush with white color to simulate erasing
-          this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
-          this.canvas.freeDrawingBrush.width = this.brushSize;
-          this.canvas.freeDrawingBrush.color = '#FFFFFF';
-        }
-        
-        // Add event listener to save eraser strokes for undo/redo
-        this.canvas.on('path:created', (opt) => {
-          this.saveBrushHistory();
-        });
+        this.updateBrushSettings();
       } else {
         this.canvas.isDrawingMode = false;
       }
@@ -1394,60 +1288,39 @@ export default {
     },
     
     updateBrushSettings() {
-      if (this.canvas) {
+      if (this.canvas && this.canvas.freeDrawingBrush) {
+        // Update brush properties
+        this.canvas.freeDrawingBrush.width = this.brushSize;
+        this.canvas.freeDrawingBrush.color = this.brushColor;
+        this.canvas.freeDrawingBrush.opacity = this.brushOpacity;
+        
+        // Set specific brush type
         if (this.activeTool === 'brush') {
-          // Set brush type
           switch(this.brushType) {
             case 'pencil':
               this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
-              this.canvas.freeDrawingBrush.width = this.brushSize;
-              this.canvas.freeDrawingBrush.color = this.brushColor;
               break;
             case 'spray':
               this.canvas.freeDrawingBrush = new fabric.SprayBrush(this.canvas);
-              this.canvas.freeDrawingBrush.width = this.brushSize;
-              this.canvas.freeDrawingBrush.color = this.brushColor;
               break;
             case 'marker':
               this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
               this.canvas.freeDrawingBrush.width = this.brushSize * 1.5;
-              this.canvas.freeDrawingBrush.color = this.brushColor;
               break;
             case 'soft':
               this.canvas.freeDrawingBrush = new fabric.CircleBrush(this.canvas);
               this.canvas.freeDrawingBrush.width = this.brushSize * 2;
-              this.canvas.freeDrawingBrush.color = this.brushColor;
-              break;
-            case 'eraser':
-              // Check if EraserBrush is available
-              if (fabric.EraserBrush) {
-                this.canvas.freeDrawingBrush = new fabric.EraserBrush(this.canvas);
-                this.canvas.freeDrawingBrush.width = this.brushSize;
-              } else {
-                // Fallback: use regular brush with white color to simulate erasing
-                this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
-                this.canvas.freeDrawingBrush.width = this.brushSize;
-                this.canvas.freeDrawingBrush.color = '#FFFFFF';
-              }
               break;
           }
-        } else if (this.activeTool === 'eraser') {
-          // Check if EraserBrush is available
-          if (fabric.EraserBrush) {
-            this.canvas.freeDrawingBrush = new fabric.EraserBrush(this.canvas);
-            this.canvas.freeDrawingBrush.width = this.brushSize;
-          } else {
-            // Fallback: use regular brush with white color to simulate erasing
-            this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
-            this.canvas.freeDrawingBrush.width = this.brushSize;
-            this.canvas.freeDrawingBrush.color = '#FFFFFF';
-          }
-        }
-        
-        // Apply opacity if supported
-        if (this.canvas.freeDrawingBrush) {
+          
+          // Apply current settings to the new brush
+          this.canvas.freeDrawingBrush.width = this.brushSize;
+          this.canvas.freeDrawingBrush.color = this.brushColor;
           this.canvas.freeDrawingBrush.opacity = this.brushOpacity;
         }
+        
+        this.isDirty = true;
+        this.$emit('changed');
       }
     },
     
@@ -1459,6 +1332,15 @@ export default {
         this.selectedObject.fill = color;
         this.updateCanvas();
       } else {
+        this.updateBrushSettings();
+      }
+    },
+    
+    selectGradientColor(gradient) {
+      // Extract first color from gradient for brush
+      const colorMatch = gradient.match(/#[0-9a-fA-F]{3,6}/);
+      if (colorMatch) {
+        this.brushColor = colorMatch[0];
         this.updateBrushSettings();
       }
     },
@@ -1479,19 +1361,24 @@ export default {
         this.brushHistory.shift();
         this.brushHistoryIndex--;
       }
+      
+      // Update reactive properties
+      this.updateReactiveProperties();
     },
     
     undoBrushStroke() {
-      if (this.canUndoBrush) {
+      if (this.canUndoBrush()) {
         this.brushHistoryIndex--;
         this.restoreFromBrushHistory();
+        this.updateReactiveProperties();
       }
     },
     
     redoBrushStroke() {
-      if (this.canRedoBrush) {
+      if (this.canRedoBrush()) {
         this.brushHistoryIndex++;
         this.restoreFromBrushHistory();
+        this.updateReactiveProperties();
       }
     },
     
@@ -1512,14 +1399,97 @@ export default {
       return this.brushHistory && this.brushHistory.length > 0 && this.brushHistoryIndex < this.brushHistory.length - 1;
     },
     
+
+    
+    // General undo/redo methods that handle all canvas operations
+    canUndoGeneral() {
+      // Check if we have any general history entries
+      return this.generalHistory && this.generalHistory.length > 0 && this.generalHistoryIndex > 0;
+    },
+    
+    canRedoGeneral() {
+      return this.generalHistory && this.generalHistory.length > 0 && this.generalHistoryIndex < this.generalHistory.length - 1;
+    },
+    
+    saveToGeneralHistory() {
+      // Remove any history after current index
+      if (this.generalHistoryIndex < this.generalHistory.length - 1) {
+        this.generalHistory = this.generalHistory.slice(0, this.generalHistoryIndex + 1);
+      }
+      
+      // Add current state
+      const currentState = this.canvas.toJSON();
+      this.generalHistory.push(currentState);
+      this.generalHistoryIndex = this.generalHistory.length - 1;
+      
+      // Limit history size
+      if (this.generalHistory.length > this.maxGeneralHistory) {
+        this.generalHistory.shift();
+        this.generalHistoryIndex--;
+      }
+      
+      // Update reactive properties
+      this.updateReactiveProperties();
+    },
+    
+    undoGeneral() {
+      if (this.canUndoGeneral()) {
+        this.generalHistoryIndex--;
+        this.restoreFromGeneralHistory();
+        this.updateReactiveProperties();
+      }
+    },
+    
+    redoGeneral() {
+      if (this.canRedoGeneral()) {
+        this.generalHistoryIndex++;
+        this.restoreFromGeneralHistory();
+        this.updateReactiveProperties();
+      }
+    },
+    
+    restoreFromGeneralHistory() {
+      if (this.generalHistoryIndex >= 0 && this.generalHistoryIndex < this.generalHistory.length) {
+        const state = this.generalHistory[this.generalHistoryIndex];
+        this.canvas.loadFromJSON(state, () => {
+          this.canvas.renderAll();
+        });
+      }
+    },
+    
+    // Unified undo/redo methods that handle both brush and general operations
+    undo() {
+      // Try general history first (more comprehensive)
+      if (this.canUndoGeneral()) {
+        this.undoGeneral();
+      } else if (this.canUndoBrush()) {
+        this.undoBrushStroke();
+      }
+    },
+    
+    redo() {
+      // Try general history first (more comprehensive)
+      if (this.canRedoGeneral()) {
+        this.redoGeneral();
+      } else if (this.canRedoBrush()) {
+        this.redoBrushStroke();
+      }
+    },
+    
     clearCanvas() {
       if (confirm('Are you sure you want to clear the entire canvas?')) {
         this.canvas.clear();
         // Clear brush history
         this.brushHistory = [];
         this.brushHistoryIndex = -1;
+        // Also clear general history since we're starting fresh
+        this.generalHistory = [];
+        this.generalHistoryIndex = -1;
         this.isDirty = true;
         this.$emit('changed');
+        
+        // Initialize history for empty canvas
+        this.saveToGeneralHistory();
       }
     },
     
@@ -1561,6 +1531,24 @@ export default {
       this.canvas.renderAll();
       this.isDirty = true;
       this.$emit('changed');
+    },
+    
+    // Expose unified undo/redo methods for external access via refs
+    undo() {
+      this.undoGeneral();
+    },
+    
+    redo() {
+      this.redoGeneral();
+    },
+    
+    // Properly expose methods for parent component access
+    canUndo() {
+      return this.canUndoGeneral();
+    },
+    
+    canRedo() {
+      return this.canRedoGeneral();
     },
     
     sanitizeImageUrl(url) {
@@ -1668,6 +1656,52 @@ export default {
         throw error;
       }
     },
+    
+    // Handle window resize for responsiveness
+    handleResize() {
+      // Only resize canvas if it exists
+      if (this.canvas) {
+        // Get the container dimensions
+        const container = this.$refs.canvas?.parentElement;
+        if (container) {
+          const rect = container.getBoundingClientRect();
+          
+          // Update canvas dimensions if they've changed significantly
+          if (Math.abs(this.canvas.width - rect.width) > 10 || Math.abs(this.canvas.height - rect.height) > 10) {
+            // Preserve the aspect ratio
+            const canvasRatio = this.canvas.width / this.canvas.height;
+            const containerRatio = rect.width / rect.height;
+            
+            let newWidth, newHeight;
+            if (containerRatio > canvasRatio) {
+              // Container is wider than canvas - limit by height
+              newHeight = Math.min(rect.height, 600);
+              newWidth = newHeight * canvasRatio;
+            } else {
+              // Container is taller than canvas - limit by width
+              newWidth = Math.min(rect.width, 800);
+              newHeight = newWidth / canvasRatio;
+            }
+            
+            // Update canvas dimensions
+            this.canvas.setWidth(newWidth);
+            this.canvas.setHeight(newHeight);
+            
+            // Update the canvas element itself
+            const canvasEl = this.$refs.canvas;
+            canvasEl.width = newWidth;
+            canvasEl.height = newHeight;
+            
+            // Preview canvas functionality removed - no preview panel
+            
+            // Save to history after resize
+            this.$nextTick(() => {
+              this.saveToGeneralHistory();
+            });
+          }
+        }
+      }
+    },
   },
   
   beforeUnmount() {
@@ -1682,6 +1716,9 @@ export default {
     
     // Remove keyboard event listener
     document.removeEventListener('keydown', this.handleKeyDown);
+    
+    // Remove window resize listener
+    window.removeEventListener('resize', this.handleResize);
   },
 };
 </script>
@@ -1690,90 +1727,705 @@ export default {
 .designer-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background: #e0e5ec;
+  height: 100%;
+  min-height: 0;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.toolbar {
+/* Modern Toolbar Header */
+.toolbar-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.75rem 1.5rem;
+  flex-shrink: 0;
+}
+
+.toolbar-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 100%;
+  margin: 0 auto;
+  gap: 1rem;
+}
+
+.tool-group {
   display: flex;
   gap: 0.5rem;
-  padding: 0.75rem;
-  flex-wrap: wrap;
+  align-items: center;
 }
 
 .tool-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  transition: all 0.2s;
-  min-height: 40px;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.tool-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tool-btn:hover::before {
+  opacity: 1;
 }
 
 .tool-btn:hover {
   transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
-.tool-btn.active-tool {
-  background: #3b82f6;
-  color: white;
-  box-shadow: inset 2px 2px 5px #b8bec7, inset -2px -2px 5px #ffffff;
+.tool-btn.active {
+  background: white;
+  color: #667eea;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transform: translateY(0);
+}
+
+.tool-btn .tool-icon {
+  width: 22px;
+  height: 22px;
+  z-index: 1;
 }
 
 .tool-btn.primary {
-  background: #3b82f6;
-  color: white;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
 }
 
 .tool-btn.primary:hover {
-  background: #2563eb;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
 }
 
 .tool-btn.success {
-  background: #10b981;
-  color: white;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
 .tool-btn.success:hover {
-  background: #059669;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
-.canvas-wrapper {
+.actions-group {
+  display: flex;
+  gap: 0.75rem;
+  padding-left: 1rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Main Design Area - Full width canvas */
+.design-area {
+  display: flex;
+  padding: 1.5rem;
   flex: 1;
+  overflow: hidden;
+  min-height: 0;
+  position: relative;
+  height: calc(100vh - 40px); /* Account for reduced header */
+}
+
+/* Canvas Container - Full width */
+.canvas-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1rem;
-  min-width: 800px;
-  min-height: 600px;
-  max-width: 800px;
-  max-height: 70vh;
-  width: 800px;
-  height: 600px;
-  overflow: hidden;
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.canvas-wrapper {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.canvas-wrapper:hover {
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.18);
+  transform: translateY(-2px);
 }
 
 canvas {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   background: white;
-  border: 1px solid #cbd5e1;
-  width: 800px !important;
-  height: 600px !important;
+  cursor: crosshair;
   max-width: 100%;
   max-height: 100%;
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
-.brush-panel {
-  width: 250px;
+canvas.drawing-mode {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="black" opacity="0.7"/></svg>') 12 12, crosshair;
+}
+
+
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.brush-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.brush-panel::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.brush-panel::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.brush-control {
+  margin-bottom: 1.25rem;
+}
+
+.brush-control label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 0.5rem;
+}
+
+.brush-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #e2e8f0;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.brush-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.brush-types {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.brush-type-btn {
+  padding: 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.brush-type-btn:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+}
+
+.brush-type-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.brush-actions {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 2px solid #f0f0f0;
+}
+
+.undo-redo {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+  color: #4a5568;
+}
+
+.action-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-btn.danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+.action-btn.danger:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.brush-panel.enhanced {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-left: none;
+  box-shadow: -4px 0 15px rgba(0,0,0,0.1);
+}
+
+.brush-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(255,255,255,0.2);
+}
+
+.brush-panel-header h4 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+}
+
+.close-panel-btn {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.close-panel-btn:hover {
+  background: rgba(255,255,255,0.3);
+  transform: rotate(90deg);
+}
+
+.control-group.enhanced {
+  background: rgba(255,255,255,0.1);
   padding: 1rem;
-  overflow-y: auto;
-  background: #f8fafc;
-  border-left: 1px solid #e2e8f0;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  margin-bottom: 1rem;
+}
+
+.control-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.value-badge {
+  background: rgba(255,255,255,0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: bold;
+}
+
+.slider-container {
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.enhanced-slider {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.2);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.enhanced-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.enhanced-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  border: none;
+}
+
+.slider-indicator {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  pointer-events: none;
+}
+
+.size-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+  margin-top: 0.5rem;
+}
+
+.size-dot {
+  border-radius: 50%;
+  transition: all 0.3s;
+}
+
+.opacity-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+  margin-top: 0.5rem;
+}
+
+.opacity-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.color-section .control-label {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.current-color-display {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255,255,255,0.1);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.color-preview-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.color-hex-code {
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.enhanced-color-picker {
+  width: 100%;
+  height: 50px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.color-picker-label {
+  font-size: 0.875rem;
+  opacity: 0.8;
+  text-align: center;
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.palette-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  background: rgba(255,255,255,0.1);
+  padding: 0.5rem;
+  border-radius: 10px;
+}
+
+.palette-tab {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.palette-tab.active {
+  background: white;
+  color: #667eea;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.color-palette-content {
+  background: rgba(255,255,255,0.1);
+  padding: 0.75rem;
+  border-radius: 10px;
+}
+
+.color-palette-grid.basic,
+.color-palette-grid.advanced {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+}
+
+.color-palette-grid.gradient {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+}
+
+.color-palette-grid.metallic {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.color-swatch-gradient {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid rgba(255,255,255,0.3);
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.color-swatch-gradient:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.color-swatch-large.metallic {
+  box-shadow: inset 0 0 10px rgba(255,255,255,0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.color-swatch-large.metallic::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255,255,255,0.3),
+    transparent
+  );
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) rotate(45deg); }
+}
+
+.checkmark {
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.brush-type-selector.enhanced {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+  background: rgba(255,255,255,0.1);
+  padding: 0.75rem;
+  border-radius: 12px;
+}
+
+.brush-type-btn.enhanced {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 0.5rem;
+  border: 2px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+  color: white;
+  border-radius: 10px;
+  gap: 0.25rem;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.brush-type-btn.enhanced:hover {
+  background: rgba(255,255,255,0.2);
+  transform: translateY(-2px);
+}
+
+.brush-type-btn.enhanced.active-brush-type {
+  background: white;
+  color: #667eea;
+  border-color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transform: translateY(-2px);
+}
+
+.brush-actions.enhanced {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid rgba(255,255,255,0.2);
+}
+
+.action-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.action-row:last-child {
+  margin-bottom: 0;
+}
+
+.tool-btn.enhanced {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  border: 2px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+  gap: 0.25rem;
+}
+
+.tool-btn.enhanced .icon {
+  font-size: 1.25rem;
+}
+
+.tool-btn.enhanced:hover:not(:disabled) {
+  background: rgba(255,255,255,0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.tool-btn.enhanced:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tool-btn.danger.enhanced {
+  background: rgba(239, 68, 68, 0.8);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.tool-btn.danger.enhanced:hover {
+  background: rgba(239, 68, 68, 1);
 }
 
 .brush-controls {
@@ -1874,123 +2526,356 @@ canvas {
   border-top: 1px solid #e2e8f0;
 }
 
+/* Properties Panel - Modern Design */
 .properties-panel {
-  width: 250px;
-  padding: 1rem;
-  overflow-y: auto;
+  position: relative;
+  align-self: stretch;
+  background: white;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  max-width: 300px;
+  transition: all 0.3s ease;
+  animation: slideInRight 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.properties-panel h4 {
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.5rem;
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-.properties-panel label {
+.properties-panel:hover {
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+}
+
+.properties-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.properties-panel::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.properties-panel::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.properties-panel::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.property-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.property-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.property-label {
   display: block;
-  margin-bottom: 0.25rem;
   font-size: 0.875rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 0.5rem;
 }
 
-.properties-panel input,
-.properties-panel select {
+.property-input,
+.property-slider {
   width: 100%;
-  padding: 0.5rem;
-  border: none;
+  margin-bottom: 0.75rem;
+}
+
+.property-input {
+  padding: 0.625rem;
+  border: 2px solid #e2e8f0;
   border-radius: 8px;
-  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  background: white;
+}
+
+.property-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.property-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #e2e8f0;
+  outline: none;
+  margin-bottom: 0.5rem;
+}
+
+.property-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s;
+}
+
+.property-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.slider-value {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #667eea;
+  background: #f0f0ff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  margin-top: 0.25rem;
+}
+
+.color-picker {
+  width: 100%;
+  height: 42px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  background: white;
+  transition: all 0.2s;
+}
+
+.color-picker:hover {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.position-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.position-input label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #718096;
+  margin-bottom: 0.25rem;
 }
 
 .layer-controls {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-top: 1rem;
 }
 
-.layer-controls button {
-  padding: 0.5rem;
+.layer-btn {
+  padding: 0.625rem 1rem;
   border: none;
   border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
-  min-height: 40px;
+  transition: all 0.2s;
+  background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+  color: #4a5568;
 }
 
-.layer-controls button.danger {
-  background: #ef4444;
+.layer-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.layer-btn.danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
 }
 
+.layer-btn.danger:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Modal Styles - Modern Overlay */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal {
   background: white;
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  max-width: 80vw;
-  max-height: 80vh;
+  border-radius: 20px;
+  padding: 2rem;
+  max-width: 90vw;
+  max-height: 85vh;
   overflow-y: auto;
-  width: 600px;
+  width: 700px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+.modal-large {
+  width: 900px;
+  max-width: 95vw;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.modal-header h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0;
+}
+
+.modal-content {
+  margin-top: 1rem;
 }
 
 .clipart-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 1rem;
   margin: 1rem 0;
 }
 
 .clipart-item {
   cursor: pointer;
-  border-radius: 0.375rem;
-  transition: all 0.2s;
-  padding: 0.5rem;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #f8fafc;
+  border: 2px solid transparent;
 }
 
 .clipart-item:hover {
-  transform: scale(1.05);
+  transform: translateY(-4px) scale(1.05);
+  background: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border-color: #667eea;
 }
 
 .clipart-item img {
   width: 100%;
   height: 100px;
   object-fit: contain;
+  transition: all 0.3s;
 }
 
-.shape-grid, .effects-grid {
+.clipart-item:hover img {
+  transform: scale(1.1);
+}
+
+.shape-grid,
+.effects-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 1rem;
   margin: 1rem 0;
 }
 
-.shape-item, .effect-item {
+.shape-item,
+.effect-item {
   cursor: pointer;
-  border-radius: 0.375rem;
-  transition: all 0.2s;
-  padding: 0.5rem;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 80px;
+  min-height: 100px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f0f0f0 100%);
+  border: 2px solid transparent;
 }
 
-.shape-item:hover, .effect-item:hover {
-  transform: scale(1.05);
+.shape-item:hover,
+.effect-item:hover {
+  transform: translateY(-4px) scale(1.05);
+  background: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border-color: #667eea;
+}
+
+.shape-icon,
+.effect-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s;
+}
+
+.shape-item:hover .shape-icon,
+.effect-item:hover .effect-icon {
+  transform: scale(1.2) rotate(10deg);
+}
+
+.shape-name,
+.effect-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4a5568;
+  text-align: center;
 }
 
 .active-tool {
@@ -2037,5 +2922,157 @@ canvas {
 
 .text-neumorphic-text {
   color: #6d7587;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .design-area {
+    grid-template-columns: 2fr 260px;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .properties-panel {
+    max-width: 260px;
+    padding: 1rem;
+  }
+  
+  .brush-panel {
+    right: 260px;
+    width: 260px;
+  }
+  
+  .modal {
+    max-width: 95vw;
+    width: 800px;
+  }
+}
+
+@media (max-width: 992px) {
+  .design-area {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+    padding: 1rem;
+    height: auto;
+    min-height: 70vh;
+  }
+  
+  .canvas-container {
+    order: 1;
+  }
+  
+  .properties-panel {
+    position: static;
+    max-width: 100%;
+    width: 100%;
+    grid-column: 1;
+    align-self: auto;
+    order: 2;
+    margin-top: 1rem;
+  }
+  
+  .brush-panel {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    margin-bottom: 1rem;
+  }
+  
+  .toolbar-content {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .tool-group {
+    margin-bottom: 0.5rem;
+  }
+  
+  .modal {
+    width: 90vw;
+    max-width: 90vw;
+  }
+}
+
+@media (max-width: 768px) {
+  .design-area {
+    grid-template-columns: 1fr;
+    padding: 0.75rem;
+    gap: 1rem;
+  }
+  
+  .toolbar-header {
+    padding: 0.5rem;
+  }
+  
+  .tool-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .tool-btn .tool-icon {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .canvas-wrapper {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+  
+  .modal {
+    max-width: 95vw;
+    padding: 1.5rem;
+  }
+  
+  .clipart-grid,
+  .shape-grid,
+  .effects-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .design-area {
+    padding: 0.5rem;
+    gap: 0.75rem;
+  }
+  
+  .tool-group {
+    gap: 0.25rem;
+  }
+  
+  .tool-btn {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .actions-group {
+    padding-left: 0.5rem;
+    border-left: none;
+    margin-top: 0.5rem;
+  }
+  
+  .canvas-wrapper {
+    border-radius: 12px;
+    padding: 0.75rem;
+  }
+  
+  .modal {
+    width: 95vw;
+    padding: 1rem;
+  }
+  
+  .modal-large {
+    width: 95vw;
+  }
+  
+  .property-input {
+    font-size: 0.75rem;
+    padding: 0.5rem;
+  }
 }
 </style>

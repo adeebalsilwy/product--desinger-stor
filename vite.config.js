@@ -23,6 +23,17 @@ export default defineConfig({
             '@': resolve(__dirname, './resources/js'),
         },
     },
+    server: {
+        host: '127.0.0.1',
+        port: 5173,
+        hmr: {
+            host: '127.0.0.1',
+            port: 5173,
+        },
+        watch: {
+            usePolling: true,
+        },
+    },
     build: {
         rollupOptions: {
             external: [],
