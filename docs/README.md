@@ -1,465 +1,414 @@
-# 🎨 Ahlam's Girls- مشروع إعادة الهوية التجارية
+هذا إصدار **README** مُعاد صياغته ليكون **تعليمات تشغيل المشروع بالكامل** بدل الملخص الحالي، وبصياغة مناسبة لمشروع **Laravel + Node.js + Vue.js**، مع الإشارة إلى أن المطور هو **أديب الصلوي**.
 
-## 📁 Project Structure
-
-**Important**: This project has been reorganized for better maintainability!
-
-### New Directory Structure:
-- 📂 **docs/** - All documentation files (guides, reports, summaries)
-- 📂 **scripts/** - Utility and maintenance scripts
-- 📂 **assets/** - Media files, demonstrations, screenshots
-- 📂 **tools/** - Development utilities (PlantUML, etc.)
-- 📂 **backups/** - Project backups
-- 📂 **storage/app/public/brands/** - Brand assets
-
-> For complete structure details, see [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md)
+يمكنك نسخه مباشرةً ووضعه مكان ملف `README.md` الحالي:
 
 ---
 
-## 📋 ملخص تنفيذي
+# Ahlam's Girls - تشغيل المشروع بالكامل
 
-تم بنجاح تحليل وتطوير نظام هوية تجارية متكامل لمشروع **Ahlam's Girls** - منصة تجارة إلكترونية متخصصة في أزياء النساء الراقية.
+مشروع **Ahlam's Girls** مبني باستخدام **Laravel 11 + Vue 3 + Inertia.js + Vite + Tailwind CSS**، ويعتمد على **MySQL** كقاعدة بيانات. ملفات المشروع تُظهر أن الواجهة الأمامية تستخدم Vue 3 وVite، وأن التشغيل المحلي يمكن أن يتم عبر `npm run dev` أو عبر أمر `composer dev` الذي يشغّل السيرفر والـ queue والـ logs والـ Vite معًا. ([GitHub][1])
 
----
+## معلومات المشروع
 
-## ✅ الإنجازات الرئيسية
-
-### 1. 🔍 التحليل الشامل
-
-#### تحليل المشروع الأصلي:
-- ✅ تحليل جميع مكونات Laravel + Vue.js
-- ✅ فحص هيكل قاعدة البيانات
-- ✅ مراجعة نظام الألوان الحالي
-- ✅ تحليل مكونات واجهة المستخدم
-- ✅ دراسة رحلة المستخدم الكاملة
-
-#### المكونات التي تم تحليلها:
-- 🏠 الصفحة الرئيسية (Homepage)
-- 🛍️ صفحات المنتجات (Product Pages)
-- 🎨 أداة التصميم (Designer Tool)
-- 🛒 عربة التسوق (Shopping Cart)
-- 👤 لوحة تحكم العميل (Customer Dashboard)
-- 👑 لوحة الإدارة (Admin Dashboard)
-- 🔐 صفحات المصادقة (Auth Pages)
-- 📱 القوائم المتجاوبة (Mobile Navigation)
+* **اسم المشروع:** Ahlam's Girls
+* **التقنيات:** Laravel 11, PHP 8.2+, Vue 3, Inertia.js, Vite, Tailwind CSS, MySQL. ([GitHub][1])
+* **المطور:** **أديب الصلوي**
+* **المستودع:** مشروع Laravel/Vue يحتوي على ملفات `artisan`, `composer.json`, `package.json`, `vite.config.js`, و`tailwind.config.js`. ([GitHub][2])
 
 ---
 
-### 2. 🎨 نظام الهوية البصرية
+## المتطلبات
 
-#### لوحة الألوان الجديدة:
+قبل تشغيل المشروع، تأكد من توفر ما يلي على جهازك:
 
-| اللون | Hex Code | الاستخدام | النسبة |
-|-------|----------|-----------|--------|
-| **الأزرق الداكن** | #1a1a2e | العناوين، النصوص الأساسية | 35% |
-| **الوردي** | #e94560 | أزرار الدعوة، التلميحات | 25% |
-| **الذهبي** | #d4af37 | العناصر الفاخرة، المميزة | 15% |
-| **الأزرق الغني** | #16213e | الخلفيات الثانوية | 10% |
-| **الأبيض** | #ffffff | النصوص، المساحات النظيفة | 10% |
-| **اللافندر** | #b19cd9 | العناصر الإبداعية | 3% |
-| **الوردي الناعم** | #f8b4c8 | اللمسات الأنثوية | 2% |
+* **PHP 8.2 أو أحدث**. ملف `composer.json` يطلب `php: ^8.2`. ([GitHub][3])
+* **Composer**
+* **Node.js + npm**
+* **MySQL**
+* يفضّل تفعيل إضافات PHP المعتادة لمشاريع Laravel مثل:
 
-#### علم نفس الألوان:
-- **الأزرق الداكن**: الأناقة، التطور، الثقة
-- **الوردي**: الأنوثة، الطاقة، العاطفة
-- **الذهبي**: الفخامة، الجودة، الهيبة
-- **اللافندر**: الإبداع، التفرد، الخيال
-
----
-
-### 3. 📁 الملفات المنشأة
-
-#### وثائق شاملة:
-
-1. **AHLAMS_BRAND_GUIDE.md** (404 سطر)
-   - دليل الهوية التجارية الكامل
-   - فلسفة التصميم
-   - إرشادات الاستخدام
-   - أمثلة تطبيقية
-
-2. **BRAND_COMPONENT_ANALYSIS.md** (480 سطر)
-   - تحليل مفصل لكل مكون
-   - تخصيص الألوان لكل عنصر
-   - جداول تفصيلية للألوان
-   - أولويات التطبيق
-
-3. **IMPLEMENTATION_GUIDE.md** (549 سطر)
-   - دليل التطبيق خطوة بخطوة
-   - أمثلة على الكود
-   - قوائم التحقق
-   - استكشاف الأخطاء
-
-4. **AHLAMS_SUMMARY_AR.md** (270 سطر)
-   - ملخص بالعربية
-   - إرشادات سريعة
-   - جدول الألوان
-   - حالة التطبيق
-
-5. **AhlamsHeroSection.vue** (221 سطر)
-   - مكون بطل متطور
-   - تصميم أنيق بالمرأة والزهور
-   - تأثيرات حركية
-   - متجاوب بالكامل
+  * `pdo_mysql`
+  * `mbstring`
+  * `openssl`
+  * `tokenizer`
+  * `xml`
+  * `ctype`
+  * `json`
+  * `fileinfo`
 
 ---
 
-### 4. 🗄️ تحديثات قاعدة البيانات
+## استنساخ المشروع
 
-#### جدول settings:
+```bash
+git clone https://github.com/adeebalsilwy/product--desinger-stor.git
+cd product--desinger-stor
+```
+
+---
+
+## تثبيت الحزم
+
+### 1) تثبيت حزم PHP
+
+```bash
+composer install
+```
+
+يعتمد المشروع على Laravel 11 وحزم مثل Inertia Laravel وLaravel Breeze وSanctum وCashier وZiggy وغيرها. ([GitHub][3])
+
+### 2) تثبيت حزم Node.js
+
+```bash
+npm install
+```
+
+الواجهة الأمامية تعتمد على Vue 3 وVite وTailwind CSS وInertia.js، بالإضافة إلى مكتبات مثل PrimeVue وApexCharts وKonva وFabric وThree.js. ([GitHub][1])
+
+---
+
+## إعداد ملف البيئة
+
+انسخ ملف البيئة:
+
+```bash
+cp .env.example .env
+```
+
+في Windows PowerShell:
+
+```powershell
+copy .env.example .env
+```
+
+ملف `.env.example` يوضح أن الإعداد الافتراضي يستخدم:
+
+* `APP_URL=http://localhost`
+* `DB_CONNECTION=mysql`
+* `DB_HOST=127.0.0.1`
+* `DB_PORT=3306`
+* `DB_DATABASE=d_shirts`
+* `DB_USERNAME=root`
+* `DB_PASSWORD=`
+  كما أن `SESSION_DRIVER=database` و`QUEUE_CONNECTION=database` و`CACHE_STORE=database`. ([GitHub][4])
+
+---
+
+## توليد مفتاح التطبيق
+
+```bash
+php artisan key:generate
+```
+
+يوجد في `composer.json` ما يشير إلى أن Laravel يستخدم هذا الأمر أثناء إعداد المشروع الجديد أيضًا. ([GitHub][3])
+
+---
+
+## إعداد قاعدة البيانات
+
+أنشئ قاعدة بيانات جديدة في MySQL باسم:
 
 ```sql
--- حقول جديدة مضافة
-brand_primary_color    VARCHAR    '#1a1a2e'
-brand_secondary_color  VARCHAR    '#16213e'
-brand_accent_color     VARCHAR    '#e94560'
-brand_bg_color         VARCHAR    '#0f3460'
-brand_text_color       VARCHAR    '#ffffff'
-brand_logo_woman       VARCHAR    NULL
-brand_tagline          VARCHAR    'Elegance, Sewn to Perfection'
-brand_script_font      VARCHAR    'brand-script'
-brand_regular_font     VARCHAR    'brand-elegant'
+CREATE DATABASE d_shirts;
 ```
 
-#### بيانات الافتراضية:
-- اسم الموقع: "Ahlam's Girls"
-- العملة: SAR (ريال سعودي)
-- الضريبة: 15%
-- اللغة: الإنجليزية (مع دعم العربية)
+هذا الاسم هو الافتراضي الموجود داخل `.env.example`. ويمكنك تغييره إذا رغبت، بشرط تعديل القيم داخل ملف `.env`. ([GitHub][4])
 
----
+ثم عدّل بيانات الاتصال داخل `.env` حسب بيئتك:
 
-### 5. ⚙️ تكوين Tailwind CSS
-
-#### إضافة ألوان مخصصة:
-
-```javascript
-// tailwind.config.js
-colors: {
-    brand: {
-        primary: '#1a1a2e',
-        secondary: '#16213e',
-        accent: '#e94560',
-        bg: '#0f3460',
-        text: '#ffffff',
-        gold: '#d4af37',
-        rose: '#f8b4c8',
-        lavender: '#b19cd9',
-    }
-}
-```
-
-#### فئات CSS مساعدة:
-
-```css
-/* فئات الخلفية */
-.bg-brand-primary
-.bg-brand-accent
-.bg-brand-gold
-
-/* فئات النصوص */
-.text-brand-primary
-.text-brand-gold
-.text-brand-rose
-
-/* فئات الحدود */
-.border-brand-accent
-.border-brand-gold
-
-/* التدرجات */
-.gradient-brand
-.gradient-luxury
-.gradient-elegant
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=d_shirts
+DB_USERNAME=root
+DB_PASSWORD=
 ```
 
 ---
 
-### 6. 🎨 نظام الخطوط
+## تنفيذ الجداول والبيانات الأولية
 
-#### خطوط مخصصة:
+بما أن المشروع يستخدم الجداول الخاصة بالجلسات والـ cache والـ queue على قاعدة البيانات، فمن المهم تنفيذ الترحيلات كاملة: ([GitHub][4])
 
-1. **brand-script** (للشعار والعناوين الخاصة)
-   - Great Vibes/ Dancing Script
-   - استخدام: شعار "Ahlam's"
-   - الخصائص: متدفق، يدوي، فاخر
-
-2. **brand-elegant** ( للعناوين والنصوص الرسمية)
-   - Playfair Display / Cormorant Garamond
-   - استخدام: "GIRLS"، العناوين الفرعية
-   - الخصائص: كلاسيكي، متطور، مقروء
-
-3. **main** ( للنصوص الأساسية)
-   - Rubik
-   - استخدام: نصوص الجسم، واجهة المستخدم
-   - الخصائص: حديث، نظيف، متعدد الاستخدامات
-
----
-
-### 7. 🎯 حالة التطبيق
-
-#### ✅ مكتمل (100%)
-
-**التكوين الأساسي:**
-- [x] نظام الألوان محدّد
-- [x] متغيرات CSS منشأة
-- [x] Tailwind مكوّن
-- [x] قاعدة البيانات محدّثة
-- [x] Seeder محدّث
-- [x] التوثيق كامل
-
-**الملفات المنشأة:**
-- [x] دليل العلامة التجارية
-- [x] تحليل المكونات
-- [x] دليل التطبيق
-- [x] الملخص العربي
-- [x] مكون Hero متطور
-
-**🔄 قيد التنفيذ:**
-- [ ] تحديث الصفحة الرئيسية
-- [ ] تحديث شريط التنقل
-- [ ] تحديث بطاقات المنتجات
-- [ ] تحديث لوحة الإدارة
-- [ ] التجاوب مع الجوال
-
-**📅 مخطط له:**
-- [ ] قوالب البريد الإلكتروني
-- [ ] رسومات وسائل التواصل
-- [ ] تصميم العبوات
-- [ ] مواد التسويق
-- [ ] مكتبة أصول العلامة
-
----
-
-## 🎨 فلسفة التصميم
-
-### المبادئ الأساسية:
-
-1. **الأناقة أولاً ✨**
-   - كل خيار تصميم يعكس التطور
-   - استخدام مساحات بيضاء سخية
-   - الحفاظ على تخطيطات نظيفة غير مزدحمة
-
-2. **اللمسة الأنثوية 🌸**
-   - دمج الزخارف الزهرية بدقة
-   - استخدام الخطوط المنحنية بدلاً من الزوايا الحادة
-   - انتقالات ورسوم متحركة ناعمة
-
-3. **الشعور الفاخر 🏆**
-   - لمسات ذهبية للعناصر المميزة
-   - صور عالية الجودة
-   - تدرجات وظلال ناعمة
-
-4. **الجودة الاحترافية 💼**
-   - تباعد متسق (نظام شبكة 8px)
-   - نسب تباين مناسبة لإمكانية الوصول
-   - متجاوب عبر جميع الأجهزة
-
-5. **اتساق العلامة التجارية 🎯**
-   - استخدام ألوان العلامة باستمرار
-   - الحفاظ على تسلسل الخطوط
-   - تطبيق نمط Neumorphic بشكل موحد
-
----
-
-## 📊 توزيع المكونات
-
-### النسب المئوية للتطبيق:
-
+```bash
+php artisan migrate
 ```
-المكونات الأساسية (Core):     ████████████████████  35%
-المكونات الداعمة (Support):   ████████████          25%
-العناصر الفاخرة (Luxury):     ████████              15%
-الخلفيات (Backgrounds):       ██████                10%
-النصوص (Text):                ██████                10%
-الإبداعات (Creative):         ██                     3%
-اللمسات الناعمة (Gentle):     █                      2%
+
+وإذا كان المشروع يحتوي على seeders وتريد تعبئة البيانات الأولية:
+
+```bash
+php artisan db:seed
+```
+
+أو:
+
+```bash
+php artisan migrate --seed
 ```
 
 ---
 
-## 🎯 خريطة الطريق
+## ربط مجلد التخزين
 
-### المرحلة 1: التأسيس ✅ (مكتمل)
-- بحث العلامة التجارية
-- تطوير نظام الألوان
-- إنشاء الوثائق
-- تكوين البيئة
+إذا كان المشروع يعتمد على ملفات مرفوعة وصور داخل `storage/app/public`، فأنشئ الرابط الرمزي التالي:
 
-### المرحلة 2: التطبيق 🔄 (جاري)
-- تحديث واجهة المستخدم
-- تطبيق الألوان
-- تحديث الخطوط
-- اختبار التجاوب
+```bash
+php artisan storage:link
+```
 
-### المرحلة 3: التحسين 📅 (قادم)
-- تحسين الأداء
-- تحسين محركات البحث
-- إمكانية الوصول
-- الاختبار الشامل
-
-### المرحلة 4: الإطلاق 🚀 (مستقبل)
-- النشر
-- المراقبة
-- التحسين المستمر
-- التوسع
+وجود المسار `storage/app/public/brands/` ضمن بنية المشروع يدل على أن الأصول الخاصة بالعلامة التجارية مخزنة هناك. ([GitHub][2])
 
 ---
 
-## 📈 المقاييس المستهدفة
+## تشغيل المشروع
 
-### أهداف الأداء:
+### الطريقة 1: تشغيل كل شيء بأمر واحد
 
-- ⚡ **سرعة التحميل**: < 3 ثواني
-- 📱 **التجاوب**: 100% على جميع الأجهزة
-- ♿ **إمكانية الوصول**: WCAG AA compliant
-- 🎨 **اتساق العلامة**: 95%+ تطبيق
-- 📊 **رضا المستخدم**: 4.5/5 نجوم
+أفضل طريقة أثناء التطوير:
 
-### أهداف التحويل:
+```bash
+composer run dev
+```
 
-- 🛒 **إضافة للعربة**: +25% تحسين
-- 💳 **إتمام الشراء**: +20% تحسين
-- 🔄 **العودة**: +30% تحسين
-- ⭐ **التقييمات**: +40% تحسين
+أمر `dev` الموجود داخل `composer.json` يشغّل معًا:
 
----
+* `php artisan serve`
+* `php artisan queue:listen --tries=1`
+* `php artisan pail --timeout=0`
+* `npm run dev`
+  وذلك باستخدام `concurrently`. ([GitHub][3])
 
-## 🛠️ التقنيات المستخدمة
+### الطريقة 2: تشغيل Laravel وVite يدويًا
 
-### Frontend:
-- ✅ Vue.js 3 (Composition API)
-- ✅ Tailwind CSS
-- ✅ Inertia.js
-- ✅ CSS Custom Properties
+افتح نافذتين في الطرفية.
 
-### Backend:
-- ✅ Laravel 11
-- ✅ MySQL
-- ✅ Eloquent ORM
+#### النافذة الأولى:
 
-### Design:
-- ✅ SVG Graphics
-- ✅ CSS Animations
-- ✅ Responsive Grid System
-- ✅ Neumorphic Design
+```bash
+php artisan serve
+```
 
----
+#### النافذة الثانية:
 
-## 📦 التسليمات
+```bash
+npm run dev
+```
 
-### ملفات التوثيق:
-1. ✅ AHLAMS_BRAND_GUIDE.md - دليل شامل (404 سطر)
-2. ✅ BRAND_COMPONENT_ANALYSIS.md - تحليل مفصل (480 سطر)
-3. ✅ IMPLEMENTATION_GUIDE.md - دليل التطبيق (549 سطر)
-4. ✅ AHLAMS_SUMMARY_AR.md - ملخص عربي (270 سطر)
-5. ✅ README.md - هذا الملف
+ملف `package.json` يعرّف:
 
-### ملفات الكود:
-1. ✅ Database Migration - تحديث schema
-2. ✅ Setting Model - حقول جديدة
-3. ✅ SettingsSeeder - بيانات افتراضية
-4. ✅ tailwind.config.js - ألوان مخصصة
-5. ✅ app.css - متغيرات وفئات CSS
-6. ✅ AhlamsHeroSection.vue - مكون متطور
+* `npm run dev` لتشغيل Vite
+* `npm run build` لبناء ملفات الإنتاج. ([GitHub][1])
 
----
+### الطريقة 3: استخدام سكربتات التشغيل الجاهزة
 
-## 🎁 المكافآت الإضافية
+#### Linux / macOS:
 
-### تأثيرات خاصة:
-- ✨ تأثير الوميض (Sparkle Animation)
-- 🌸 تأثير الطفو (Float Animation)
-- 💫 تأثير التدرج (Gradient Flow)
-- 🎭 تأثيرات Neumorphic
+```bash
+chmod +x start-dev-servers.sh
+./start-dev-servers.sh
+```
 
-### مكونات إضافية:
-- 🏷️ شارات الحالة (Status Badges)
-- 🔘 أزرار مخصصة (Custom Buttons)
-- 📊 بطاقات الإحصائيات (Stat Cards)
-- 🎨 منتقي الألوان (Color Picker)
+هذا السكربت يشغّل:
+
+* Laravel على `http://127.0.0.1:8000`
+* Vite على `http://127.0.0.1:5173`
+  ويكتب السجلات في `laravel.log` و`vite.log`. ([GitHub][5])
+
+#### Windows PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start-dev-servers.ps1
+```
+
+السكريبت الخاص بـ PowerShell يشغّل Laravel وVite ويكتب السجلات أيضًا في ملفات log. ([GitHub][6])
 
 ---
 
-## 🔍 ضمان الجودة
+## الوصول إلى المشروع
 
-### معايير القبول:
+بعد التشغيل المحلي، غالبًا ستستخدم:
 
-#### البصريات:
-- ✅ تطابق الألوان 100% مع الرموز السداسية
-- ✅ تسلسل خطي متسق
-- ✅ صور عالية الجودة ومحسّنة
-- ✅ رسوم متحركة ناعمة (60fps)
+* **Laravel App:** `http://127.0.0.1:8000`
+* **Vite Dev Server:** `http://127.0.0.1:5173` عند التطوير المحلي عبر Vite. ([GitHub][5])
 
-#### الأداء:
-- ✅ درجة Lighthouse> 90
-- ✅ وقت التحميل < 3s
-- ✅ First Contentful Paint < 1.5s
-- ✅ Time to Interactive < 3.5s
+إذا كنت تستخدم `php artisan serve` يدويًا ولم تغيّر المنفذ، فسيعمل التطبيق أيضًا على:
 
-#### إمكانية الوصول:
-- ✅ تباين الألوان يلبي WCAG AA
-- ✅ نص بديل لجميع الصور
-- ✅ حالات التركيز مرئية
-- ✅ تنقل بلوحة المفاتيح
-
-#### التجاوب:
-- ✅ اختبار على الجوال (320px+)
-- ✅ اختبار على التابلت (768px+)
-- ✅ اختبار على سطح المكتب (1024px+)
-- ✅ أهداف اللمس 44px كحد أدنى
+* `http://127.0.0.1:8000`
 
 ---
 
-## 📞 الدعم والموارد
+## أوامر مفيدة أثناء التطوير
 
-### الوثائق:
-- 📖 دليل العلامة التجارية الشامل
-- 📊 تحليل المكونات التفصيلي
-- 🔧 دليل التطبيق العملي
-- 🌐 الملخص العربي
+### تنظيف الكاش
 
-### الأدوات الموصى بها:
-- 🎨 Color Contrast Checker
-- 🎯 Brand Color Picker
-- 📐 Font Pairing Tool
-- 📱 Responsive Testing Tool
+```bash
+php artisan optimize:clear
+```
 
-### قنوات الدعم:
-- 📧 Email Support
-- 💬 Live Chat
-- 📞 Phone Support (Business Hours)
-- 🐛 Issue Tracker
+### إعادة بناء الواجهة للإنتاج
 
----
+```bash
+npm run build
+```
 
-## 🎉 الخلاصة
+### تشغيل الـ queue worker يدويًا
 
-تم بنجاح إنشاء نظام هوية تجارية متكامل لـ **Ahlam's Girls** يعكس:
+إذا لم تستخدم `composer run dev`:
 
-✨ **الأناقة والفخامة** - من خلال الألوان الزرقاء الداكنة والذهبية  
-🌸 **الأنوثة والنعومة** - من خلال درجات الوردي واللافندر  
-💼 **الحداثة والاحترافية** - من خلال التصميم المتجاوب وسهل الاستخدام  
-🎯 **الهوية المميزة** - تجمع بين الأصالة والمعاصرة  
+```bash
+php artisan queue:listen --tries=1
+```
 
-### النتيجة النهائية:
-- ✅ نظام ألوان متكامل واحترافي
-- ✅ وثائق شاملة وسهلة الفهم
-- ✅ مكونات جاهزة للتطبيق
-- ✅ تجربة مستخدم استثنائية
-- ✅ هوية بصرية مميزة ومتسقة
+### متابعة السجلات
 
-**المشروع جاهز للتطبيق ويعمل على جميع المنصات!** 🚀
+إذا كان لديك Laravel Pail:
+
+```bash
+php artisan pail --timeout=0
+```
+
+أمر `composer run dev` يشغّل queue وpail تلقائيًا. ([GitHub][3])
 
 ---
 
-**عدد الملفات المنشأة:** 9 ملفات  
-**عدد الأسطر المكتوبة:** 2,500+ سطر  
-**وقت التطوير:** جلسة واحدة  
-**الحالة:** مكتمل 100% ✅  
+## مشاكل شائعة وحلولها
+
+### 1) خطأ في الاتصال بقاعدة البيانات
+
+تأكد من:
+
+* تشغيل MySQL
+* صحة اسم القاعدة
+* صحة اسم المستخدم وكلمة المرور في `.env`
+  القيم الافتراضية في المشروع تشير إلى قاعدة باسم `d_shirts` على `127.0.0.1:3306`. ([GitHub][4])
+
+### 2) الأصول أو التصميم لا يظهران
+
+تأكد من تشغيل:
+
+```bash
+npm install
+npm run dev
+```
+
+لأن المشروع يستخدم Vite وVue 3 وTailwind. ([GitHub][1])
+
+### 3) خطأ APP_KEY
+
+نفّذ:
+
+```bash
+php artisan key:generate
+```
+
+### 4) الصور أو الملفات المرفوعة لا تعمل
+
+نفّذ:
+
+```bash
+php artisan storage:link
+```
+
+### 5) مشاكل في الجلسات أو الكيو أو الكاش
+
+بما أن المشروع مضبوط على استخدام قاعدة البيانات لهذه الخدمات، تأكد من تنفيذ جميع الـ migrations. إعدادات `.env.example` توضح:
+
+* `SESSION_DRIVER=database`
+* `QUEUE_CONNECTION=database`
+* `CACHE_STORE=database` ([GitHub][4])
 
 ---
 
-**الإصدار:** 1.0  
-**تاريخ الإنشاء:** مارس 2026  
-**الحالة:** نشط ✨  
-**المطور:** AI Assistant  
-**العميل:** Ahlam's Girls Team
+## بناء المشروع للإنتاج
+
+```bash
+composer install --no-dev --optimize-autoloader
+npm install
+npm run build
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+```
+
+ثم تأكد من ضبط:
+
+* `APP_ENV=production`
+* `APP_DEBUG=false`
+
+---
+
+## تقنيات المشروع
+
+### Backend
+
+* Laravel Framework `^11.9`
+* Inertia Laravel
+* Laravel Breeze
+* Laravel Sanctum
+* Laravel Cashier
+* Intervention Image
+* Ziggy ([GitHub][3])
+
+### Frontend
+
+* Vue `^3.4.0`
+* Vite `^5.0`
+* Tailwind CSS `^3.2.1`
+* Inertia Vue 3
+* PrimeVue
+* ApexCharts
+* Fabric / Konva / Three.js ([GitHub][1])
+
+---
+
+## ملاحظات مهمة
+
+* المشروع يحتوي على مجلدات منظمة مثل:
+
+  * `docs/`
+  * `scripts/`
+  * `assets/`
+  * `tools/`
+  * `storage/`
+  * `resources/`
+  * `routes/`
+  * `database/`
+    وهذا ظاهر من بنية المستودع الحالية. ([GitHub][2])
+* اسم قاعدة البيانات الافتراضي ما يزال يشير إلى `d_shirts` داخل ملف البيئة، لذلك يُفضّل مراجعته إذا كنت تريد اسمًا يتوافق مع هوية **Ahlam's Girls**. ([GitHub][4])
+
+---
+
+## المطور
+
+**أديب الصلوي**
+Repository: `adeebalsilwy/product--desinger-stor` ([GitHub][2])
+
+---
+
+## أمر التشغيل السريع
+
+بعد الاستنساخ، هذه أقل مجموعة أوامر لتشغيل المشروع:
+
+```bash
+git clone https://github.com/adeebalsilwy/product--desinger-stor.git
+cd product--desinger-stor
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan storage:link
+composer run dev
+```
+
+---
+
+إذا رغبت، أقدر أيضًا أعطيك **نسخة README نهائية منسقة بالكامل بستايل GitHub Markdown** ومختصرة وجاهزة للّصق مباشرة دون أي شرح إضافي.
+
+[1]: https://raw.githubusercontent.com/adeebalsilwy/product--desinger-stor/main/package.json "raw.githubusercontent.com"
+[2]: https://github.com/adeebalsilwy/product--desinger-stor/ "GitHub - adeebalsilwy/product--desinger-stor · GitHub"
+[3]: https://raw.githubusercontent.com/adeebalsilwy/product--desinger-stor/main/composer.json "raw.githubusercontent.com"
+[4]: https://raw.githubusercontent.com/adeebalsilwy/product--desinger-stor/main/.env.example "raw.githubusercontent.com"
+[5]: https://raw.githubusercontent.com/adeebalsilwy/product--desinger-stor/main/start-dev-servers.sh "raw.githubusercontent.com"
+[6]: https://raw.githubusercontent.com/adeebalsilwy/product--desinger-stor/main/start-dev-servers.ps1 "raw.githubusercontent.com"
