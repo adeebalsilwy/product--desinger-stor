@@ -993,6 +993,18 @@ export default {
       return this.history && this.history.length > 0 && this.historyIndex < this.history.length - 1;
     },
     
+    get canUndoBrush() {
+      return this.$refs.designer && typeof this.$refs.designer.canUndoBrush === 'function' 
+        ? this.$refs.designer.canUndoBrush() 
+        : false;
+    },
+    
+    get canRedoBrush() {
+      return this.$refs.designer && typeof this.$refs.designer.canRedoBrush === 'function' 
+        ? this.$refs.designer.canRedoBrush() 
+        : false;
+    },
+    
     // Tool Methods
     setActiveTool(tool) {
       console.log('Create.vue: Setting active tool to', tool);
@@ -1043,18 +1055,6 @@ export default {
       }
     },
     
-    canUndoBrush() {
-      return this.$refs.designer && typeof this.$refs.designer.canUndoBrush === 'function' 
-        ? this.$refs.designer.canUndoBrush() 
-        : false;
-    },
-    
-    canRedoBrush() {
-      return this.$refs.designer && typeof this.$refs.designer.canRedoBrush === 'function' 
-        ? this.$refs.designer.canRedoBrush() 
-        : false;
-    },
-    
     // Text formatting helpers
     isBold() {
       return this.$refs.designer && this.$refs.designer.selectedObject 
@@ -1084,18 +1084,6 @@ export default {
     canRedo() {
       return this.$refs.designer && typeof this.$refs.designer.canRedo === 'function' 
         ? this.$refs.designer.canRedo() 
-        : false;
-    },
-    
-    canUndoBrush() {
-      return this.$refs.designer && typeof this.$refs.designer.canUndoBrush === 'function' 
-        ? this.$refs.designer.canUndoBrush() 
-        : false;
-    },
-    
-    canRedoBrush() {
-      return this.$refs.designer && typeof this.$refs.designer.canRedoBrush === 'function' 
-        ? this.$refs.designer.canRedoBrush() 
         : false;
     },
     
