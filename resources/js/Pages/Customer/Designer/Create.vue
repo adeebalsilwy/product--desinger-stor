@@ -938,7 +938,7 @@ export default {
           activeTemplate: this.activeTemplate,
           drawing: this.$refs.drawingCanvas.toDataURL('image/png'),
           garment_color: this.garmentColor,
-          dress_size: this.selectedSize || 'M'  // Default size if none selected
+          dress_size: this.selectedSize || 'M'
         }
 
         const payload = {

@@ -42,16 +42,16 @@
               <i class="fas fa-save"></i>
               <span>{{ t('designer.save_design', 'تحديث التصميم') }}</span>
             </button>
-            <button class="hero-action preview-btn" @click="showMockup = !showMockup"
-              :title="t('designer.toggle_mockup_tooltip', 'تبديل عرض المجسم')">
-              <i class="fas fa-female"></i>
-              <span>{{ showMockup ? t('designer.hide_preview', 'إخفاء المجسم') : t('designer.show_preview', 'عرض التصميم على المجسم') }}</span>
+            <button class="hero-action preview-btn" @click="toggle3DViewer"
+              :title="t('designer.toggle_3d_viewer_tooltip', 'تبديل عرض المجسم الاحترافي')">
+              <i class="fas fa-cube"></i>
+              <span>{{ show3DViewer ? t('designer.hide_3d_viewer', 'إخفاء المجسم الاحترافي') : t('designer.show_3d_viewer', 'عرض المجسم الاحترافي') }}</span>
             </button>
           </div>
         </div>
 
         <div class="canvas-wrap">
-          <div class="design-stage neumorphic-inset">
+          <div v-if="!show3DViewer" class="design-stage neumorphic-inset">
             <div class="stage-background"
               :style="{ background: activeTemplate.background || defaultTemplate.background }"></div>
             <canvas ref="templateCanvas" class="dress-template" :width="stageWidth" :height="stageHeight"></canvas>
@@ -95,6 +95,25 @@
                 </button>
               </div>
             </div>
+          </div>
+          
+          <!-- Professional 3D Viewer -->
+          <div v-else class="viewer-3d-container">
+            <Product3DViewer 
+              ref="product3dviewer"
+              :product-name="design?.name || 'التصميم'"
+              :images="[mockupImage]"
+              :product-image="mockupImage"
+              :height="680"
+              :auto-rotate="true"
+              :show-grid="false"
+              :fullscreen="false"
+              :design-position="designPosition"
+              :design-scale="designScale"
+              :design-rotation="designRotation"
+              :design-opacity="designOpacity"
+              :design-brightness="designBrightness"
+            />
           </div>
         </div>
 
@@ -315,6 +334,7 @@
         </button>
       </div>
 
+      <!-- Legacy 2D Preview Panel -->
       <transition name="preview-slide">
         <div class="preview-panel" v-if="showMockup">
           <div class="preview-header">
@@ -355,6 +375,9 @@
         </div>
       </transition>
 
+      <!-- Professional 3D Editing Controls -->
+      
+
       <input ref="imageInput" class="hidden-file" type="file" accept="image/*" @change="onImageSelected" />
     </div>
   </Customer>
@@ -362,10 +385,11 @@
 
 <script>
 import Customer from '@/Layouts/Customer.vue'
+import Product3DViewer from '@/Components/Product3DViewer.vue'
 
 export default {
   name: 'EditDesign',
-  components: { Customer },
+  components: { Customer, Product3DViewer },
   props: {
     design: { type: Object, required: true },
     printAreas: { type: Array, default: () => [] }
@@ -421,6 +445,12 @@ export default {
       wardrobeOpen: false,
       wardrobeMinimized: false,
       mockupImage: '',
+      show3DViewer: false,
+      designPosition: { x: 0, y: 0.42, z: 0.18 },
+      designScale: { x: 0.82, y: 1.02 },
+      designRotation: { x: 4, y: 0, z: 0 },
+      designOpacity: 1,
+      designBrightness: 1,
       isDrawing: false,
       selectedElementId: null,
       dragState: null,
@@ -1008,6 +1038,7 @@ export default {
       this.pendingSave = true
 
       try {
+        // Build the final canvas with the current design
         const canvas = await this.buildExportCanvas()
         const dataUrl = canvas.toDataURL('image/png')
 
@@ -1017,15 +1048,23 @@ export default {
           activeTemplate: this.activeTemplate,
           drawing: this.$refs.drawingCanvas.toDataURL('image/png'),
           garment_color: this.garmentColor,
-          dress_size: this.selectedSize || 'M'  // Default size if none selected
+          dress_size: this.selectedSize || 'M',
+          // Include 3D projection settings if available
+          projection_settings: this.show3DViewer ? {
+            position: this.designPosition,
+            scale: this.designScale,
+            rotation: this.designRotation,
+            opacity: this.designOpacity,
+            brightness: this.designBrightness
+          } : null
         }
 
         const payload = {
-          id: this.design.id, // Use existing design ID
+          id: this.design.id,
           name: this.design.name || `تصميم ${new Date().toLocaleString('ar-SA')} - ${this.activeTemplate.name || 'مخصص'}`,
           design_data: designData,
           preview_url: dataUrl,
-          product_type_id: this.activeTemplate.product_type_id || null,  // Use template's product type if available
+          product_type_id: this.activeTemplate.product_type_id || null,
           product_id: this.design.product_id || null,
           template_id: this.activeTemplate.id || null,
           is_public: this.design.is_public || false,
@@ -1038,7 +1077,7 @@ export default {
         }
 
         const response = await fetch(`/api/designs/${this.design.id}`, {
-          method: 'PUT', // Use PUT for updating existing design
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
@@ -1078,6 +1117,64 @@ export default {
       }
       return sessionId
     },
+    toggle3DViewer() {
+      this.show3DViewer = !this.show3DViewer;
+      // When switching to 3D view, ensure the mockup image is updated
+      if (this.show3DViewer) {
+        this.$nextTick(() => {
+          this.updateMockupImage();
+        });
+      }
+    },
+    
+    adjustDesignPosition(axis, value) {
+      const increment = 0.02;
+      if (axis === 'x') {
+        this.designPosition.x += value * increment;
+      } else if (axis === 'y') {
+        this.designPosition.y += value * increment;
+      } else if (axis === 'z') {
+        this.designPosition.z += value * increment;
+      }
+      this.updateDesignProperties();
+    },
+    
+    adjustDesignScale(factor) {
+      this.designScale.x = Math.max(0.1, this.designScale.x + factor);
+      this.designScale.y = Math.max(0.1, this.designScale.y + factor);
+      this.updateDesignProperties();
+    },
+    
+    adjustDesignRotation(axis, degrees) {
+      const increment = degrees;
+      if (axis === 'x') {
+        this.designRotation.x += increment;
+      } else if (axis === 'y') {
+        this.designRotation.y += increment;
+      } else if (axis === 'z') {
+        this.designRotation.z += increment;
+      }
+      this.updateDesignProperties();
+    },
+    
+    resetDesignTransform() {
+      this.designPosition = { x: 0, y: 0.42, z: 0.18 };
+      this.designScale = { x: 0.82, y: 1.02 };
+      this.designRotation = { x: 4, y: 0, z: 0 };
+      this.designOpacity = 1;
+      this.designBrightness = 1;
+      this.updateDesignProperties();
+    },
+    
+    updateDesignProperties() {
+      // Trigger update to the 3D viewer if it's available
+      if (this.$refs.product3dviewer) {
+        // The 3D viewer will react to the prop changes automatically
+      }
+      // Update the mockup image to reflect the current design
+      this.updateMockupImage();
+    },
+    
     async updateMockupImage() {
       const canvas = await this.buildExportCanvas()
       this.mockupImage = canvas.toDataURL('image/png')
@@ -1350,6 +1447,14 @@ export default {
   justify-content: center;
   align-items: center;
   padding-top: 55px
+}
+
+.viewer-3d-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .design-stage {
@@ -1973,6 +2078,117 @@ export default {
   padding: 18px;
   display: flex;
   flex-direction: column
+}
+
+.sketchfab-controls {
+  position: fixed;
+  top: 24px;
+  right: 128px;
+  width: 470px;
+  height: calc(100vh - 48px);
+  background: rgba(224, 229, 236, .96);
+  border-radius: 24px;
+  box-shadow: -12px 0 30px rgba(0, 0, 0, .12);
+  z-index: 25;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.controls-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(156, 39, 176, 0.2);
+}
+
+.controls-header h4 {
+  margin: 0;
+  color: #4a148c;
+  font-size: 16px;
+}
+
+.controls-section {
+  margin-bottom: 20px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+}
+
+.controls-section h5 {
+  margin: 0 0 12px 0;
+  color: #4a148c;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.transform-controls,
+.rotation-controls {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.property-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.property-controls label {
+  font-size: 13px;
+  color: #4a148c;
+  font-weight: 600;
+}
+
+.property-controls input[type="range"] {
+  flex: 1;
+  margin: 0 10px;
+}
+
+.property-controls span {
+  font-size: 12px;
+  color: #5c6270;
+  min-width: 40px;
+  text-align: right;
+}
+
+.advanced-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hero-action:disabled,
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.control-btn {
+  border: none;
+  cursor: pointer;
+  transition: .25s ease;
+  font-weight: 700;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #fff;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 
 .preview-header {
