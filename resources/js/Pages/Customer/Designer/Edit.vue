@@ -933,92 +933,147 @@ export default {
         
         // Extract gradient information from CSS gradient string
         if (gradientString.includes('linear-gradient')) {
-          // Parse linear gradient: extract direction/orientation and color stops
-          const gradientMatch = gradientString.match(/linear-gradient\(([^)]+)\)/);
-          if (gradientMatch) {
-            const fullParams = gradientMatch[1];
+          // Simple parsing: remove 'linear-gradient(' and ')' and split by commas
+          const startIndex = gradientString.indexOf('(');
+          const endIndex = gradientString.lastIndexOf(')');
+          if (startIndex === -1 || endIndex === -1) return null;
+          
+          const params = gradientString.substring(startIndex + 1, endIndex);
+          
+          // Split by commas but be careful with parentheses inside rgb/hsl values
+          let current = '';
+          let parenCount = 0;
+          const parts = [];
+          for (let i = 0; i < params.length; i++) {
+            const char = params[i];
+            if (char === '(') parenCount++;
+            else if (char === ')') parenCount--;
+            else if (char === ',' && parenCount === 0) {
+              parts.push(current.trim());
+              current = '';
+              continue;
+            }
+            current += char;
+          }
+          if (current.trim()) parts.push(current.trim());
+          
+          // Check if first part is a direction (contains numbers with deg/rad or keywords like 'to')
+          let direction = null;
+          let colorStops = [];
+          
+          if (parts.length > 0) {
+            const firstPart = parts[0];
+            if (firstPart.match(/^\d+(deg|rad)$/) || firstPart.startsWith('to ') || 
+                firstPart === 'left' || firstPart === 'right' || firstPart === 'top' || firstPart === 'bottom') {
+              direction = firstPart;
+              // Process remaining parts as color stops
+              for (let i = 1; i < parts.length; i++) {
+                const part = parts[i].trim();
+                if (!part) continue;
+                
+                // Extract color from part (it might have a position after the color)
+                const colorMatch = part.match(/(#[0-9a-fA-F]{3,6}|rgba?\([^)]+\)|hsla?\([^)]+\)|\w+)(?:\s+(\d+%|\d+))?/);
+                if (colorMatch && this.isValidColor(colorMatch[1])) {
+                  colorStops.push({
+                    color: colorMatch[1],
+                    position: colorMatch[2] || null
+                  });
+                }
+              }
+            } else {
+              // No direction, treat all parts as color stops
+              for (let i = 0; i < parts.length; i++) {
+                const part = parts[i].trim();
+                if (!part) continue;
+                
+                // Extract color from part (it might have a position after the color)
+                const colorMatch = part.match(/(#[0-9a-fA-F]{3,6}|rgba?\([^)]+\)|hsla?\([^)]+\)|\w+)(?:\s+(\d+%|\d+))?/);
+                if (colorMatch && this.isValidColor(colorMatch[1])) {
+                  colorStops.push({
+                    color: colorMatch[1],
+                    position: colorMatch[2] || null
+                  });
+                }
+              }
+            }
+          }
+          
+          // Calculate gradient direction based on parsed direction
+          let startX = 0, startY = 0, endX = this.stageWidth, endY = this.stageHeight;
+          
+          if (direction) {
+            // Normalize direction string
+            const normalizedDirection = direction.toLowerCase().replace(/\s+/g, ' ');
             
-            // Split by commas, but be careful not to split within color definitions like rgba(255,255,255)
-            // First, temporarily replace commas inside parentheses
-            let processedParams = fullParams;
-            const parenMatches = fullParams.match(/\([^)]+\)/g) || [];
-            parenMatches.forEach((match, index) => {
-              processedParams = processedParams.replace(match, `__TEMP_PAREN_${index}__`);
-            });
-            
-            // Split by commas and clean up
-            const parts = processedParams.split(',').map(part => {
-              // Restore parentheses
-              let restoredPart = part.trim();
-              parenMatches.forEach((match, index) => {
-                restoredPart = restoredPart.replace(`__TEMP_PAREN_${index}__`, match);
-              });
-              return restoredPart;
-            });
-            
-            // Process color stops - filter out directional parts and keep only color stops
-            const colorStops = [];
-            parts.forEach(part => {
-              part = part.trim();
-              // Skip if this looks like a direction (starts with a number followed by deg/rad or keywords like "to")
-              if (/^\d+(?:\.\d+)?\s*(deg|rad)/i.test(part) || /^to\s/i.test(part) || /^(left|right|top|bottom|center)$/i.test(part.trim())) {
-                return;
+            if (normalizedDirection.includes('to bottom')) {
+              startX = 0; startY = 0; endX = 0; endY = this.stageHeight;
+            } else if (normalizedDirection.includes('to top')) {
+              startX = 0; startY = this.stageHeight; endX = 0; endY = 0;
+            } else if (normalizedDirection.includes('to right')) {
+              startX = 0; startY = 0; endX = this.stageWidth; endY = 0;
+            } else if (normalizedDirection.includes('to left')) {
+              startX = this.stageWidth; startY = 0; endX = 0; endY = 0;
+            } else if (normalizedDirection.includes('deg')) {
+              // Handle degree-based directions
+              const angleInRad = this.parseAngleToRadians(direction);
+              const halfWidth = this.stageWidth / 2;
+              const halfHeight = this.stageHeight / 2;
+              
+              // Calculate start and end points based on angle
+              startX = halfWidth - Math.cos(angleInRad) * halfWidth;
+              startY = halfHeight - Math.sin(angleInRad) * halfHeight;
+              endX = halfWidth + Math.cos(angleInRad) * halfWidth;
+              endY = halfHeight + Math.sin(angleInRad) * halfHeight;
+            } else if (!isNaN(parseFloat(direction))) {
+              // Handle numeric angle without 'deg'
+              const angleInRad = this.parseAngleToRadians(direction + 'deg');
+              const halfWidth = this.stageWidth / 2;
+              const halfHeight = this.stageHeight / 2;
+              
+              // Calculate start and end points based on angle
+              startX = halfWidth - Math.cos(angleInRad) * halfWidth;
+              startY = halfHeight - Math.sin(angleInRad) * halfHeight;
+              endX = halfWidth + Math.cos(angleInRad) * halfWidth;
+              endY = halfHeight + Math.sin(angleInRad) * halfHeight;
+            }
+          }
+          
+          // Create a linear gradient with calculated direction
+          const gradient = ctx.createLinearGradient(startX, startY, endX, endY);
+          
+          // Add color stops to gradient
+          if (colorStops.length >= 1) {
+            colorStops.forEach((stop, index) => {
+              let position;
+              if (stop.position && stop.position.endsWith('%')) {
+                position = parseInt(stop.position) / 100;
+              } else if (index === 0) {
+                position = 0;
+              } else if (index === colorStops.length - 1) {
+                position = 1;
+              } else {
+                position = index / (colorStops.length - 1);
               }
               
-              // Check if this part is a color stop (contains a color and optionally a position)
-              if (part.match(/(#(?:[0-9a-fA-F]{3}){1,2}|(?:rgb|hsl)a?\([^)]+\)|\w+|transparent)(?:\s+(\d+(?:\.\d+)?%|from|to))?/)) {
-                const colorMatch = part.match(/^(#(?:[0-9a-fA-F]{3}){1,2}|(?:rgb|hsl)a?\([^)]+\)|\w+|transparent)/);
-                if (colorMatch) {
-                  const color = colorMatch[1];
-                  // Extract position if present
-                  const positionMatch = part.match(/(\d+(?:\.\d+)?%|from|to)$/);
-                  const position = positionMatch ? positionMatch[1] : undefined;
-                  
-                  // Validate the color before adding
-                  if (this.isValidColor(color)) {
-                    colorStops.push({ color: color.trim(), position: position });
-                  } else {
-                    console.warn('Skipping invalid color:', color);
-                  }
-                }
+              // Ensure position is within bounds
+              position = Math.max(0, Math.min(1, position));
+              
+              try {
+                gradient.addColorStop(position, stop.color);
+              } catch (e) {
+                console.warn('Invalid color for gradient:', stop.color, e);
+                // Add fallback color if current one is invalid
+                if (index === 0) gradient.addColorStop(0, '#ffffff');
+                else gradient.addColorStop(1, '#f5f7ff');
               }
             });
-            
-            // Create a linear gradient from top to bottom by default
-            const gradient = ctx.createLinearGradient(0, 0, 0, this.stageHeight);
-            
-            // Add color stops to gradient
-            if (colorStops.length >= 1) {
-              colorStops.forEach((stop, index) => {
-                let position;
-                if (stop.position && stop.position.endsWith('%')) {
-                  position = parseInt(stop.position) / 100;
-                } else if (index === 0) {
-                  position = 0;
-                } else if (index === colorStops.length - 1) {
-                  position = 1;
-                } else {
-                  position = index / (colorStops.length - 1);
-                }
-                // Ensure position is within bounds
-                position = Math.max(0, Math.min(1, position));
-                try {
-                  gradient.addColorStop(position, stop.color);
-                } catch (e) {
-                  console.warn('Invalid color for gradient:', stop.color, e);
-                  // Add fallback color if current one is invalid
-                  if (index === 0) gradient.addColorStop(0, '#ffffff');
-                  else gradient.addColorStop(1, '#f5f7ff');
-                }
-              });
-            } else {
-              // Fallback
-              gradient.addColorStop(0, '#ffffff');
-              gradient.addColorStop(1, '#f5f7ff');
-            }
-            
-            return gradient;
+          } else {
+            // Fallback
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(1, '#f5f7ff');
           }
+          
+          return gradient;
         }
         return null;
       } catch (e) {
