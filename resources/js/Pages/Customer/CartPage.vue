@@ -243,7 +243,7 @@ const showCard = (event) => {
 </script>
 
 <template>
-    <div class="bg-gray-50 min-h-screen">
+    <div class="bg-neumorphic min-h-screen">
         <Head title="Cart" />
         <Toast position="top-center" />
         <Popover ref="card" class="w-fit text-nowrap">
@@ -262,16 +262,16 @@ const showCard = (event) => {
             <!-- Header -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Shopping Cart</h1>
-                    <p class="text-gray-600 mt-2">{{ cart.length }} item{{ cart.length !== 1 ? 's' : '' }} in cart</p>
+                    <h1 class="text-3xl font-bold text-brand-primary">{{ $t('cart.title') }}</h1>
+                    <p class="text-brand-secondary mt-2">{{ cart.length }} {{ cart.length !== 1 ? $t('cart.items') : $t('cart.item') }} {{ $t('cart.in_cart') }}</p>
                 </div>
                 <Link
                     v-if="cart.length > 0"
                     :href="route('home')"
-                    class="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                    class="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-brand-gold border-opacity-40 rounded-lg text-brand-primary bg-neumorphic hover:bg-brand-lavender transition-colors"
                 >
                     <Tshirt class="w-5 h-5 mr-2" />
-                    Continue Shopping
+                    {{ $t('cart.continue') }}
                 </Link>
             </div>
 
@@ -279,15 +279,15 @@ const showCard = (event) => {
             <div v-if="cart.length > 0" class="grid lg:grid-cols-3 gap-8">
                 <!-- Cart Items -->
                 <div class="lg:col-span-2">
-                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-                        <div class="p-6 border-b border-gray-200">
-                            <h2 class="text-xl font-semibold text-gray-900">Your Items</h2>
+                    <div class="bg-neumorphic rounded-2xl overflow-hidden neumorphic">
+                        <div class="p-6 border-b border-brand-gold border-opacity-30">
+                            <h2 class="text-xl font-semibold text-brand-primary">{{ $t('cart.your_items') }}</h2>
                         </div>
-                        <div class="divide-y divide-gray-200">
+                        <div class="divide-y divide-brand-gold divide-opacity-30">
                             <div
                                 v-for="item in cart"
                                 :key="item.tshirt_id"
-                                class="p-6 hover:bg-gray-50 transition-colors"
+                                class="p-6 hover:bg-brand-lavender hover:bg-opacity-30 transition-colors"
                             >
                                 <div class="flex flex-col sm:flex-row gap-6">
                                     <!-- Product Image -->
@@ -301,20 +301,20 @@ const showCard = (event) => {
                                     
                                     <!-- Product Details -->
                                     <div class="flex-1 min-w-0">
-                                        <h3 class="text-lg font-medium text-gray-900 mb-2">
+                                        <h3 class="text-lg font-medium text-brand-primary mb-2">
                                             {{ textHelper.limitText(item.tshirt_title, 60) }}
                                         </h3>
                                         
                                         <div class="flex flex-wrap gap-4 mb-4">
                                             <div class="flex items-center">
-                                                <span class="text-gray-500 mr-2">Size:</span>
-                                                <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+                                                <span class="text-brand-secondary mr-2">{{ $t('cart.size') }}:</span>
+                                                <span class="px-3 py-1 bg-brand-lavender bg-opacity-40 text-brand-primary rounded-full text-sm font-medium">
                                                     {{ item.size }}
                                                 </span>
                                             </div>
                                             <div class="flex items-center">
-                                                <span class="text-gray-500 mr-2">Price:</span>
-                                                <span class="font-semibold text-gray-900">
+                                                <span class="text-brand-secondary mr-2">{{ $t('cart.price') }}:</span>
+                                                <span class="font-semibold text-brand-primary">
                                                     ${{ item.tshirt_price }}
                                                 </span>
                                             </div>
@@ -323,11 +323,11 @@ const showCard = (event) => {
                                     
                                     <!-- Quantity Controls -->
                                     <div class="flex flex-col items-center gap-3">
-                                        <div class="flex items-center border border-gray-300 rounded-lg">
+                                        <div class="flex items-center border border-brand-gold border-opacity-40 rounded-lg">
                                             <button
                                                 @click="decreaseQuantity(item.item_id)"
                                                 :disabled="item.quantity <= 1"
-                                                class="px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-l-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                class="px-3 py-2 text-brand-secondary hover:text-brand-primary hover:bg-brand-lavender hover:bg-opacity-30 rounded-l-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 -
                                             </button>
@@ -337,15 +337,15 @@ const showCard = (event) => {
                                             <button
                                                 @click="increaseQuantity(item.item_id)"
                                                 :disabled="item.quantity >= 10"
-                                                class="px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-r-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                class="px-3 py-2 text-brand-secondary hover:text-brand-primary hover:bg-brand-lavender hover:bg-opacity-30 rounded-r-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 +
                                             </button>
                                         </div>
                                         
                                         <div class="text-center">
-                                            <p class="text-sm text-gray-500">Subtotal</p>
-                                            <p class="text-lg font-bold text-blue-600">
+                                            <p class="text-sm text-brand-secondary">{{ $t('cart.subtotal') }}</p>
+                                            <p class="text-lg font-bold text-brand-accent">
                                                 ${{ (item.tshirt_price * item.quantity).toFixed(2) }}
                                             </p>
                                         </div>
@@ -355,7 +355,7 @@ const showCard = (event) => {
                                     <div class="flex items-start sm:items-center justify-center">
                                         <button
                                             @click="removeItem(item.item_id)"
-                                            class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                                            class="p-2 text-brand-secondary hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
                                             title="Remove item"
                                         >
                                             <Remove class="w-5 h-5" />
@@ -369,26 +369,26 @@ const showCard = (event) => {
 
                 <!-- Order Summary -->
                 <div class="lg:col-span-1">
-                    <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-8">
-                        <h2 class="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
+                    <div class="bg-neumorphic rounded-2xl p-6 sticky top-8 neumorphic">
+                        <h2 class="text-xl font-semibold text-brand-primary mb-6">{{ $t('cart.summary') }}</h2>
                         
                         <div class="space-y-4 mb-6">
                             <div class="flex justify-between">
-                                <span class="text-gray-600">Subtotal</span>
+                                <span class="text-brand-secondary">{{ $t('cart.subtotal') }}</span>
                                 <span class="font-medium">${{ cartTotal.toFixed(2) }}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600">Shipping</span>
-                                <span class="font-medium text-green-600">Free</span>
+                                <span class="text-brand-secondary">{{ $t('cart.shipping') }}</span>
+                                <span class="font-medium text-brand-accent">{{ $t('cart.free') }}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600">Tax</span>
+                                <span class="text-brand-secondary">{{ $t('cart.tax') }}</span>
                                 <span class="font-medium">${{ (cartTotal * 0.08).toFixed(2) }}</span>
                             </div>
-                            <div class="border-t border-gray-200 pt-4">
+                            <div class="border-t border-brand-gold border-opacity-30 pt-4">
                                 <div class="flex justify-between">
-                                    <span class="text-lg font-semibold text-gray-900">Total</span>
-                                    <span class="text-2xl font-bold text-blue-600">
+                                    <span class="text-lg font-semibold text-brand-primary">{{ $t('cart.total') }}</span>
+                                    <span class="text-2xl font-bold text-brand-accent">
                                         ${{ (cartTotal * 1.08).toFixed(2) }}
                                     </span>
                                 </div>

@@ -41,7 +41,7 @@ const useCredentials = (credential) => {
 };
 
 const goToCustomerLogin = () => {
-    window.location.href = route('customer.login');
+    window.location.href = route('login', { customer: true });
 };
 </script>
 

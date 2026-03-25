@@ -354,8 +354,8 @@ export default {
     },
     
     openDesigner() {
-      // Redirect to designer with t-shirt as default product type
-      router.visit('/designer/t-shirt');
+      const defaultProductType = this.$page?.props?.defaultProductType || 't-shirt';
+      router.visit(route('designer.create', { productType: defaultProductType }));
     },
     
     batchProcess() {

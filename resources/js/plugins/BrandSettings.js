@@ -28,14 +28,14 @@ export const brandSettings = {
       // Set default values
       settings.value = {
         site_name: "Ahlam's Girls",
-        brand_primary_color: '#6B1138',  // Deep burgundy
-        brand_secondary_color: '#1a1a2e', // Navy
-        brand_accent_color: '#FFD700',   // Gold
-        brand_bg_color: '#0f3460',       // Midnight blue
-        brand_text_color: '#ffffff',     // White
-        brand_gold: '#FFD700',           // Gold
-        brand_rose: '#FF6B6B',           // Rose
-        brand_lavender: '#E6E6FA',       // Lavender
+        brand_primary_color: '#4a5568',
+        brand_secondary_color: '#6d7587',
+        brand_accent_color: '#4a7eff',
+        brand_bg_color: '#e0e5ec',
+        brand_text_color: '#4a5568',
+        brand_gold: '#c9d6ff',
+        brand_rose: '#4a7eff',
+        brand_lavender: '#c9d6ff',
         site_description: "Elegance, Sewn to Perfection",
         site_email: 'contact@ahlamsgirls.com',
         site_phone: '+966 50 123 4567',
@@ -55,17 +55,17 @@ export const brandSettings = {
     const root = document.documentElement;
     
     // Map the database settings to CSS variables
-    root.style.setProperty('--brand-primary', brandSettings.brand_primary_color || '#6B1138');
-    root.style.setProperty('--brand-secondary', brandSettings.brand_secondary_color || '#1a1a2e');
-    root.style.setProperty('--brand-accent', brandSettings.brand_accent_color || '#FFD700');
-    root.style.setProperty('--brand-bg', brandSettings.brand_bg_color || '#0f3460');
-    root.style.setProperty('--brand-text', brandSettings.brand_text_color || '#ffffff');
-    root.style.setProperty('--brand-gold', brandSettings.brand_gold || '#FFD700');
-    root.style.setProperty('--brand-rose', brandSettings.brand_rose || '#FF6B6B');
-    root.style.setProperty('--brand-lavender', brandSettings.brand_lavender || '#E6E6FA');
+    root.style.setProperty('--brand-primary', brandSettings.brand_primary_color || '#4a5568');
+    root.style.setProperty('--brand-secondary', brandSettings.brand_secondary_color || '#6d7587');
+    root.style.setProperty('--brand-accent', brandSettings.brand_accent_color || '#4a7eff');
+    root.style.setProperty('--brand-bg', brandSettings.brand_bg_color || '#e0e5ec');
+    root.style.setProperty('--brand-text', brandSettings.brand_text_color || '#4a5568');
+    root.style.setProperty('--brand-gold', brandSettings.brand_gold || '#c9d6ff');
+    root.style.setProperty('--brand-rose', brandSettings.brand_rose || '#4a7eff');
+    root.style.setProperty('--brand-lavender', brandSettings.brand_lavender || '#c9d6ff');
     
     // Also update the root CSS variables that might be defined in the CSS
-    root.style.setProperty('--neumorphic-bg', brandSettings.brand_bg_color ? this.adjustBrightness(brandSettings.brand_bg_color, 20) : '#f0f4f8');
+    root.style.setProperty('--neumorphic-bg', brandSettings.brand_bg_color ? this.adjustBrightness(brandSettings.brand_bg_color, 0) : '#e0e5ec');
   },
   
   // Helper function to adjust brightness of a hex color

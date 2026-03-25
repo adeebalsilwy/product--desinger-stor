@@ -1,1191 +1,2063 @@
 <template>
-  <CustomerLayout>
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <!-- Professional Header Section -->
-      <div class="bg-gradient-to-r from-purple-600 to-indigo-700 shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex items-center justify-between h-20">
-            <div class="flex items-center space-x-4">
-              <div class="text-white">
-                <h1 class="text-3xl font-bold">Design Studio</h1>
-                <p class="text-purple-200 mt-1 text-lg">
-                  {{ product?.name || productType.name }} Designer
-                </p>
-              </div>
-            </div>
-            
-            <div class="flex items-center gap-4">
-              <!-- Undo/Redo Group -->
-              <div class="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-xl p-2">
-                <button 
-                  @click="undo"
-                  :disabled="!canUndo"
-                  class="w-12 h-12 flex items-center justify-center rounded-lg bg-white/30 hover:bg-white/50 text-white font-bold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Undo (Ctrl+Z)"
-                >
-                  ↶
-                </button>
-                <button 
-                  @click="redo"
-                  :disabled="!canRedo"
-                  class="w-12 h-12 flex items-center justify-center rounded-lg bg-white/30 hover:bg-white/50 text-white font-bold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Redo (Ctrl+Y)"
-                >
-                  ↷
-                </button>
-              </div>
-              
-              <!-- Action Buttons -->
-              <div class="flex items-center gap-3">
-                <button 
-                  @click="saveDesign"
-                  :disabled="!hasChanges"
-                  class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
-                >
-                  <span class="text-lg">💾</span>
-                  Save Design
-                </button>
-                <button 
-                  @click="exportDesign"
-                  class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-                >
-                  <span class="text-lg">📤</span>
-                  Export
-                </button>
-              </div>
-            </div>
+  <Customer :showNav="false" :showFooter="false" :showCart="false" contentClass="designer-content">
+    <div class="app-container">
+      <aside class="sidebar">
+        <div class="nav-item" v-for="item in navItems" :key="item.key">
+          <button type="button" class="nav-icon" :class="{ active: item.active }" @click="handleNavItemClick(item)" :title="item.label">
+            <i :class="item.icon"></i>
+          </button>
+          <span class="nav-label">{{ item.label }}</span>
+        </div>
+      </aside>
+
+      <main class="design-area">
+        <div class="user-panel">
+          <div class="user-avatar neumorphic-btn">
+            <i class="fas fa-user"></i>
           </div>
         </div>
-      </div>
 
-      <!-- Professional Toolbar Header -->
-      <div class="bg-gradient-to-r from-purple-600 to-indigo-700 shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex items-center justify-between h-16">
-            <!-- Tool Selection -->
-            <div class="flex items-center space-x-2">
-              <button 
-                @click="setActiveTool('select')"
-                :class="{ 'active': activeTool === 'select' }"
-                class="tool-btn"
-                title="Selection"
-              >
-                <svg class="tool-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" /></svg>
-              </button>
-              
-              <button 
-                @click="setActiveTool('text')"
-                :class="{ 'active': activeTool === 'text' }"
-                class="tool-btn"
-                title="Text"
-              >
-                <svg class="tool-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
-              </button>
-              
-              <button 
-                @click="setActiveTool('image')"
-                :class="{ 'active': activeTool === 'image' }"
-                class="tool-btn"
-                title="Image"
-              >
-                <svg class="tool-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              </button>
-              
-              <button 
-                @click="setActiveTool('brush'); toggleBrushMode()"
-                :class="{ 'active': activeTool === 'brush' }"
-                class="tool-btn"
-                title="Brush"
-              >
-                <svg class="tool-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-              </button>
-              
-              <button 
-                @click="setActiveTool('eraser'); toggleEraserMode()"
-                :class="{ 'active': activeTool === 'eraser' }"
-                class="tool-btn"
-                title="Eraser"
-              >
-                <svg class="tool-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            
-            <!-- Shape Tools -->
-            <div class="flex items-center space-x-2">
-              <button @click="showShapes = true" class="tool-btn" title="Shapes">
-                <svg class="tool-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-              </button>
-              
-              <button @click="setActiveTool('clipart'); showCliparts = true" :class="{ 'active': activeTool === 'clipart' }" class="tool-btn" title="Clipart">
-                <svg class="tool-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              </button>
-            </div>
-            
-            <!-- Actions -->
-            <div class="flex items-center space-x-2">
-              <button @click="saveDesign" class="tool-btn primary" title="Save">
-                <svg class="tool-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
-              </button>
-              
-              <button @click="exportDesign" class="tool-btn success" title="Export">
-                <svg class="tool-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Main Designer Area with Proper Container -->
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 h-[calc(100vh-11rem)]">
-
-          <!-- Main Canvas Area - Full width -->
-          <div class="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-full">
-            <!-- Canvas Container - Full width -->
-            <div class="flex-1 p-4 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
-              <div class="bg-white rounded-xl shadow-inner border-2 border-dashed border-gray-300 w-full h-full mx-auto flex items-center justify-center">
-                <div class="w-full h-full flex items-center justify-center p-4">
-                  <ProductDesigner 
-                    ref="designer"
-                    :product-type-id="productType.id"
-                    @saved="onDesignSaved"
-                    @changed="onDesignChanged"
-                    @zoom="updateZoom"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <!-- Canvas Controls -->
-            <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <button @click="zoomOut" class="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold transition-colors">
-                    −
-                  </button>
-                  <span class="text-sm font-medium min-w-[60px] text-center">{{ Math.round(zoomLevel * 100) }}%</span>
-                  <button @click="zoomIn" class="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold transition-colors">
-                    +
-                  </button>
-                </div>
-                
-                <div class="flex items-center gap-2">
-                  <button @click="centerCanvas" class="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-lg font-medium transition-colors">
-                    Center View
-                  </button>
-                  <button @click="toggleGrid" class="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-lg font-medium transition-colors" :class="{ 'bg-blue-200': showGrid }">
-                    Grid {{ showGrid ? 'On' : 'Off' }}
-                  </button>
-                </div>
-              </div>
-            </div>
+        <div class="top-toolbar neumorphic">
+          <div class="toolbar-group">
+            <button class="toolbar-btn neumorphic-btn" @click="undo" :disabled="historyIndex <= 0"><i
+                class="fas fa-undo"></i></button>
+            <button class="toolbar-btn neumorphic-btn" @click="redo" :disabled="historyIndex >= history.length - 1"><i
+                class="fas fa-redo"></i></button>
+            <button class="toolbar-btn neumorphic-btn" @click="duplicateSelected" :disabled="!selectedElementId"><i
+                class="fas fa-clone"></i></button>
+            <button class="toolbar-btn neumorphic-btn" @click="deleteSelected" :disabled="!selectedElementId"><i
+                class="fas fa-trash"></i></button>
           </div>
 
-          <!-- Right Panel - Properties, Tools & Editing -->
-          <div class="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-full">
-            <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b">
-              <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <span class="text-purple-600">⚙️</span>
-                Properties & Tools
-              </h3>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto p-4 space-y-6">
-              <!-- Brush/Eraser Tools -->
-              <div v-if="activeTool === 'brush' || activeTool === 'eraser'" class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-200">
-                <h4 class="font-semibold text-purple-800 mb-3 flex items-center gap-2">
-                  <span>{{ activeTool === 'eraser' ? '🧽' : '🖌️' }}</span>
-                  {{ activeTool === 'eraser' ? 'Eraser' : 'Brush' }} Tools
-                </h4>
-                
-                <div class="space-y-4">
-                  <!-- Brush Size -->
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Size: {{ brushSize }}px</label>
-                    <input 
-                      type="range" 
-                      v-model.number="brushSize" 
-                      min="1" 
-                      max="50"
-                      @input="updateBrushSettings"
-                      class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                    >
-                  </div>
-                  
-                  <!-- Brush Color (only for brush, not eraser) -->
-                  <div v-if="activeTool !== 'eraser'">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Color</label>
-                    <input 
-                      type="color" 
-                      v-model="brushColor" 
-                      @change="updateBrushSettings"
-                      class="w-full h-10 rounded-lg border border-gray-300 cursor-pointer"
-                    >
-                  </div>
-                  
-                  <!-- Brush Opacity -->
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Opacity: {{ Math.round(brushOpacity * 100) }}%</label>
-                    <input 
-                      type="range" 
-                      v-model.number="brushOpacity" 
-                      min="0.1" 
-                      max="1"
-                      step="0.1"
-                      @input="updateBrushSettings"
-                      class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                    >
-                  </div>
-                  
-                  <!-- Brush Types -->
-                  <div v-if="activeTool === 'brush'">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Brush Type</label>
-                    <div class="grid grid-cols-2 gap-2">
-                      <button 
-                        v-for="brush in brushTypes" 
-                        :key="brush.value"
-                        @click="setBrushType(brush.value)"
-                        :class="{ 'active': brushType === brush.value }"
-                        class="p-2 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        {{ brush.name }}
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <!-- Actions -->
-                  <div class="pt-4 border-t border-gray-200">
-                    <button @click="clearCanvas" class="w-full p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium transition-colors mb-2">
-                      Clear Canvas
-                    </button>
-                    <div class="flex gap-2">
-                      <button @click="undoBrushStroke" :disabled="!canUndoBrush()" class="flex-1 p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
-                        Undo
-                      </button>
-                      <button @click="redoBrushStroke" :disabled="!canRedoBrush()" class="flex-1 p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
-                        Redo
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Object Properties -->
-              <div v-if="selectedObject" class="bg-blue-50 rounded-xl p-4">
-                <h4 class="font-semibold text-blue-800 mb-3">Selected: {{ selectedObject.type || 'Object' }}</h4>
-                
-                <!-- Text Properties -->
-                <div v-if="selectedObject.type === 'i-text'" class="space-y-3 mb-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Text Content</label>
-                    <textarea 
-                      v-model="selectedObject.text" 
-                      @input="updateCanvas" 
-                      class="w-full p-2 border border-gray-300 rounded-lg text-sm"
-                      placeholder="Enter text..."
-                      rows="3"
-                    ></textarea>
-                  </div>
-                  
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Font Size: {{ selectedObject.fontSize }}px</label>
-                    <input 
-                      type="range" 
-                      v-model.number="selectedObject.fontSize" 
-                      min="8" 
-                      max="72"
-                      @input="updateCanvas"
-                      class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                    >
-                  </div>
-                  
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
-                    <input 
-                      type="color" 
-                      v-model="selectedObject.fill" 
-                      @change="updateCanvas"
-                      class="w-full h-10 rounded-lg border border-gray-300 cursor-pointer"
-                    >
-                  </div>
-                </div>
-                
-                <!-- Common Properties -->
-                <div class="space-y-3">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Opacity: {{ Math.round((selectedObject.opacity || 1) * 100) }}%</label>
-                    <input 
-                      type="range" 
-                      v-model.number="selectedObject.opacity" 
-                      min="0" 
-                      max="1" 
-                      step="0.1"
-                      @input="updateCanvas"
-                      class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                    >
-                  </div>
-                  
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Rotation: {{ Math.round(selectedObject.angle || 0) }}°</label>
-                    <input 
-                      type="range" 
-                      v-model.number="selectedObject.angle" 
-                      min="0" 
-                      max="360"
-                      @input="updateCanvas"
-                      class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                    >
-                  </div>
-                </div>
-                
-                <!-- Position Controls -->
-                <div class="grid grid-cols-2 gap-3 mt-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">X Position</label>
-                    <input 
-                      type="number"
-                      v-model.number="selectedObject.left" 
-                      @input="updateCanvas"
-                      class="w-full p-2 border border-gray-300 rounded-lg text-sm"
-                    >
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Y Position</label>
-                    <input 
-                      type="number"
-                      v-model.number="selectedObject.top" 
-                      @input="updateCanvas"
-                      class="w-full p-2 border border-gray-300 rounded-lg text-sm"
-                    >
-                  </div>
-                </div>
-                
-                <!-- Layer Controls -->
-                <div class="mt-4 pt-4 border-t border-blue-200">
-                  <div class="grid grid-cols-2 gap-2">
-                    <button @click="bringToFront" class="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors">
-                      Bring Front
-                    </button>
-                    <button @click="sendToBack" class="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors">
-                      Send Back
-                    </button>
-                    <button @click="bringForward" class="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors">
-                      Forward
-                    </button>
-                    <button @click="sendBackwards" class="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors">
-                      Backward
-                    </button>
-                  </div>
-                  
-                  <button @click="deleteObject" class="w-full mt-2 p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium transition-colors">
-                    Delete Object
-                  </button>
-                </div>
-                
-                <!-- Text Formatting -->
-                <div v-if="selectedObject.type === 'i-text'" class="mt-4 pt-4 border-t border-blue-200">
-                  <h5 class="font-medium text-blue-700 mb-2">Text Formatting</h5>
-                  <div class="grid grid-cols-3 gap-2">
-                    <button @click="toggleBold" :class="{'bg-blue-200': isBold()}" class="p-2 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg text-sm font-medium transition-colors">
-                      Bold
-                    </button>
-                    <button @click="toggleItalic" :class="{'bg-blue-200': isItalic()}" class="p-2 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg text-sm font-medium transition-colors">
-                      Italic
-                    </button>
-                    <button @click="toggleUnderline" :class="{'bg-blue-200': isUnderline()}" class="p-2 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg text-sm font-medium transition-colors">
-                      Underline
-                    </button>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- No Selection State -->
-              <div v-else class="text-center py-8 text-gray-500">
-                <div class="text-4xl mb-2">🖱️</div>
-                <p>Select an element to view properties</p>
-              </div>
-              
-              <!-- Quick Actions -->
-              <div class="bg-gray-50 rounded-xl p-4">
-                <h4 class="font-semibold text-gray-700 mb-3">Quick Actions</h4>
-                <div class="space-y-2">
-                  <button @click="clearCanvas" class="w-full p-3 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-700 rounded-xl font-medium transition-all duration-200 flex items-center gap-2">
-                    <span>🗑️</span> Clear Canvas
-                  </button>
-                  <button @click="showTemplates = true" class="w-full p-3 bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 text-purple-700 rounded-xl font-medium transition-all duration-200 flex items-center gap-2">
-                    <span>🎨</span> Browse Templates
-                  </button>
-                  <button @click="showCliparts = true" class="w-full p-3 bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 rounded-xl font-medium transition-all duration-200 flex items-center gap-2">
-                    <span>🖼️</span> Browse Clipart
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Templates Modal -->
-      <div v-if="showTemplates" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-          <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-600 to-indigo-700 text-white">
-            <div>
-              <h3 class="text-2xl font-bold flex items-center gap-2">
-                <span>🎨</span>
-                Design Templates
-              </h3>
-              <p class="text-purple-200 mt-1">Choose from professionally designed templates</p>
-            </div>
-            <button @click="showTemplates = false" class="text-white hover:text-gray-200 text-3xl font-light">×</button>
-          </div>
-          <div class="p-6 max-h-[70vh] overflow-y-auto">
-            <div class="mb-6 flex gap-4">
-              <input
-                v-model="templateSearch"
-                type="text"
-                placeholder="Search templates..."
-                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-              />
-              <select
-                v-model="templateCategory"
-                class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-              >
-                <option value="">All Categories</option>
-                <option v-for="category in templateCategories" :key="category" :value="category">
-                  {{ category.charAt(0).toUpperCase() + category.slice(1) }}
-                </option>
-              </select>
-            </div>
-            
-            <div v-if="loadingTemplates" class="flex justify-center items-center h-64">
-              <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-            </div>
-            
-            <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              <div 
-                v-for="template in templates" 
-                :key="template.id"
-                class="border rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-purple-500 transition-all hover:shadow-lg"
-                @click="useTemplate(template)"
-              >
-                <div class="aspect-square bg-gray-100 relative">
-                  <img :src="template.thumbnail_url || template.preview_url" :alt="template.name" class="w-full h-full object-cover" />
-                  <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all"></div>
-                </div>
-                <div class="p-3">
-                  <div class="font-medium text-sm truncate">{{ template.name }}</div>
-                  <div class="text-xs text-gray-500 mt-1">{{ template.category || 'Uncategorized' }}</div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Pagination -->
-            <div v-if="!loadingTemplates && templates.length > 0" class="mt-8 flex justify-center">
-              <nav class="flex items-center space-x-2">
-                <button
-                  @click="fetchTemplates(currentTemplatePage - 1)"
-                  :disabled="currentTemplatePage === 1"
-                  class="px-4 py-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Previous
-                </button>
-                
-                <span class="mx-4 text-gray-600">
-                  Page {{ currentTemplatePage }} of {{ totalTemplatePages }}
-                </span>
-                
-                <button
-                  @click="fetchTemplates(currentTemplatePage + 1)"
-                  :disabled="currentTemplatePage === totalTemplatePages"
-                  class="px-4 py-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Next
-                </button>
-              </nav>
-            </div>
-          </div>
-          <div class="p-6 border-t border-gray-200 text-center bg-gray-50">
-            <button @click="showTemplates = false" class="px-6 py-3 bg-gradient-to-r from-gray-200 to-gray-300 hover:from-gray-300 hover:to-gray-400 rounded-lg font-medium transition-all duration-200">
-              Close
+          <div class="toolbar-group">
+            <button class="hero-action save-btn" @click="saveDesignToDatabase" :disabled="pendingSave"
+              :title="t('designer.save_to_db_tooltip', 'حفظ التصميم في قاعدة البيانات')">
+              <i class="fas fa-database"></i>
+              <span>{{ t('designer.save_to_db', 'حفظ في قاعدة البيانات') }}</span>
+            </button>
+            <button class="hero-action save-btn" @click="saveDesignToLibrary" :disabled="pendingSave"
+              :title="t('designer.save_local_tooltip', 'حفظ التصميم محليًا')">
+              <i class="fas fa-save"></i>
+              <span>{{ t('designer.save_design', 'حفظ التصميم') }}</span>
+            </button>
+            <button class="hero-action preview-btn" @click="showMockup = !showMockup"
+              :title="t('designer.toggle_mockup_tooltip', 'تبديل عرض المجسم')">
+              <i class="fas fa-female"></i>
+              <span>{{ showMockup ? t('designer.hide_preview', 'إخفاء المجسم') : t('designer.show_preview', 'عرض التصميم على المجسم') }}</span>
             </button>
           </div>
         </div>
-      </div>
 
-      <!-- Clipart Modal -->
-      <div v-if="showCliparts" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl max-w-4xl w-full max-h-96 overflow-hidden shadow-2xl">
-          <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-600 to-indigo-700 text-white">
-            <div>
-              <h3 class="text-2xl font-bold flex items-center gap-2">
-                <span>🖼️</span>
-                Clipart Library
-              </h3>
-              <p class="text-purple-200 mt-1">Browse our collection of illustrations</p>
-            </div>
-            <button @click="showCliparts = false" class="text-white hover:text-gray-200 text-3xl font-light">×</button>
-          </div>
-          <div class="p-6 max-h-80 overflow-y-auto">
-            <div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
-              <div 
-                v-for="clipart in cliparts" 
-                :key="clipart.id"
-                class="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-purple-500 hover:shadow-lg transition-all"
-                @click="addClipart(clipart)"
-              >
-                <img :src="clipart.image_url" :alt="clipart.title" class="w-full h-full object-cover" />
+        <div class="canvas-wrap">
+          <div class="design-stage neumorphic-inset">
+            <div class="stage-background"
+              :style="{ background: activeTemplate.background || defaultTemplate.background }"></div>
+            <canvas ref="templateCanvas" class="dress-template" :width="stageWidth" :height="stageHeight"></canvas>
+            <canvas ref="drawingCanvas" class="drawing-layer" :class="{ 'draw-cursor': isDrawTool }" :width="stageWidth"
+              :height="stageHeight" @mousedown="onStageMouseDown" @mousemove="onStageMouseMove"
+              @mouseup="onStageMouseUp" @mouseleave="onStageMouseUp"></canvas>
+
+            <div class="elements-layer">
+              <div v-for="element in orderedElements" :key="element.id" class="design-element"
+                :class="{ selected: selectedElementId === element.id }" :style="elementStyle(element)"
+                @mousedown.stop="startElementDrag($event, element)" @click.stop="selectElement(element.id)">
+                <template v-if="element.type === 'text'">
+                  <div class="text-node" :style="textStyle(element)">{{ element.text }}</div>
+                </template>
+
+                <template v-else-if="element.type === 'image'">
+                  <img :src="element.src" class="image-node" alt="design image" draggable="false" />
+                </template>
+
+                <template v-else-if="element.type === 'rect'">
+                  <div class="shape-node rect-node" :style="shapeStyle(element)"></div>
+                </template>
+
+                <template v-else-if="element.type === 'circle'">
+                  <div class="shape-node circle-node" :style="shapeStyle(element)"></div>
+                </template>
+
+                <template v-else-if="element.type === 'triangle'">
+                  <div class="triangle-node" :style="triangleStyle(element)"></div>
+                </template>
+
+                <button v-if="selectedElementId === element.id" class="resize-handle"
+                  @mousedown.stop="startResize(element)"></button>
+                <button v-if="selectedElementId === element.id" class="rotate-handle"
+                  @mousedown.stop="startRotate(element)">
+                  <i class="fas fa-sync-alt"></i>
+                </button>
+                <button v-if="selectedElementId === element.id" class="delete-handle"
+                  @click.stop="deleteElement(element.id)">
+                  <i class="fas fa-times"></i>
+                </button>
               </div>
             </div>
           </div>
-          <div class="p-6 border-t border-gray-200 text-center bg-gray-50">
-            <button @click="showCliparts = false" class="px-6 py-3 bg-gradient-to-r from-gray-200 to-gray-300 hover:from-gray-300 hover:to-gray-400 rounded-lg font-medium transition-all duration-200">
-              Close
+        </div>
+
+        <div class="bottom-toolbar neumorphic">
+          <button class="control-btn delete-btn" @click="clearDrawing"><i class="fas fa-eraser"></i><span>{{
+            t('designer.clear',
+              'مسح الرسم') }}</span></button>
+          <button class="control-btn reset-btn" @click="resetDesign"><i class="fas fa-rotate-left"></i><span>{{
+            t('designer.reset', 'إعادة ضبط') }}</span></button>
+          <button class="control-btn save-btn" @click="downloadDesign"><i class="fas fa-download"></i><span>{{
+            t('designer.download', 'تنزيل') }}</span></button>
+        </div>
+      </main>
+
+      <aside class="tools-panel">
+        <div class="tool-item" v-for="tool in tools" :key="tool.key">
+          <button class="tool-icon" :class="{ active: activeTool === tool.key }" @click="activateTool(tool.key)">
+            <i :class="tool.icon"></i>
+          </button>
+          <span class="tool-label">{{ tool.label }}</span>
+        </div>
+      </aside>
+
+      <div class="palette color-palette" v-if="openPalette === 'color'">
+        <div class="palette-header">
+          <div class="palette-title">{{ t('designer.colors', 'الألوان') }}</div>
+          <button class="close-btn" @click="closePalette"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="color-grid">
+          <button v-for="color in colors" :key="color" class="color-option"
+            :class="{ selected: currentColor === color }" :style="{ background: color }"
+            @click="selectColor(color)"></button>
+        </div>
+      </div>
+
+      <div class="palette size-palette" v-if="openPalette === 'size'">
+        <div class="palette-header">
+          <div class="palette-title">{{ t('designer.brush_size', 'مقاس الأداة') }}</div>
+          <button class="close-btn" @click="closePalette"><i class="fas fa-times"></i></button>
+        </div>
+        <button v-for="size in brushSizes" :key="size" class="size-option" :class="{ selected: brushSize === size }"
+          @click="brushSize = size">{{ size }}px</button>
+      </div>
+
+      <div class="palette template-palette wide-palette" v-if="openPalette === 'templates'">
+        <div class="palette-header">
+          <div class="palette-title">{{ t('designer.templates', 'القوالب') }}</div>
+          <button class="close-btn" @click="closePalette"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="loading-box" v-if="templatesLoading">{{ t('designer.loading_templates', 'جاري تحميل القوالب...') }}
+        </div>
+        <div class="error-box" v-else-if="templatesError">{{ templatesError }}</div>
+        <div class="empty-box" v-else-if="!templates.length">{{ t('designer.no_templates', 'لا توجد قوالب متاحة') }}
+        </div>
+
+        <div v-else class="template-grid">
+          <button v-for="template in templates" :key="template.id" class="template-card"
+            :class="{ active: activeTemplate.id === template.id }" @click="applyTemplate(template)">
+            <span class="template-preview template-image-preview" :style="templateCardStyle(template)">
+              <img v-if="template.preview" :src="template.preview" :alt="template.name" />
+            </span>
+            <span class="template-name">{{ template.name }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="palette text-palette" v-if="openPalette === 'text'">
+        <div class="palette-header">
+          <div class="palette-title">{{ t('designer.add_text', 'إضافة نص') }}</div>
+          <button class="close-btn" @click="closePalette"><i class="fas fa-times"></i></button>
+        </div>
+        <textarea v-model="draftText" class="palette-input" rows="3"></textarea>
+        <button class="action-btn" @click="addTextElement">{{ t('designer.add_text', 'إضافة النص') }}</button>
+      </div>
+
+      <div class="palette image-palette" v-if="openPalette === 'image'">
+        <div class="palette-header">
+          <div class="palette-title">{{ t('designer.add_image', 'إضافة صورة') }}</div>
+          <button class="close-btn" @click="closePalette"><i class="fas fa-times"></i></button>
+        </div>
+        <button class="action-btn" @click="$refs.imageInput.click()">{{ t('designer.choose_image', 'اختيار صورة')
+          }}</button>
+      </div>
+
+      <div class="palette layers-palette" v-if="openPalette === 'layers'">
+        <div class="palette-header">
+          <div class="palette-title">{{ t('designer.layers', 'الطبقات') }}</div>
+          <button class="close-btn" @click="closePalette"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="layers-list">
+          <button v-for="element in reversedLayers" :key="element.id" class="layer-item"
+            :class="{ active: selectedElementId === element.id }" @click="selectElement(element.id)">
+            <span>{{ layerLabel(element) }}</span>
+            <i class="fas fa-layer-group"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="palette properties-palette" v-if="selectedElement">
+        <div class="palette-header">
+          <div class="palette-title">{{ t('designer.properties', 'خصائص العنصر') }}</div>
+          <button class="close-btn" @click="selectedElementId = null"><i class="fas fa-times"></i></button>
+        </div>
+
+        <template v-if="selectedElement.type === 'text'">
+          <label class="property-field">
+            <span>{{ t('designer.text', 'النص') }}</span>
+            <textarea v-model="selectedElement.text" class="palette-input" rows="3" @input="commitChanges"></textarea>
+          </label>
+          <label class="property-field">
+            <span>{{ t('designer.font_size', 'حجم الخط') }}</span>
+            <input type="range" min="12" max="120" v-model.number="selectedElement.fontSize" @input="commitChanges" />
+          </label>
+        </template>
+
+        <template v-else>
+          <label class="property-field">
+            <span>{{ t('designer.width', 'العرض') }}</span>
+            <input type="range" min="40" max="900" v-model.number="selectedElement.width" @input="commitChanges" />
+          </label>
+          <label class="property-field">
+            <span>{{ t('designer.height', 'الارتفاع') }}</span>
+            <input type="range" min="40" max="900" v-model.number="selectedElement.height" @input="commitChanges" />
+          </label>
+        </template>
+
+        <label class="property-field">
+          <span>{{ t('designer.opacity', 'الشفافية') }}</span>
+          <input type="range" min="0.1" max="1" step="0.05" v-model.number="selectedElement.opacity"
+            @input="commitChanges" />
+        </label>
+
+        <label class="property-field">
+          <span>{{ t('designer.rotation', 'الدوران') }}</span>
+          <input type="range" min="-180" max="180" v-model.number="selectedElement.rotation" @input="commitChanges" />
+        </label>
+
+        <label class="property-field" v-if="selectedElement.type !== 'image'">
+          <span>{{ t('designer.color', 'اللون') }}</span>
+          <input type="color" v-model="selectedElement.color" @input="commitChanges" />
+        </label>
+      </div>
+
+      <div class="wardrobe-container-3d" :class="{ 'wardrobe-minimized': wardrobeMinimized }">
+        <div class="wardrobe-3d" :class="{ open: wardrobeOpen, minimized: wardrobeMinimized }">
+          <div class="wardrobe-body-3d"></div>
+          <div class="wardrobe-door-3d door-left-3d">
+            <div class="door-handle-3d"></div>
+          </div>
+          <div class="wardrobe-door-3d door-right-3d">
+            <div class="door-handle-3d"></div>
+          </div>
+
+          <div class="wardrobe-inside-3d">
+            <div class="wardrobe-header">
+              <span>{{ t('designer.templates', 'القوالب') }}</span>
+              <div class="wardrobe-controls">
+                <button class="wardrobe-minimize-btn" @click="toggleWardrobeMinimized"
+                  :title="wardrobeMinimized ? t('designer.expand', 'توسيع') : t('designer.minimize', 'تصغير')">
+                  <i :class="wardrobeMinimized ? 'fas fa-expand' : 'fas fa-compress'"></i>
+                </button>
+                <button class="close-btn small" @click="wardrobeOpen = false; wardrobeMinimized = false"
+                  :title="t('designer.close', 'إغلاق')">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="clothes-rail-3d">
+              <div class="hanger-3d" style="left: 14%"></div>
+              <div class="hanger-3d" style="left: 34%"></div>
+              <div class="hanger-3d" style="left: 54%"></div>
+              <div class="hanger-3d" style="left: 74%"></div>
+            </div>
+
+            <div class="loading-box wardrobe-state" v-if="templatesLoading">{{ t('designer.loading_templates', 'جاري تحميل القوالب...') }}</div>
+            <div class="error-box wardrobe-state" v-else-if="templatesError">{{ templatesError }}</div>
+            <div class="empty-box wardrobe-state" v-else-if="!templates.length">{{ t('designer.no_templates', 'لا توجد قوالب متاحة') }}</div>
+
+            <button v-else v-for="template in templates" :key="`wardrobe-${template.id}`" class="clothing-item-3d"
+              :class="{ active: activeTemplate.id === template.id }"
+              @click="applyTemplate(template); wardrobeMinimized = false">
+              <div class="clothing-img-container-3d">
+                <img v-if="template.preview" :src="template.preview" class="clothing-img-3d" :alt="template.name" />
+                <div v-else class="clothing-fallback" :style="templateCardStyle(template)"></div>
+              </div>
+              <div class="clothing-name-3d">{{ template.name }}</div>
             </button>
           </div>
         </div>
+
+        <button class="wardrobe-control-3d" @click="toggleWardrobe">
+          <i :class="wardrobeOpen ? 'fas fa-times' : 'fas fa-tshirt'"></i>
+        </button>
       </div>
+
+      <transition name="preview-slide">
+        <div class="preview-panel" v-if="showMockup">
+          <div class="preview-header">
+            <div>
+              <h3>{{ t('designer.preview', 'عرض التصميم على المجسم') }}</h3>
+              <p>{{ t('designer.preview_desc', 'مجسم بنت شابة احترافي مع عرض حي للتصميم والقالب المحدد.') }}</p>
+            </div>
+            <div class="preview-actions">
+              <button class="action-btn compact" @click="spinMockup = !spinMockup">{{ spinMockup ? t('designer.stop', 'إيقاف الدوران') : t('designer.rotate', 'تدوير المجسم') }}</button>
+              <button class="close-btn on-panel" @click="showMockup = false"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+
+          <div class="mockup-stage">
+            <div class="mannequin-3d" :class="{ spinning: spinMockup }">
+              <div class="hair-back"></div>
+              <div class="mannequin-head"></div>
+              <div class="hair-front"></div>
+              <div class="mannequin-neck"></div>
+              <div class="mannequin-body">
+                <div class="garment-surface" :style="{ background: garmentColor }">
+                  <img :src="mockupImage" class="garment-texture" alt="mockup" />
+                </div>
+                <div class="body-highlight"></div>
+              </div>
+              <div class="arm arm-left"></div>
+              <div class="arm arm-right"></div>
+              <div class="forearm forearm-left"></div>
+              <div class="forearm forearm-right"></div>
+              <div class="hip"></div>
+              <div class="leg leg-left"></div>
+              <div class="leg leg-right"></div>
+              <div class="shin shin-left"></div>
+              <div class="shin shin-right"></div>
+              <div class="floor-shadow"></div>
+            </div>
+          </div>
+        </div>
+      </transition>
+
+      <input ref="imageInput" class="hidden-file" type="file" accept="image/*" @change="onImageSelected" />
     </div>
-  </CustomerLayout>
+  </Customer>
 </template>
 
 <script>
-import CustomerLayout from '@/Layouts/Customer.vue';
-import ProductDesigner from '@/Components/Designer/ProductDesigner.vue';
-import axios from 'axios';
-import { router } from '@inertiajs/vue3';
+import Customer from '@/Layouts/Customer.vue'
 
 export default {
-  name: 'DesignerCreate',
-  
-  components: {
-    CustomerLayout,
-    ProductDesigner,
-  },
-  
+  name: 'CreateWardrobeTemplatesFixed',
+  components: { Customer },
   props: {
-    productType: Object,
-    product: Object,
-    printAreas: Array,
-    initialTemplate: Object,
+    templatesFromServer: { type: Array, default: () => [] },
+    designTemplates: { type: Array, default: () => [] },
+    templates: { type: Array, default: () => [] },
+    editMode: { type: Boolean, default: false },
+    initialDesign: { type: Object, default: null }
   },
-  
   data() {
     return {
-      showCliparts: false,
-      showTemplates: false,
-      showProperties: true,
-      showShapes: false,
-      cliparts: [],
-      fonts: [],
-      userAssets: [],
-      recentDesigns: [],
-      // selectedObject is now a computed property
-      previewUrl: null,
-      hasChanges: false,
-      templates: [],
-      loadingTemplates: false,
-      templateSearch: '',
-      templateCategory: '',
-      currentTemplatePage: 1,
-      totalTemplatePages: 1,
-      templateCategories: ['t-shirt', 'hoodie', 'mug', 'poster', 'other'],
-      imageBackgroundRemoved: false,
-      zoomLevel: 1,
-      showGrid: false,
+      navItems: [
+        { key: 'home', label: 'الرئيسية', icon: 'fas fa-home', active: true, route: '/' },
+        { key: 'designs', label: 'تصاميمي', icon: 'fas fa-palette', active: false, route: '/designer/my-designs' },
+        { key: 'products', label: 'المنتجات', icon: 'fas fa-tshirt', active: false, route: '/products' },
+        { key: 'panel', label: 'لوحة التحكم', icon: 'fas fa-file-invoice', active: false, route: '/customer/dashboard' },
+        { key: 'profile', label: 'الملف الشخصي', icon: 'fas fa-user', active: false, route: '/customer/profile' }
+      ],
+      tools: [
+        { key: 'brush', label: 'فرشاة', icon: 'fas fa-paint-brush' },
+        { key: 'pen', label: 'قلم', icon: 'fas fa-pen' },
+        { key: 'eraser', label: 'ممحاة', icon: 'fas fa-eraser' },
+        { key: 'color', label: 'ألوان', icon: 'fas fa-palette' },
+        { key: 'size', label: 'مقاس', icon: 'fas fa-ruler' },
+        { key: 'templates', label: 'القوالب', icon: 'fas fa-object-group' },
+        { key: 'text', label: 'نص', icon: 'fas fa-font' },
+        { key: 'shape', label: 'مربع', icon: 'fas fa-square' },
+        { key: 'circle', label: 'دائرة', icon: 'fas fa-circle' },
+        { key: 'triangle', label: 'مثلث', icon: 'fas fa-play' },
+        { key: 'image', label: 'صور', icon: 'fas fa-image' },
+        { key: 'layers', label: 'الطبقات', icon: 'fas fa-layer-group' },
+        { key: 'wardrobe', label: 'دولاب', icon: 'fas fa-wardrobe' },
+        { key: 'select', label: 'تحديد', icon: 'fas fa-mouse-pointer' }
+      ],
+      colors: ['#000000', '#ff0000', '#00c853', '#2962ff', '#ffeb3b', '#ff00ff', '#00ffff', '#ff9800', '#7c4dff', '#e91e63', '#03a9f4', '#8bc34a', '#ffffff', '#bdbdbd', '#616161'],
+      brushSizes: [1, 3, 5, 8, 10, 15, 20, 30, 50],
+      defaultTemplate: { id: 'default', name: 'افتراضي', background: 'linear-gradient(180deg,#ffffff 0%,#f5f7ff 100%)', preview: null, baseColor: '#ffffff' },
+      templatesList: [],
+      templatesLoading: false,
+      templatesError: '',
+      stageWidth: 980,
+      stageHeight: 680,
+      activeTool: 'brush',
+      openPalette: null,
+      currentColor: '#000000',
+      brushSize: 5,
+      garmentColor: '#ffffff',
+      activeTemplate: { id: 'default', name: 'افتراضي', background: 'linear-gradient(180deg,#ffffff 0%,#f5f7ff 100%)', preview: null, baseColor: '#ffffff' },
+      draftText: 'نص جديد',
+      showMockup: false,
+      spinMockup: true,
+      wardrobeOpen: false,
+      wardrobeMinimized: false,
+      mockupImage: '',
+      isDrawing: false,
+      selectedElementId: null,
+      dragState: null,
+      resizeState: false,
+      rotationState: false,
+      elements: [],
       history: [],
       historyIndex: -1,
-      maxHistory: 50,
-      
-      // Tool state
-      activeTool: 'select',
-      
-      // Brush properties
-      brushSize: 5,
-      brushColor: '#000000',
-      brushOpacity: 1,
-      brushType: 'pencil',
-      brushTypes: [
-        { value: 'pencil', name: 'Pencil' },
-        { value: 'spray', name: 'Spray' },
-        { value: 'marker', name: 'Marker' },
-        { value: 'soft', name: 'Soft Brush' },
-        { value: 'eraser', name: 'Eraser' }
-      ],
-    };
+      drawingContext: null,
+      templateContext: null,
+      pendingSave: false
+    }
   },
-  
-  async created() {
-    await this.loadAssets();
-    await this.loadUserAssets();
-    await this.loadRecentDesigns();
-    await this.fetchTemplates(1);
-    
-    // Watch for template filters
-    this.$watch('templateSearch', this.onTemplateFilterChange);
-    this.$watch('templateCategory', this.onTemplateFilterChange);
+  computed: {
+    isDrawTool() {
+      return ['brush', 'pen', 'eraser'].includes(this.activeTool)
+    },
+    orderedElements() {
+      return [...this.elements].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
+    },
+    reversedLayers() {
+      return [...this.orderedElements].reverse()
+    },
+    selectedElement() {
+      return this.elements.find(item => item.id === this.selectedElementId) || null
+    },
+    templatesResolved() {
+      return this.templatesList.length ? this.templatesList : [this.defaultTemplate]
+    },
+    templates() {
+      return this.templatesResolved
+    }
   },
-  
   async mounted() {
-    console.log('Create.vue mounted');
-    
-    // Load template if provided
-    if (this.initialTemplate) {
-      console.log('Loading initial template:', this.initialTemplate);
-      await this.$nextTick();
-      try {
-        await this.useTemplate(this.initialTemplate);
-      } catch (error) {
-        console.error('Failed to load initial template:', error);
-      }
-    }
-    
-    // Ensure proper initialization of designer
-    await this.$nextTick();
-    if (this.$refs.designer) {
-      console.log('Designer component reference available');
-      // Make sure canvas is properly initialized
-      if (this.$refs.designer.initializeCanvas && typeof this.$refs.designer.initializeCanvas === 'function') {
-        this.$refs.designer.initializeCanvas();
-      }
-    } else {
-      console.error('Designer component reference not available');
-    }
+    this.templateContext = this.$refs.templateCanvas.getContext('2d')
+    this.drawingContext = this.$refs.drawingCanvas.getContext('2d')
+    this.drawingContext.lineCap = 'round'
+    this.drawingContext.lineJoin = 'round'
+    this.drawTemplate()
+    this.pushHistory(true)
+    await this.loadTemplates()
+    this.restoreInitialDesign()
+    await this.updateMockupImage()
+    document.addEventListener('click', this.handleOutsideClick)
   },
-  
+  beforeUnmount() {
+    document.removeEventListener('click', this.handleOutsideClick)
+  },
   methods: {
-    async loadAssets() {
+    t(key, fallback) {
       try {
-        const [fontsRes, clipartsRes] = await Promise.all([
-          axios.get('/api/v1/fonts'),
-          axios.get('/api/v1/cliparts'),
-        ]);
-        
-        this.fonts = fontsRes.data.data.map(f => f.name);
-        this.cliparts = clipartsRes.data.data;
-      } catch (error) {
-        console.error('Failed to load assets:', error);
-        // Provide fallback data
-        this.fonts = [];
-        this.cliparts = [];
+        if (typeof window !== 'undefined' && typeof window.__ === 'function') return window.__(key)
+      } catch (e) { }
+      return fallback
+    },
+    handleOutsideClick(event) {
+      if (!event.target.closest('.palette') && !event.target.closest('.tool-icon') && !event.target.closest('.design-element') && !event.target.closest('.wardrobe-container-3d')) {
+        this.openPalette = null
       }
     },
-    
-    clearCanvas() {
-      if (this.$refs.designer && typeof this.$refs.designer.clearCanvas === 'function') {
-        this.$refs.designer.clearCanvas();
-      }
-    },
-    
-    async loadUserAssets() {
-      try {
-        const response = await axios.get('/api/assets');
-        this.userAssets = response.data.data || [];
-      } catch (error) {
-        // User not authenticated, no need to load user assets
-        if (error.response && error.response.status === 401) {
-          console.log('User not authenticated, skipping user assets');
-          this.userAssets = [];
-        } else {
-          console.error('Failed to load user assets:', error);
-          this.userAssets = [];
+    closePalette() { this.openPalette = null },
+    activateTool(tool) {
+      this.activeTool = tool
+      if (['color', 'size', 'templates', 'text', 'image', 'layers', 'wardrobe'].includes(tool)) {
+        if (tool === 'wardrobe') {
+          this.openWardrobe()
+          return
         }
+        this.openPalette = tool
+        return
+      }
+      if (tool === 'shape') return this.addShape('rect')
+      if (tool === 'circle') return this.addShape('circle')
+      if (tool === 'triangle') return this.addShape('triangle')
+      this.openPalette = null
+    },
+    normalizeTemplate(row, index = 0) {
+      const preview = row.preview || row.image || row.thumbnail || row.photo || row.template_image || row.cover || row.url || null
+      const background = row.background || row.gradient || row.bg || 'linear-gradient(180deg,#ffffff 0%,#f5f7ff 100%)'
+      return {
+        id: row.id ?? row.uuid ?? `template-${index}`,
+        name: row.name || row.title || row.template_name || `Template ${index + 1}`,
+        preview,
+        background,
+        baseColor: row.baseColor || row.base_color || '#ffffff'
       }
     },
-    
-    async loadRecentDesigns() {
+    async loadTemplates() {
+      this.templatesLoading = true
+      this.templatesError = ''
       try {
-        const response = await axios.get('/api/designs');
-        this.recentDesigns = response.data.data || [];
-      } catch (error) {
-        // User not authenticated, no need to load recent designs
-        if (error.response && error.response.status === 401) {
-          console.log('User not authenticated, skipping recent designs');
-          this.recentDesigns = [];
-        } else {
-          console.error('Failed to load recent designs:', error);
-          this.recentDesigns = [];
-        }
-      }
-    },
-    
-    async fetchTemplates(page = 1) {
-      this.loadingTemplates = true;
-      try {
-        const response = await axios.get('/api/v1/templates', {
-          params: {
-            page,
-            search: this.templateSearch,
-            category: this.templateCategory
+        const fromProps = [
+          ...(Array.isArray(this.templatesFromServer) ? this.templatesFromServer : []),
+          ...(Array.isArray(this.designTemplates) ? this.designTemplates : []),
+          ...(Array.isArray(this.$props.templates) ? this.$props.templates : []),
+          ...(Array.isArray(this.$page?.props?.templates) ? this.$page.props.templates : []),
+          ...(Array.isArray(this.$page?.props?.designTemplates) ? this.$page.props.designTemplates : []),
+          ...(Array.isArray(this.$page?.props?.templatesFromServer) ? this.$page.props.templatesFromServer : [])
+        ]
+
+        let rows = fromProps.filter(Boolean)
+
+        if (!rows.length) {
+          const endpoints = [
+            '/designer/templates',
+            '/customer/designer/templates',
+            '/api/designer/templates',
+            '/api/templates',
+            '/templates'
+          ]
+          for (const endpoint of endpoints) {
+            try {
+              const response = await fetch(endpoint, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+              if (!response.ok) continue
+              const json = await response.json()
+              const list = Array.isArray(json) ? json : (json.data || json.templates || [])
+              if (Array.isArray(list) && list.length) {
+                rows = list
+                break
+              }
+            } catch (_) { }
           }
-        });
-        
-        // Handle response format properly - check if data exists
-        if (response.data && response.data.data) {
-          this.templates = response.data.data;
-          
-          // Check if meta exists
-          if (response.data.meta) {
-            this.currentTemplatePage = response.data.meta.current_page || 1;
-            this.totalTemplatePages = response.data.meta.last_page || 1;
-          } else {
-            // Fallback if meta doesn't exist
-            this.currentTemplatePage = 1;
-            this.totalTemplatePages = 1;
-          }
-        } else {
-          // No data returned
-          this.templates = [];
-          this.currentTemplatePage = 1;
-          this.totalTemplatePages = 1;
         }
-      } catch (error) {
-        console.error('Failed to load templates:', error);
-        // Set defaults on error
-        this.templates = [];
-        this.currentTemplatePage = 1;
-        this.totalTemplatePages = 1;
+
+        this.templatesList = rows.map((row, index) => this.normalizeTemplate(row, index))
+        if (!this.templatesList.length) this.templatesList = [this.defaultTemplate]
+
+        const keepSelected = this.templatesList.find(item => item.id === this.activeTemplate.id)
+        if (!keepSelected) this.applyTemplate(this.templatesList[0], false)
+      } catch (e) {
+        this.templatesError = this.t('designer.templates_load_failed', 'تعذر جلب القوالب من قاعدة البيانات')
+        this.templatesList = [this.defaultTemplate]
+        this.applyTemplate(this.defaultTemplate, false)
       } finally {
-        this.loadingTemplates = false;
+        this.templatesLoading = false
       }
     },
-    
-    onTemplateFilterChange() {
-      this.fetchTemplates(1);
-    },
-    
-    async useTemplate(template) {
-      console.log('Using template:', template);
-      // Load the template into the designer
-      this.showTemplates = false;
-      
-      // Call the designer component method to load template
-      if (this.$refs.designer && typeof this.$refs.designer.loadTemplate === 'function') {
-        await this.$refs.designer.loadTemplate(template);
-      } else {
-        console.error('Designer component not ready or loadTemplate method not available');
-        if (typeof this.$toast !== 'undefined') {
-          this.$toast.error('Designer not ready. Please try again.');
+    restoreInitialDesign() {
+      const design = this.initialDesign || this.$page?.props?.initialDesign || null
+      if (!design) return
+      const selectedTemplateId = design.template_id || design.templateId || design.template?.id
+      if (selectedTemplateId) {
+        const found = this.templatesList.find(t => String(t.id) === String(selectedTemplateId))
+        if (found) this.applyTemplate(found, false)
+      }
+      if (Array.isArray(design.elements)) this.elements = design.elements
+      if (design.drawing) {
+        const img = new Image()
+        img.onload = () => {
+          this.drawingContext.clearRect(0, 0, this.stageWidth, this.stageHeight)
+          this.drawingContext.drawImage(img, 0, 0)
+          this.updateMockupImage()
         }
+        img.src = design.drawing
       }
     },
-    
-    addText() {
-      this.$refs.designer.addText();
+    templateCardStyle(template) {
+      return { background: template.background || this.defaultTemplate.background }
     },
-    
-    triggerImageUpload() {
-      this.$refs.designer.triggerImageUpload();
+    selectColor(color) {
+      this.currentColor = color
+      if (this.selectedElement && this.selectedElement.type !== 'image') {
+        this.selectedElement.color = color
+        this.commitChanges()
+      }
     },
-    
-    addClipart(clipart) {
-      this.showCliparts = false;
-      this.$refs.designer.addClipart(clipart);
+    applyTemplate(template, push = true) {
+      this.activeTemplate = { ...this.defaultTemplate, ...template }
+      this.garmentColor = this.activeTemplate.baseColor || '#ffffff'
+      if (push) this.commitChanges()
+      else this.drawTemplate()
+      this.wardrobeOpen = false
+      this.openPalette = null
+      this.updateMockupImage()
     },
-    
-    addImageFromAsset(asset) {
-      this.$refs.designer.addImageFromUrl(asset.file_url);
+    drawTemplate() {
+      const ctx = this.templateContext
+      ctx.clearRect(0, 0, this.stageWidth, this.stageHeight)
+      ctx.save()
+      ctx.fillStyle = this.garmentColor
+      const cx = this.stageWidth / 2
+      const top = 44
+      const bodyHeight = this.stageHeight - 95
+      ctx.beginPath()
+      ctx.moveTo(cx - 88, top + 18)
+      ctx.quadraticCurveTo(cx - 145, top + 55, cx - 188, top + 165)
+      ctx.quadraticCurveTo(cx - 215, top + 248, cx - 235, top + 468)
+      ctx.quadraticCurveTo(cx - 130, top + bodyHeight, cx, top + bodyHeight - 10)
+      ctx.quadraticCurveTo(cx + 130, top + bodyHeight, cx + 235, top + 468)
+      ctx.quadraticCurveTo(cx + 215, top + 248, cx + 188, top + 165)
+      ctx.quadraticCurveTo(cx + 145, top + 55, cx + 88, top + 18)
+      ctx.quadraticCurveTo(cx + 42, top - 4, cx + 10, top + 6)
+      ctx.lineTo(cx + 34, top + 58)
+      ctx.quadraticCurveTo(cx + 44, top + 95, cx + 20, top + 154)
+      ctx.lineTo(cx - 20, top + 154)
+      ctx.quadraticCurveTo(cx - 44, top + 95, cx - 34, top + 58)
+      ctx.lineTo(cx - 10, top + 6)
+      ctx.quadraticCurveTo(cx - 42, top - 4, cx - 88, top + 18)
+      ctx.closePath()
+      ctx.fill()
+      ctx.strokeStyle = 'rgba(74,20,140,0.16)'
+      ctx.lineWidth = 3
+      ctx.stroke()
+      ctx.restore()
     },
-    
-    saveDesign() {
-      this.$refs.designer.saveDesign();
+    getPoint(event) {
+      const rect = this.$refs.drawingCanvas.getBoundingClientRect()
+      return { x: ((event.clientX - rect.left) / rect.width) * this.stageWidth, y: ((event.clientY - rect.top) / rect.height) * this.stageHeight }
     },
-    
-    exportDesign() {
-      this.$refs.designer.exportDesign();
+    onStageMouseDown(event) {
+      if (!this.isDrawTool) return
+      const point = this.getPoint(event)
+      this.isDrawing = true
+      this.drawingContext.beginPath()
+      this.drawingContext.moveTo(point.x, point.y)
+      this.drawingContext.lineWidth = this.activeTool === 'pen' ? Math.max(1, this.brushSize - 2) : this.brushSize
+      if (this.activeTool === 'eraser') {
+        this.drawingContext.globalCompositeOperation = 'destination-out'
+      } else {
+        this.drawingContext.globalCompositeOperation = 'source-over'
+        this.drawingContext.strokeStyle = this.currentColor
+      }
     },
-    
-    onDesignSaved(design) {
-      this.hasChanges = false;
-      // Use Inertia router to navigate
-      this.$inertia.visit(route('designer.my-designs'));
+    onStageMouseMove(event) {
+      if (this.isDrawing) {
+        const point = this.getPoint(event)
+        this.drawingContext.lineTo(point.x, point.y)
+        this.drawingContext.stroke()
+        this.updateMockupImage()
+      }
+      if (this.dragState && this.selectedElement) {
+        const point = this.getPoint(event)
+        this.selectedElement.x = this.clamp(point.x - this.dragState.offsetX, 0, this.stageWidth - 20)
+        this.selectedElement.y = this.clamp(point.y - this.dragState.offsetY, 0, this.stageHeight - 20)
+        this.updateMockupImage()
+      }
+      if (this.resizeState && this.selectedElement) {
+        const point = this.getPoint(event)
+        this.selectedElement.width = this.clamp(Math.round(point.x - this.selectedElement.x), 40, this.stageWidth)
+        this.selectedElement.height = this.clamp(Math.round(point.y - this.selectedElement.y), 40, this.stageHeight)
+        this.updateMockupImage()
+      }
+      if (this.rotationState && this.selectedElement) {
+        const point = this.getPoint(event)
+        const cx = this.selectedElement.x + this.selectedElement.width / 2
+        const cy = this.selectedElement.y + this.selectedElement.height / 2
+        this.selectedElement.rotation = Math.round((Math.atan2(point.y - cy, point.x - cx) * 180 / Math.PI) + 90)
+        this.updateMockupImage()
+      }
     },
-    
-    onDesignChanged() {
-      this.hasChanges = true;
+    onStageMouseUp() {
+      if (this.isDrawing) {
+        this.isDrawing = false
+        this.drawingContext.globalCompositeOperation = 'source-over'
+        this.pushHistory()
+      }
+      if (this.dragState || this.resizeState || this.rotationState) {
+        this.dragState = null
+        this.resizeState = false
+        this.rotationState = false
+        this.pushHistory()
+      }
     },
-    
-    loadDesign(design) {
-      this.$refs.designer.loadDesign(design);
+    addTextElement() {
+      const id = this.uid()
+      this.elements.push({ id, type: 'text', text: this.draftText || 'نص جديد', x: 330, y: 180, width: 260, height: 120, rotation: 0, opacity: 1, color: this.currentColor, fontSize: 42, fontWeight: '700', zIndex: this.nextZ() })
+      this.selectedElementId = id
+      this.openPalette = null
+      this.commitChanges()
     },
-    
-    updateCanvas() {
-      this.$refs.designer.updateCanvas();
-      this.hasChanges = true;
+    addShape(type = 'rect') {
+      const id = this.uid()
+      this.elements.push({ id, type, x: 320, y: 220, width: 180, height: 180, rotation: 0, opacity: 0.9, color: this.currentColor, zIndex: this.nextZ() })
+      this.selectedElementId = id
+      this.commitChanges()
     },
-    
+    onImageSelected(event) {
+      const file = event.target.files?.[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = () => {
+        const id = this.uid()
+        this.elements.push({ id, type: 'image', src: reader.result, x: 300, y: 160, width: 250, height: 250, rotation: 0, opacity: 1, zIndex: this.nextZ() })
+        this.selectedElementId = id
+        this.openPalette = null
+        this.commitChanges()
+      }
+      reader.readAsDataURL(file)
+      event.target.value = ''
+    },
+    selectElement(id) { this.selectedElementId = id; this.activeTool = 'select' },
+    startElementDrag(event, element) {
+      if (this.isDrawTool) return
+      const point = this.getPoint(event)
+      this.selectedElementId = element.id
+      this.dragState = { offsetX: point.x - element.x, offsetY: point.y - element.y }
+    },
+    startResize(element) { this.selectedElementId = element.id; this.resizeState = true },
+    startRotate(element) { this.selectedElementId = element.id; this.rotationState = true },
+    duplicateSelected() {
+      if (!this.selectedElement) return
+      const copy = JSON.parse(JSON.stringify(this.selectedElement))
+      copy.id = this.uid()
+      copy.x += 24
+      copy.y += 24
+      copy.zIndex = this.nextZ()
+      this.elements.push(copy)
+      this.selectedElementId = copy.id
+      this.commitChanges()
+    },
+    deleteSelected() {
+      if (!this.selectedElementId) return
+      this.elements = this.elements.filter(item => item.id !== this.selectedElementId)
+      this.selectedElementId = null
+      this.commitChanges()
+    },
+    deleteElement(id) {
+      this.elements = this.elements.filter(item => item.id !== id)
+      if (this.selectedElementId === id) {
+        this.selectedElementId = null
+      }
+      this.commitChanges()
+    },
+    clearDrawing() { this.drawingContext.clearRect(0, 0, this.stageWidth, this.stageHeight); this.commitChanges() },
+    resetDesign() {
+      this.elements = []
+      this.selectedElementId = null
+      this.currentColor = '#000000'
+      this.brushSize = 5
+      this.activeTemplate = this.templates[0] || this.defaultTemplate
+      this.drawTemplate()
+      this.drawingContext.clearRect(0, 0, this.stageWidth, this.stageHeight)
+      this.commitChanges()
+    },
     bringForward() {
-      this.$refs.designer.bringForward();
-      this.hasChanges = true;
+      if (!this.selectedElement) return
+      this.selectedElement.zIndex += 1
+      this.reindexLayers()
+      this.commitChanges()
     },
-    
-    sendBackwards() {
-      this.$refs.designer.sendBackwards();
-      this.hasChanges = true;
+    sendBackward() {
+      if (!this.selectedElement) return
+      this.selectedElement.zIndex -= 1
+      this.reindexLayers()
+      this.commitChanges()
     },
-    
-    deleteObject() {
-      this.$refs.designer.deleteObject();
-      this.hasChanges = true;
+    reindexLayers() {
+      this.elements.sort((a, b) => a.zIndex - b.zIndex).forEach((item, index) => { item.zIndex = index + 1 })
     },
-    
-    bringToFront() {
-      if (this.$refs.designer && typeof this.$refs.designer.bringToFront === 'function') {
-        this.$refs.designer.bringToFront();
-        this.hasChanges = true;
+    layerLabel(element) {
+      const labels = { text: 'نص', image: 'صورة', rect: 'مربع', circle: 'دائرة', triangle: 'مثلث' }
+      return `${labels[element.type] || 'عنصر'} #${element.zIndex || 1}`
+    },
+    commitChanges() { this.pushHistory(); this.updateMockupImage() },
+    pushHistory(initial = false) {
+      const snapshot = JSON.stringify({
+        activeTemplate: this.activeTemplate,
+        drawing: this.$refs.drawingCanvas?.toDataURL('image/png') || '',
+        elements: this.elements
+      })
+      if (initial) { this.history = [snapshot]; this.historyIndex = 0; return }
+      if (this.history[this.historyIndex] === snapshot) return
+      this.history = this.history.slice(0, this.historyIndex + 1)
+      this.history.push(snapshot)
+      this.historyIndex = this.history.length - 1
+    },
+    restoreSnapshot(snapshot) {
+      const data = JSON.parse(snapshot)
+      this.activeTemplate = data.activeTemplate
+      this.elements = data.elements || []
+      this.selectedElementId = null
+      const img = new Image()
+      img.onload = () => {
+        this.drawingContext.clearRect(0, 0, this.stageWidth, this.stageHeight)
+        this.drawingContext.drawImage(img, 0, 0)
+        this.updateMockupImage()
       }
+      img.src = data.drawing
     },
-    
-    sendToBack() {
-      if (this.$refs.designer && typeof this.$refs.designer.sendToBack === 'function') {
-        this.$refs.designer.sendToBack();
-        this.hasChanges = true;
+    undo() { if (this.historyIndex <= 0) return; this.historyIndex -= 1; this.restoreSnapshot(this.history[this.historyIndex]) },
+    redo() { if (this.historyIndex >= this.history.length - 1) return; this.historyIndex += 1; this.restoreSnapshot(this.history[this.historyIndex]) },
+    elementStyle(element) {
+      return { left: `${element.x}px`, top: `${element.y}px`, width: `${element.width}px`, height: `${element.height}px`, transform: `rotate(${element.rotation || 0}deg)`, opacity: element.opacity ?? 1, zIndex: element.zIndex || 1 }
+    },
+    textStyle(element) { return { color: element.color, fontSize: `${element.fontSize}px`, fontWeight: element.fontWeight } },
+    shapeStyle(element) { return { background: element.color } },
+    triangleStyle(element) {
+      return { borderLeft: `${element.width / 2}px solid transparent`, borderRight: `${element.width / 2}px solid transparent`, borderBottom: `${element.height}px solid ${element.color}`, width: '0', height: '0' }
+    },
+    uid() { return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}` },
+    nextZ() { return this.elements.length ? Math.max(...this.elements.map(item => item.zIndex || 1)) + 1 : 1 },
+    clamp(value, min, max) { return Math.min(Math.max(value, min), max) },
+    async gradientToImage(background) {
+      return new Promise(resolve => {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${this.stageWidth}" height="${this.stageHeight}"><foreignObject x="0" y="0" width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="width:${this.stageWidth}px;height:${this.stageHeight}px;background:${background};"></div></foreignObject></svg>`
+        const img = new Image()
+        img.onload = () => resolve(img)
+        img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+      })
+    },
+    async drawElementOnCanvas(ctx, element) {
+      ctx.save()
+      ctx.translate(element.x + element.width / 2, element.y + element.height / 2)
+      ctx.rotate((element.rotation || 0) * Math.PI / 180)
+      ctx.globalAlpha = element.opacity ?? 1
+      if (element.type === 'text') {
+        ctx.fillStyle = element.color
+        ctx.font = `${element.fontWeight} ${element.fontSize}px Arial`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        const lines = String(element.text).split('\n')
+        const lineHeight = element.fontSize * 1.2
+        lines.forEach((line, index) => ctx.fillText(line, 0, (index - (lines.length - 1) / 2) * lineHeight))
+      } else if (element.type === 'image') {
+        await new Promise(resolve => {
+          const img = new Image()
+          img.onload = () => { ctx.drawImage(img, -element.width / 2, -element.height / 2, element.width, element.height); resolve() }
+          img.src = element.src
+        })
+      } else if (element.type === 'rect') {
+        ctx.fillStyle = element.color
+        this.roundRect(ctx, -element.width / 2, -element.height / 2, element.width, element.height, 18)
+        ctx.fill()
+      } else if (element.type === 'circle') {
+        ctx.fillStyle = element.color
+        ctx.beginPath()
+        ctx.ellipse(0, 0, element.width / 2, element.height / 2, 0, 0, Math.PI * 2)
+        ctx.fill()
+      } else if (element.type === 'triangle') {
+        ctx.fillStyle = element.color
+        ctx.beginPath()
+        ctx.moveTo(0, -element.height / 2)
+        ctx.lineTo(element.width / 2, element.height / 2)
+        ctx.lineTo(-element.width / 2, element.height / 2)
+        ctx.closePath()
+        ctx.fill()
       }
+      ctx.restore()
     },
-    
-    toggleBold() {
-      if (this.$refs.designer && this.$refs.designer.selectedObject) {
-        this.$refs.designer.toggleBold();
-      }
+    roundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath()
+      ctx.moveTo(x + radius, y)
+      ctx.arcTo(x + width, y, x + width, y + height, radius)
+      ctx.arcTo(x + width, y + height, x, y + height, radius)
+      ctx.arcTo(x, y + height, x, y, radius)
+      ctx.arcTo(x, y, x + width, y, radius)
+      ctx.closePath()
     },
-    
-    toggleItalic() {
-      if (this.$refs.designer && this.$refs.designer.selectedObject) {
-        this.$refs.designer.toggleItalic();
-      }
+    async buildExportCanvas() {
+      this.drawTemplate()
+      const canvas = document.createElement('canvas')
+      canvas.width = this.stageWidth
+      canvas.height = this.stageHeight
+      const ctx = canvas.getContext('2d')
+      const bg = await this.gradientToImage(this.activeTemplate.background || this.defaultTemplate.background)
+      ctx.drawImage(bg, 0, 0, this.stageWidth, this.stageHeight)
+      ctx.drawImage(this.$refs.templateCanvas, 0, 0)
+      ctx.drawImage(this.$refs.drawingCanvas, 0, 0)
+      for (const element of this.orderedElements) await this.drawElementOnCanvas(ctx, element)
+      return canvas
     },
-    
-    adjustImageFilters() {
-      this.$refs.designer.adjustImageFilters();
-      this.hasChanges = true;
-      this.saveToHistory();
+    async downloadDesign() {
+      const canvas = await this.buildExportCanvas()
+      const link = document.createElement('a')
+      link.href = canvas.toDataURL('image/png')
+      link.download = 'design.png'
+      link.click()
     },
-    
-    toggleUnderline() {
-      if (this.$refs.designer && this.$refs.designer.selectedObject) {
-        this.$refs.designer.toggleUnderline();
-      }
-    },
-    
-    togglePropertiesPanel() {
-      this.showProperties = !this.showProperties;
-    },
-    
-    async toggleImageBackground() {
-      if (!this.$refs.designer || !this.$refs.designer.selectedObject) return;
-      
-      this.imageBackgroundRemoved = !this.imageBackgroundRemoved;
-      
+    async saveDesignToLibrary() {
+      if (this.pendingSave) return
+      this.pendingSave = true
       try {
-        if (this.imageBackgroundRemoved) {
-          // Remove background
-          await this.$refs.designer.removeImageBackground();
-        } else {
-          // Restore original image
-          await this.$refs.designer.restoreImageBackground();
+        const canvas = await this.buildExportCanvas()
+        const dataUrl = canvas.toDataURL('image/png')
+        const payload = {
+          id: this.uid(),
+          template_id: this.activeTemplate.id,
+          name: `design-${new Date().toISOString()}`,
+          preview: dataUrl,
+          state: {
+            activeTemplate: this.activeTemplate,
+            elements: this.elements,
+            drawing: this.$refs.drawingCanvas.toDataURL('image/png')
+          },
+          created_at: new Date().toISOString()
         }
-        this.hasChanges = true;
-        this.saveToHistory();
-      } catch (error) {
-        console.error('Failed to toggle image background:', error);
-        this.imageBackgroundRemoved = !this.imageBackgroundRemoved; // Revert state
-        if (typeof this.$toast !== 'undefined') {
-          this.$toast.error('Failed to process image background');
-        }
+        const current = JSON.parse(localStorage.getItem('designer_designs') || '[]')
+        current.unshift(payload)
+        localStorage.setItem('designer_designs', JSON.stringify(current))
+        alert(this.t('designer.saved_successfully', 'تم حفظ التصميم محليًا بنجاح'))
+      } catch (e) {
+        alert(this.t('designer.save_failed', 'تعذر حفظ التصميم'))
+      } finally {
+        this.pendingSave = false
       }
     },
-    
-    // Zoom Controls
-    zoomIn() {
-      this.zoomLevel = Math.min(this.zoomLevel + 0.1, 3);
-      this.updateCanvasZoom();
+    openWardrobe() {
+      this.wardrobeOpen = true
+      this.wardrobeMinimized = false
+      this.openPalette = null
     },
-    
-    zoomOut() {
-      this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.1);
-      this.updateCanvasZoom();
-    },
-    
-    resetZoom() {
-      this.zoomLevel = 1;
-      this.updateCanvasZoom();
-    },
-    
-    updateZoom(newZoom) {
-      this.zoomLevel = newZoom;
-    },
-    
-    updateCanvasZoom() {
-      if (this.$refs.designer && this.$refs.designer.canvas) {
-        this.$refs.designer.canvas.setZoom(this.zoomLevel);
-        this.$refs.designer.canvas.renderAll();
+    toggleWardrobe() {
+      this.wardrobeOpen = !this.wardrobeOpen
+      if (!this.wardrobeOpen) {
+        this.wardrobeMinimized = false
       }
     },
-    
-    centerCanvas() {
-      if (this.$refs.designer && this.$refs.designer.canvas) {
-        const canvas = this.$refs.designer.canvas;
-        const viewportCenter = {
-          x: canvas.width / 2,
-          y: canvas.height / 2
-        };
-        
-        // Center the viewport
-        canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-        canvas.renderAll();
-      }
+    toggleWardrobeMinimized() {
+      this.wardrobeMinimized = !this.wardrobeMinimized
     },
-    
-    toggleGrid() {
-      this.showGrid = !this.showGrid;
-      // This would need to be implemented in the ProductDesigner component
-      if (this.$refs.designer && typeof this.$refs.designer.toggleGrid === 'function') {
-        this.$refs.designer.toggleGrid();
-      }
-    },
-    
-    // History/Undo-Redo
-    saveToHistory() {
-      // Remove any history after current index
-      if (this.historyIndex < this.history.length - 1) {
-        this.history = this.history.slice(0, this.historyIndex + 1);
-      }
-      
-      // Add current state
-      const currentState = this.$refs.designer.canvas.toJSON();
-      this.history.push(currentState);
-      this.historyIndex = this.history.length - 1;
-      
-      // Limit history size
-      if (this.history.length > this.maxHistory) {
-        this.history.shift();
-        this.historyIndex--;
-      }
-    },
-    
-    undo() {
-      if (this.canUndo) {
-        this.historyIndex--;
-        this.restoreFromHistory();
-      }
-    },
-    
-    redo() {
-      if (this.canRedo) {
-        this.historyIndex++;
-        this.restoreFromHistory();
-      }
-    },
-    
-    restoreFromHistory() {
-      if (this.historyIndex >= 0 && this.historyIndex < this.history.length) {
-        const state = this.history[this.historyIndex];
-        this.$refs.designer.canvas.loadFromJSON(state, () => {
-          this.$refs.designer.canvas.renderAll();
-        });
-      }
-    },
-    
-    get canUndo() {
-      return this.history && this.history.length > 0 && this.historyIndex > 0;
-    },
-    
-    get canRedo() {
-      return this.history && this.history.length > 0 && this.historyIndex < this.history.length - 1;
-    },
-    
-    get canUndoBrush() {
-      return this.$refs.designer && typeof this.$refs.designer.canUndoBrush === 'function' 
-        ? this.$refs.designer.canUndoBrush() 
-        : false;
-    },
-    
-    get canRedoBrush() {
-      return this.$refs.designer && typeof this.$refs.designer.canRedoBrush === 'function' 
-        ? this.$refs.designer.canRedoBrush() 
-        : false;
-    },
-    
-    // Tool Methods
-    setActiveTool(tool) {
-      console.log('Create.vue: Setting active tool to', tool);
-      this.activeTool = tool;
-      
-      // Notify designer component of tool change
-      if (this.$refs.designer && typeof this.$refs.designer.setActiveTool === 'function') {
-        this.$refs.designer.setActiveTool(tool);
+    navigateTo(route) {
+      // Use Inertia.js to navigate to the route
+      if (this.$inertia) {
+        this.$inertia.visit(route)
       } else {
-        console.error('Designer component not ready or setActiveTool method not available');
+        // Fallback to window.location if Inertia is not available
+        window.location.href = route
       }
     },
-    
-    toggleBrushMode() {
-      if (this.$refs.designer && typeof this.$refs.designer.toggleBrushMode === 'function') {
-        this.$refs.designer.toggleBrushMode();
+    handleNavItemClick(item) {
+      // Update active state
+      this.navItems.forEach(navItem => {
+        navItem.active = false
+      })
+      item.active = true
+      
+      // Navigate to the route
+      if (item.route) {
+        this.navigateTo(item.route)
       }
     },
-    
-    toggleEraserMode() {
-      if (this.$refs.designer && typeof this.$refs.designer.toggleEraserMode === 'function') {
-        this.$refs.designer.toggleEraserMode();
+    async saveDesignToDatabase() {
+      if (this.pendingSave) return
+      this.pendingSave = true
+
+      try {
+        const canvas = await this.buildExportCanvas()
+        const dataUrl = canvas.toDataURL('image/png')
+
+        // Create a basic design data object
+        const designData = {
+          elements: this.elements,
+          activeTemplate: this.activeTemplate,
+          drawing: this.$refs.drawingCanvas.toDataURL('image/png'),
+          garment_color: this.garmentColor,
+          dress_size: this.selectedSize || 'M'  // Default size if none selected
+        }
+
+        const payload = {
+          name: `تصميم ${new Date().toLocaleString('ar-SA')} - ${this.activeTemplate.name || 'مخصص'}`,
+          design_data: designData,
+          preview_url: dataUrl,
+          product_type_id: this.activeTemplate.product_type_id || null,  // Use template's product type if available
+          product_id: null,  // Let backend handle product creation
+          template_id: this.activeTemplate.id || null,
+          is_public: false,
+          session_id: this.getSessionId()
+        }
+
+        // Add user ID if authenticated
+        if (this.auth?.user?.id) {
+          payload.user_id = this.auth.user.id
+        }
+
+        const response = await fetch('/api/designs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify(payload)
+        })
+
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.message || result.error || 'فشل الحفظ في قاعدة البيانات')
+        }
+
+        alert(this.t('designer.saved_to_db_success', 'تم حفظ التصميم في قاعدة البيانات بنجاح!'))
+
+        // Optionally redirect to my designs
+        setTimeout(() => {
+          if (this.auth?.user) {
+            window.location.href = '/designer/my-designs'
+          }
+        }, 1500)
+
+      } catch (error) {
+        console.error('Save to database error:', error)
+        alert(this.t('designer.save_to_db_error', 'خطأ في حفظ التصميم: ') + error.message)
+      } finally {
+        this.pendingSave = false
       }
     },
-    
-    updateBrushSettings() {
-      if (this.$refs.designer && typeof this.$refs.designer.updateBrushSettings === 'function') {
-        this.$refs.designer.updateBrushSettings();
+    getSessionId() {
+      // Get or create session ID
+      let sessionId = sessionStorage.getItem('designer_session_id')
+      if (!sessionId) {
+        sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+        sessionStorage.setItem('designer_session_id', sessionId)
       }
+      return sessionId
     },
-    
-    setBrushType(type) {
-      this.brushType = type;
-      if (this.$refs.designer && typeof this.$refs.designer.setBrushType === 'function') {
-        this.$refs.designer.setBrushType(type);
-      }
-    },
-    
-    undoBrushStroke() {
-      if (this.$refs.designer && typeof this.$refs.designer.undoBrushStroke === 'function') {
-        this.$refs.designer.undoBrushStroke();
-      }
-    },
-    
-    redoBrushStroke() {
-      if (this.$refs.designer && typeof this.$refs.designer.redoBrushStroke === 'function') {
-        this.$refs.designer.redoBrushStroke();
-      }
-    },
-    
-    // Text formatting helpers
-    isBold() {
-      return this.$refs.designer && this.$refs.designer.selectedObject 
-        ? this.$refs.designer.selectedObject.fontWeight === 'bold'
-        : false;
-    },
-    
-    isItalic() {
-      return this.$refs.designer && this.$refs.designer.selectedObject 
-        ? this.$refs.designer.selectedObject.fontStyle === 'italic'
-        : false;
-    },
-    
-    isUnderline() {
-      return this.$refs.designer && this.$refs.designer.selectedObject 
-        ? this.$refs.designer.selectedObject.underline === true
-        : false;
-    },
-    
-    // Undo/Redo methods for template access
-    canUndo() {
-      return this.$refs.designer && typeof this.$refs.designer.canUndo === 'function' 
-        ? this.$refs.designer.canUndo() 
-        : false;
-    },
-    
-    canRedo() {
-      return this.$refs.designer && typeof this.$refs.designer.canRedo === 'function' 
-        ? this.$refs.designer.canRedo() 
-        : false;
-    },
-    
-    // Computed properties for safe template access
-    designerRef() {
-      return this.$refs.designer || null;
-    },
-    
-    selectedObject() {
-      return this.designerRef ? this.designerRef.selectedObject : null;
-    },
-    
-    // Utility Methods
-    formatDate(dateString) {
-      return new Date(dateString).toLocaleDateString();
-    },
-    
-    formatFileSize(bytes) {
-      if (bytes === 0) return '0 Bytes';
-      const k = 1024;
-      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    },
-  },
-};
+    async updateMockupImage() {
+      const canvas = await this.buildExportCanvas()
+      this.mockupImage = canvas.toDataURL('image/png')
+    }
+  }
+}
 </script>
 
-<style scoped>
-/* Toolbar Button Styles */
-.tool-btn {
+<style>
+:root {
+  --primary: #9c27b0;
+  --secondary: #673ab7;
+  --text: #333;
+  --bg-color: #e0e5ec;
+  --shadow-light: #ffffff;
+  --shadow-dark: #a3b1c6;
+  --tools-width: 80px;
+  --sidebar-width: 80px;
+  --wardrobe-width: 360px;
+  --wardrobe-height: 520px;
+  --wood-color: #8B4513;
+  --wood-light: #A0522D;
+  --wood-dark: #5D4037;
+  --metal-color: #B0B0B0;
+  --clothes-hanger: #C0C0C0
+}
+
+* {
+  box-sizing: border-box
+}
+
+.designer-content {
+  min-height: 100vh;
+  background-color: var(--bg-color)
+}
+
+.app-container {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr var(--tools-width);
+  min-height: 100vh;
+  overflow: hidden;
+  position: relative
+}
+
+.neumorphic {
+  border-radius: 15px;
+  background: var(--bg-color);
+  box-shadow: 9px 9px 16px var(--shadow-dark), -9px -9px 16px var(--shadow-light)
+}
+
+.neumorphic-inset {
+  border-radius: 18px;
+  background: var(--bg-color);
+  box-shadow: inset 3px 3px 5px var(--shadow-dark), inset -3px -3px 5px var(--shadow-light)
+}
+
+.neumorphic-btn {
+  border: none;
+  border-radius: 10px;
+  background: var(--bg-color);
+  box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+  cursor: pointer
+}
+
+.sidebar,
+.tools-panel {
+  background: var(--bg-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 20px
+}
+
+.nav-item,
+.tool-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 25px;
+  width: 100%;
+  text-align: center
+}
+
+.nav-icon,
+.tool-icon {
+  width: 50px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  font-size: 20px;
+  color: var(--primary);
+  margin-bottom: 5px;
+  cursor: pointer;
+  border-radius: 15px;
+  background: var(--bg-color);
+  box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+  transition: all .3s;
+  border: none;
+  text-decoration: none
+}
+
+.nav-icon.active,
+.tool-icon.active {
+  color: #fff;
+  background: var(--primary)
+}
+
+.nav-label,
+.tool-label {
+  font-size: 12px;
+  color: var(--text)
+}
+
+.design-area {
+  position: relative;
+  padding: 20px;
+  overflow: hidden
+}
+
+.user-panel {
+  position: absolute;
+  top: 25px;
+  left: 25px;
+  z-index: 10
+}
+
+.user-avatar {
+  width: 50px;
+  height: 50px;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px
+}
+
+.top-toolbar {
+  position: absolute;
+  top: 20px;
+  left: 90px;
+  right: 90px;
+  height: 70px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  z-index: 8
+}
+
+.toolbar-group,
+.preview-actions,
+.palette-header,
+.properties-actions,
+.wardrobe-header {
+  display: flex;
+  align-items: center;
+  gap: 10px
+}
+
+.toolbar-btn,
+.hero-action,
+.action-btn,
+.control-btn,
+.template-card,
+.size-option,
+.layer-item,
+.clothing-item-3d {
+  border: none;
+  cursor: pointer;
+  transition: .25s ease;
+  font-weight: 700
+}
+
+.toolbar-btn {
+  width: 44px;
+  height: 44px;
+  color: var(--primary)
+}
+
+.hero-action,
+.action-btn,
+.control-btn {
+  padding: 12px 16px;
+  border-radius: 12px
+}
+
+.hero-action,
+.action-btn {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #fff
+}
+
+.hero-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px
+}
+
+.canvas-wrap {
+  height: calc(100vh - 170px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 55px
+}
+
+.design-stage {
+  position: relative;
+  width: min(980px, calc(100% - 40px));
+  height: 680px;
+  overflow: hidden
+}
+
+.stage-background,
+.dress-template,
+.drawing-layer,
+.elements-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%
+}
+
+.dress-template {
+  z-index: 1;
+  pointer-events: none
+}
+
+.drawing-layer {
+  z-index: 2
+}
+
+.drawing-layer.draw-cursor {
+  cursor: crosshair
+}
+
+.elements-layer {
+  z-index: 3;
+  pointer-events: none
+}
+
+.design-element {
+  position: absolute;
+  transform-origin: center center;
+  border: 1px solid transparent;
+  pointer-events: auto
+}
+
+.design-element.selected {
+  border: 1px dashed rgba(156, 39, 176, .9);
+  box-shadow: 0 0 0 2px rgba(156, 39, 176, .08)
+}
+
+.text-node,
+.shape-node,
+.image-node {
+  width: 100%;
+  height: 100%
+}
+
+.text-node {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 8px
+}
+
+.image-node {
+  object-fit: contain;
+  pointer-events: none
+}
+
+.rect-node {
+  border-radius: 18px
+}
+
+.circle-node {
+  border-radius: 50%
+}
+
+.triangle-node {
+  margin: auto
+}
+
+.resize-handle,
+.rotate-handle,
+.delete-handle,
+.close-btn {
+  border: none;
+  cursor: pointer
+}
+
+.resize-handle,
+.rotate-handle,
+.delete-handle {
+  position: absolute;
+  border-radius: 50%
+}
+
+.resize-handle {
+  width: 18px;
+  height: 18px;
+  right: -9px;
+  bottom: -9px;
+  background: var(--primary);
+  box-shadow: 0 0 0 3px white
+}
+
+.rotate-handle {
+  width: 30px;
+  height: 30px;
+  top: -15px;
+  left: calc(50% - 15px);
+  background: #fff;
+  color: var(--primary);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, .15)
+}
+
+.delete-handle {
+  width: 24px;
+  height: 24px;
+  top: -12px;
+  right: -12px;
+  background: #f44336;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .3);
+  z-index: 10;
+}
+
+.bottom-toolbar {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  z-index: 8;
+  display: flex;
+  gap: 14px;
+  padding: 14px 20px
+}
+
+.control-btn.delete-btn {
+  background: #f44336;
+  color: #fff
+}
+
+.control-btn.reset-btn {
+  background: #607d8b;
+  color: #fff
+}
+
+.control-btn.save-btn {
+  color: #fff
+}
+
+.palette {
+  position: fixed;
+  z-index: 20;
+  background: var(--bg-color);
+  border-radius: 20px;
+  box-shadow: 8px 8px 15px var(--shadow-dark), -8px -8px 15px var(--shadow-light);
+  padding: 18px;
+  width: 240px
+}
+
+.wide-palette {
+  width: 420px
+}
+
+.palette-header {
+  justify-content: space-between;
+  margin-bottom: 12px
+}
+
+.palette-title {
+  font-weight: 700;
+  color: var(--primary)
+}
+
+.close-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--bg-color);
+  box-shadow: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
+  color: var(--primary)
+}
+
+.close-btn.small {
+  width: 28px;
+  height: 28px;
+  font-size: 12px
+}
+
+.close-btn.on-panel {
+  background: rgba(255, 255, 255, .7)
+}
+
+.color-palette,
+.size-palette,
+.template-palette,
+.text-palette,
+.image-palette,
+.layers-palette {
+  right: 100px
+}
+
+.color-palette,
+.size-palette {
+  top: 40%;
+  transform: translateY(-50%)
+}
+
+.template-palette {
+  top: 14%;
+  max-height: 76vh;
+  overflow: auto
+}
+
+.text-palette {
+  top: 20%;
+  width: 270px
+}
+
+.image-palette {
+  top: 20%;
+  width: 220px
+}
+
+.layers-palette {
+  top: 24%;
+  width: 260px
+}
+
+.properties-palette {
+  top: 12%;
+  left: 105px;
+  width: 280px
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px
+}
+
+.color-option {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  box-shadow: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light)
+}
+
+.color-option.selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 5px var(--primary)
+}
+
+.size-option,
+.template-card,
+.action-btn,
+.palette-input,
+.property-field select,
+.property-field input[type='color'],
+.layer-item {
+  width: 100%
+}
+
+.size-option,
+.template-card,
+.action-btn,
+.layer-item {
+  margin-top: 10px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--bg-color);
+  box-shadow: inset 3px 3px 5px var(--shadow-dark), inset -3px -3px 5px var(--shadow-light)
+}
+
+.size-option.selected,
+.template-card.active,
+.layer-item.active,
+.clothing-item-3d.active {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #fff;
+  box-shadow: none
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px
+}
+
+.template-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 0
+}
+
+.template-image-preview {
+  height: 110px;
+  overflow: hidden;
+  border-radius: 12px;
+  display: block
+}
+
+.template-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block
+}
+
+.template-name {
+  font-size: 13px
+}
+
+.palette-input,
+.property-field select {
   border: none;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, .75);
+  margin-top: 8px
+}
+
+.property-field {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--text);
+  font-size: 13px
+}
+
+.layers-list {
+  max-height: 280px;
+  overflow: auto
+}
+
+.layer-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between
+}
+
+.loading-box,
+.error-box,
+.empty-box {
+  padding: 14px;
+  border-radius: 12px;
+  text-align: center;
+  margin-top: 10px
+}
+
+.loading-box {
+  background: #eef2ff;
+  color: #4338ca
+}
+
+.error-box {
+  background: #fee2e2;
+  color: #b91c1c
+}
+
+.empty-box {
+  background: #f8fafc;
+  color: #475569
+}
+
+.wardrobe-container-3d {
+  position: fixed;
+  bottom: 50px;
+  right: 100px;
+  width: var(--wardrobe-width);
+  height: var(--wardrobe-height);
+  perspective: 1500px;
+  z-index: 90
+}
+
+.wardrobe-container-3d.wardrobe-minimized {
+  height: 60px
+}
+
+.wardrobe-3d {
+  width: 100%;
+  height: 100%;
   position: relative;
-  overflow: hidden;
+  transform-style: preserve-3d;
+  transition: transform .8s cubic-bezier(.68, -.55, .265, 1.55)
 }
 
-.tool-btn::before {
-  content: '';
+.wardrobe-3d.minimized {
+  height: 50px;
+  transform: translateY(0) !important
+}
+
+.wardrobe-3d.minimized .wardrobe-inside-3d {
+  display: none
+}
+
+.wardrobe-3d.minimized .wardrobe-body-3d {
+  display: flex;
+  align-items: center;
+  justify-content: center
+}
+
+.wardrobe-body-3d {
   position: absolute;
-  top: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right, var(--wood-light), var(--wood-color));
+  border-radius: 8px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, .3);
+  overflow: hidden
+}
+
+.wardrobe-door-3d {
+  position: absolute;
+  width: 49%;
+  height: 100%;
+  background: linear-gradient(to right, var(--wood-dark), var(--wood-color));
+  transition: transform 1s ease-in-out;
+  box-shadow: 5px 0 15px rgba(0, 0, 0, .2);
+  display: flex;
+  align-items: center;
+  justify-content: center
+}
+
+.door-left-3d {
   left: 0;
+  border-radius: 8px 0 0 8px;
+  transform-origin: left center
+}
+
+.door-right-3d {
   right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 100%);
+  border-radius: 0 8px 8px 0;
+  transform-origin: right center
+}
+
+.door-handle-3d {
+  width: 20px;
+  height: 60px;
+  background: linear-gradient(to bottom, #D3D3D3, #A9A9A9);
+  border-radius: 10px;
+  position: absolute
+}
+
+.door-left-3d .door-handle-3d {
+  right: 15px
+}
+
+.door-right-3d .door-handle-3d {
+  left: 15px
+}
+
+.wardrobe-inside-3d {
+  position: absolute;
+  width: calc(100% - 60px);
+  height: calc(100% - 60px);
+  top: 30px;
+  left: 30px;
+  background: #F8F8F8;
+  border-radius: 4px;
+  display: none;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  padding: 20px;
+  gap: 15px;
+  overflow-y: auto;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, .1)
+}
+
+.wardrobe-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px
+}
+
+.wardrobe-controls {
+  display: flex;
+  gap: 5px
+}
+
+.wardrobe-minimize-btn {
+  background: var(--bg-color);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
+  border: none;
+  margin-left: 10px
+}
+
+.wardrobe-minimize-btn:hover {
+  background: var(--shadow-light)
+}
+
+.clothes-rail-3d {
+  width: 100%;
+  height: 30px;
+  background: var(--metal-color);
+  border-radius: 5px;
+  position: relative;
+  margin-bottom: 20px
+}
+
+.hanger-3d {
+  position: absolute;
+  width: 25px;
+  height: 40px;
+  top: 30px;
+  background: var(--clothes-hanger);
+  border-radius: 0 0 10px 10px
+}
+
+.hanger-3d:before {
+  content: "";
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  background: var(--clothes-hanger);
+  border-radius: 50%;
+  top: -7px;
+  left: 5px
+}
+
+.clothing-item-3d {
+  width: 85px;
+  position: relative;
+  background: transparent;
+  padding: 0
+}
+
+.clothing-img-container-3d {
+  width: 100%;
+  height: 110px;
+  position: relative;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, .1);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff
+}
+
+.clothing-img-3d,
+.clothing-fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block
+}
+
+.clothing-name-3d {
+  font-size: 12px;
+  text-align: center;
+  margin-top: 8px;
+  color: #333;
+  font-weight: 600
+}
+
+.wardrobe-3d.open {
+  transform: translateY(-20px)
+}
+
+.wardrobe-3d.open .door-left-3d {
+  transform: rotateY(-140deg)
+}
+
+.wardrobe-3d.open .door-right-3d {
+  transform: rotateY(140deg)
+}
+
+.wardrobe-3d.open .wardrobe-inside-3d {
+  display: flex
+}
+
+.wardrobe-control-3d {
+  position: absolute;
+  bottom: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(to bottom, #8B4513, #A0522D);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, .3);
+  border: 2px solid #5D4037;
+  z-index: 110
+}
+
+.wardrobe-state {
+  width: 100%
+}
+
+.preview-panel {
+  position: fixed;
+  top: 24px;
+  right: 128px;
+  width: 470px;
+  height: calc(100vh - 48px);
+  background: rgba(224, 229, 236, .96);
+  border-radius: 24px;
+  box-shadow: -12px 0 30px rgba(0, 0, 0, .12);
+  z-index: 25;
+  padding: 18px;
+  display: flex;
+  flex-direction: column
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px
+}
+
+.preview-header h3 {
+  margin: 0 0 6px;
+  color: #4a148c
+}
+
+.preview-header p {
+  margin: 0;
+  color: #5c6270;
+  font-size: 13px;
+  line-height: 1.7
+}
+
+.action-btn.compact {
+  padding: 10px 12px;
+  font-size: 12px
+}
+
+.mockup-stage {
+  flex: 1;
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #edf2f7, #dde4ea);
+  box-shadow: inset 5px 5px 10px rgba(163, 177, 198, .45), inset -5px -5px 10px rgba(255, 255, 255, .75);
+  position: relative;
+  perspective: 1800px
+}
+
+.mannequin-3d {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 320px;
+  height: 660px;
+  transform-style: preserve-3d;
+  transform: rotateX(3deg) rotateY(-10deg)
+}
+
+.mannequin-3d.spinning {
+  animation: spinModel 10s linear infinite
+}
+
+.hair-back,
+.hair-front,
+.mannequin-head,
+.mannequin-neck,
+.mannequin-body,
+.arm,
+.forearm,
+.hip,
+.leg,
+.shin {
+  position: absolute;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, .12)
+}
+
+.hair-back {
+  width: 122px;
+  height: 145px;
+  border-radius: 60px;
+  left: 99px;
+  top: 24px;
+  background: linear-gradient(180deg, #402313, #110804)
+}
+
+.hair-front {
+  width: 92px;
+  height: 65px;
+  border-radius: 45px 45px 30px 30px;
+  left: 114px;
+  top: 20px;
+  background: linear-gradient(180deg, #3b2114, #140a06)
+}
+
+.mannequin-head {
+  width: 82px;
+  height: 104px;
+  border-radius: 45px;
+  left: 119px;
+  top: 34px;
+  background: linear-gradient(180deg, #f7dfd2, #efcab8)
+}
+
+.mannequin-neck {
+  width: 30px;
+  height: 42px;
+  border-radius: 18px;
+  left: 145px;
+  top: 130px;
+  background: linear-gradient(180deg, #f5d7c8, #edc4b0)
+}
+
+.mannequin-body {
+  width: 192px;
+  height: 316px;
+  left: 64px;
+  top: 152px;
+  border-radius: 86px 86px 50px 50px / 95px 95px 48px 48px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #fff, #f1f5f9)
+}
+
+.body-highlight {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 22%, rgba(255, 255, 255, .35), transparent 30%)
+}
+
+.garment-surface {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden
+}
+
+.garment-texture {
+  width: 100%;
+  height: 100%;
+  object-fit: cover
+}
+
+.arm {
+  width: 38px;
+  height: 198px;
+  top: 176px;
+  border-radius: 30px;
+  background: linear-gradient(180deg, #f5d7c8, #edc4b0)
+}
+
+.arm-left {
+  left: 20px;
+  transform: rotate(17deg)
+}
+
+.arm-right {
+  right: 20px;
+  transform: rotate(-17deg)
+}
+
+.forearm {
+  width: 30px;
+  height: 155px;
+  top: 338px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #f5d7c8, #edc4b0)
+}
+
+.forearm-left {
+  left: 7px;
+  transform: rotate(10deg)
+}
+
+.forearm-right {
+  right: 7px;
+  transform: rotate(-10deg)
+}
+
+.hip {
+  width: 206px;
+  height: 108px;
+  left: 57px;
+  top: 420px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #f3d5c7, #ebc1ae)
+}
+
+.leg,
+.shin {
+  width: 54px;
+  border-radius: 30px;
+  background: linear-gradient(180deg, #f5d7c8, #edc4b0)
+}
+
+.leg {
+  height: 184px;
+  top: 474px
+}
+
+.shin {
+  height: 168px;
+  top: 606px
+}
+
+.leg-left,
+.shin-left {
+  left: 96px
+}
+
+.leg-right,
+.shin-right {
+  right: 96px
+}
+
+.floor-shadow {
+  position: absolute;
+  width: 220px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 0, 0, .18), transparent 70%);
+  left: 48px;
+  bottom: -10px;
+  transform: rotateX(88deg) translateZ(-30px)
+}
+
+.preview-slide-enter-active,
+.preview-slide-leave-active {
+  transition: all .25s ease
+}
+
+.preview-slide-enter-from,
+.preview-slide-leave-to {
   opacity: 0;
-  transition: opacity 0.3s;
+  transform: translateX(24px)
 }
 
-.tool-btn:hover::before {
-  opacity: 1;
+.hidden-file {
+  display: none
 }
 
-.tool-btn:hover {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.25);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-}
+@keyframes spinModel {
+  from {
+    transform: rotateX(3deg) rotateY(-10deg)
+  }
 
-.tool-btn.active {
-  background: white;
-  color: #667eea;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  transform: translateY(0);
-}
-
-.tool-btn .tool-icon {
-  width: 22px;
-  height: 22px;
-  z-index: 1;
-}
-
-.tool-btn.primary {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-}
-
-.tool-btn.primary:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-}
-
-.tool-btn.success {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-}
-
-.tool-btn.success:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  to {
+    transform: rotateX(3deg) rotateY(350deg)
+  }
 }
 </style>

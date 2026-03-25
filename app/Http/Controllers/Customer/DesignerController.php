@@ -14,38 +14,51 @@ class DesignerController extends Controller
 {
     public function create(Request $request, $productTypeSlug, $productSlug = null)
     {
-        $productType = ProductType::where('slug', $productTypeSlug)->firstOrFail();
-        
-        $product = null;
-        if ($productSlug) {
-            $product = Product::where('slug', $productSlug)
-                ->where('product_type_id', $productType->id)
-                ->firstOrFail();
-        }
-        
-        // Check for template parameter
-        $template = null;
-        $templateId = $request->query('template');
-        
-        if ($templateId) {
-            $template = DesignTemplate::find($templateId);
-            // Check if template exists and is accessible
-            if ($template && !$template->is_premium) {
-                // Allow access to non-premium templates
-            } elseif ($template && $template->is_premium) {
-                // Check if user is authenticated and has access to premium templates
-                if (!auth()->check()) {
-                    $template = null; // Don't allow access to premium templates for guests
+        try {
+            // Find product type by slug
+            $productType = ProductType::where('slug', $productTypeSlug)->firstOrFail();
+            
+            $product = null;
+            if ($productSlug) {
+                // Try to find product by slug
+                $product = Product::where('slug', $productSlug)
+                    ->where('product_type_id', $productType->id)
+                    ->with(['images', 'printAreas', 'designTemplate'])
+                    ->first();
+                    
+                // If product not found, log warning but continue (product is optional)
+                if (!$product) {
+                    \Log::warning("Product not found: {$productSlug} for type {$productTypeSlug}");
                 }
             }
+            
+            // Check for template parameter
+            $template = null;
+            $templateId = $request->query('template');
+            
+            if ($templateId) {
+                $template = DesignTemplate::find($templateId);
+                // Check if template exists and is accessible
+                if ($template && !$template->is_premium) {
+                    // Allow access to non-premium templates
+                } elseif ($template && $template->is_premium) {
+                    // Check if user is authenticated and has access to premium templates
+                    if (!auth()->check()) {
+                        $template = null; // Don't allow access to premium templates for guests
+                    }
+                }
+            }
+            
+            return Inertia::render('Customer/Designer/Create', [
+                'productType' => $productType,
+                'product' => $product,
+                'printAreas' => $productType ? $productType->printAreas : [],
+                'initialTemplate' => $template,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Designer create error: ' . $e->getMessage());
+            abort(404, 'Product type or designer not found');
         }
-        
-        return Inertia::render('Customer/Designer/Create', [
-            'productType' => $productType,
-            'product' => $product,
-            'printAreas' => $productType->printAreas,
-            'initialTemplate' => $template,
-        ]);
     }
 
     public function edit($designId)
@@ -63,7 +76,7 @@ class DesignerController extends Controller
         
         return Inertia::render('Customer/Designer/Edit', [
             'design' => $design,
-            'printAreas' => $design->productType->printAreas,
+            'printAreas' => $design->productType ? $design->productType->printAreas : [],
         ]);
     }
 

@@ -76,29 +76,26 @@
 
 /* Ahlam's Girls - Professional Yemeni Brand Colors */
 :root {
-    /* Primary Brand Colors - Professional Yemeni Theme */
-    --brand-primary: #2c3e50;         /* Deep navy blue - elegance, sophistication */
-    --brand-secondary: #34495e;      /* Rich slate blue - depth, professionalism */
-    --brand-accent: #e74c3c;         /* Crimson red - feminine, energetic accent */
-    --brand-bg: #ecf0f1;             /* Light gray - clean background */
-    --brand-text: #2c3e50;            /* Dark navy - clear, readable text */
-    
-    /* Luxury Accent Colors */
-    --brand-gold: #f39c12;            /* Warm gold - premium Yemeni feel */
-    --brand-rose: #e74c3c;           /* Deep rose - feminine touch */
-    --brand-lavender: #d6eaf8;       /* Soft blue - creativity, imagination */
-    --brand-cream: #fefefe;          /* Pure cream - luxury background */
-    
-    /* Neumorphism Colors - Updated for Brand (No shadows) */
-    --neumorphic-bg: #ffffff;
+    --brand-primary: #4a5568;
+    --brand-secondary: #6d7587;
+    --brand-accent: #4a7eff;
+    --brand-bg: #e0e5ec;
+    --brand-text: #4a5568;
+    --brand-gold: #c9d6ff;
+    --brand-rose: #4a7eff;
+    --brand-lavender: #c9d6ff;
+    --brand-cream: #ffffff;
+    --neumorphic-bg: #e0e5ec;
     --neumorphic-shadow-light: #ffffff;
-    --neumorphic-shadow-dark: #ecf0f1;
-    --neumorphic-text: #2c3e50;
-    --neumorphic-text-hover: #34495e;
-    --neumorphic-accent: #e74c3c;
-    --neumorphic-active: #f8f9fa;
-    --neumorphic-hover: #f1f2f6;
-    --neumorphic-badge: #ecf0f1;
+    --neumorphic-shadow-dark: #a3b1c6;
+    --neumorphic-text: #4a5568;
+    --neumorphic-text-hover: #4a7eff;
+    --neumorphic-accent: #4a7eff;
+    --neumorphic-active: #dbe4f5;
+    --neumorphic-hover: #e5ecf7;
+    --neumorphic-badge: #c9d6ff;
+    --day-bg: linear-gradient(135deg, #e2e2e2 0%, #c9d6ff 100%);
+    --night-bg: linear-gradient(135deg, #1e1e1e 0%, #3a3a5a 100%);
 }
 
 /* Neumorphism base classes */
@@ -106,39 +103,46 @@
     background: var(--neumorphic-bg);
 }
 
+.customer-shell {
+    background: var(--day-bg);
+}
+
+body.night-mode .customer-shell {
+    background: var(--night-bg);
+}
+
+.customer-content {
+    background: transparent;
+}
+
 .neumorphic {
     border-radius: 15px;
     background: var(--neumorphic-bg);
-    /* Removed all shadows for professional appearance */
-    border: 1px solid var(--neumorphic-shadow-dark);
+    box-shadow: 9px 9px 16px var(--neumorphic-shadow-dark), -9px -9px 16px var(--neumorphic-shadow-light);
 }
 
 .neumorphic-inset {
     border-radius: 15px;
     background: var(--neumorphic-bg);
-    /* Removed all inset shadows for clean professional look */
-    border: 1px solid var(--neumorphic-shadow-dark);
+    box-shadow: inset 5px 5px 10px var(--neumorphic-shadow-dark), inset -5px -5px 10px var(--neumorphic-shadow-light);
 }
 
 .neumorphic-btn {
-    border: 1px solid var(--neumorphic-shadow-dark);
     border-radius: 10px;
     background: var(--neumorphic-bg);
-    /* Removed all button shadows for professional appearance */
+    box-shadow: 5px 5px 10px var(--neumorphic-shadow-dark), -5px -5px 10px var(--neumorphic-shadow-light);
     transition: all 0.3s ease;
     cursor: pointer;
 }
 
 .neumorphic-btn:hover {
-    border-color: var(--neumorphic-text-hover);
     background-color: var(--neumorphic-hover);
-    /* Removed hover shadows for clean professional look */
+    box-shadow: inset 5px 5px 10px var(--neumorphic-shadow-dark), inset -5px -5px 10px var(--neumorphic-shadow-light);
 }
 
 .neumorphic-btn:active {
     background-color: var(--neumorphic-active);
-    border-color: var(--neumorphic-text);
-    /* Removed active shadows for professional appearance */
+    box-shadow: inset 3px 3px 6px var(--neumorphic-shadow-dark), inset -3px -3px 6px var(--neumorphic-shadow-light);
 }
 
 .text-neumorphic {
@@ -299,4 +303,147 @@
 
 .p-inputtext:enabled:focus{
     border-color: #cdd5e1 !important;
+}
+
+/* 3D Product Viewer Animations */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+}
+
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-slide-up {
+    animation: slide-up 0.5s ease-out;
+}
+
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-scale-in {
+    animation: scale-in 0.4s ease-out;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.shimmer {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.2) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+}
+
+/* 3D Card Hover Effects */
+.card-3d {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+}
+
+.card-3d:hover {
+    transform: perspective(1000px) rotateX(5deg) rotateY(5deg) scale3d(1.05, 1.05, 1.05);
+    box-shadow: 
+        0 30px 60px -12px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(0, 0, 0, 0.05),
+        inset 0 0 100px rgba(255, 255, 255, 0.1);
+}
+
+/* Smooth Transitions */
+.transition-smooth {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Product Showcase Animations */
+.product-enter-active,
+.product-leave-active {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-enter-from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+}
+
+.product-leave-to {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.9);
+}
+
+/* Loading Spinner Enhancement */
+.loading-spinner {
+    position: relative;
+}
+
+.loading-spinner::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, var(--brand-gold), var(--brand-accent), var(--brand-rose), var(--brand-gold));
+    background-size: 400%;
+    animation: gradient-rotate 3s linear infinite;
+    z-index: -1;
+}
+
+@keyframes gradient-rotate {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
 }

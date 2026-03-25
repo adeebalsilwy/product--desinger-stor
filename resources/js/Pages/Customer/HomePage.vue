@@ -1,11 +1,17 @@
 <script setup>
 import CustomerLayout from '@/Layouts/Customer.vue';
-import { ref, onMounted } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
 import AhlamsHeroSection from '@/Components/Customer/AhlamsHeroSection.vue';
+import ProductShowcase3D from '@/Components/ProductShowcase3D.vue';
 
-const featuredProducts = ref([]);
-const loading = ref(true);
+const page = usePage();
+
+// Get featured products from props (passed from controller)
+const featuredProducts = computed(() => page.props.featuredProducts || []);
+const defaultProductType = computed(() => page.props.defaultProductType || 't-shirt');
+const loading = ref(false); // No longer needed since data comes from server
+const activeCategory = ref('all');
 const testimonials = ref([
   {
     quote: "The quality and elegance of Ahlam's Girls exceeded my expectations. Every piece feels like a work of art.",
@@ -25,194 +31,498 @@ const testimonials = ref([
 ]);
 
 const addToWishlist = (productId) => {
-  console.log('Adding to wishlist:', productId);
+    console.log('Adding to wishlist:', productId);
 };
 
-onMounted(async () => {
-  try {
-    // Simulate API call
-    setTimeout(() => {
-      featuredProducts.value = [
-        {
-          id: 1,
-          title: 'Elegant Evening Dress',
-          description: 'A stunning evening dress crafted with premium fabrics and intricate details.',
-          price: '199.99',
-          image_url: '/images/logo.jpeg'
-        },
-        {
-          id: 2,
-          title: 'Casual Chic Blouse',
-          description: 'Versatile blouse perfect for both office wear and casual outings.',
-          price: '89.99',
-          image_url: '/images/logo.jpeg'
-        },
-        {
-          id: 3,
-          title: 'Summer Floral Skirt',
-          description: 'Lightweight floral skirt ideal for summer days and garden parties.',
-          price: '79.99',
-          image_url: '/images/logo.jpeg'
-        },
-        {
-          id: 4,
-          title: 'Premium Tuxedo Jacket',
-          description: 'Sophisticated jacket for the modern woman who demands style.',
-          price: '249.99',
-          image_url: '/images/logo.jpeg'
-        }
-      ];
-      loading.value = false;
-    }, 1000);
-  } catch (error) {
-    console.error('Error loading products:', error);
-    loading.value = false;
-  }
-});
+// Neumorphism colors matching PHP design
+const neumorphismColors = {
+    bg: '#e0e5ec',
+    shadowLight: '#ffffff',
+    shadowDark: '#a3b1c6',
+    primary: '#4a7eff',
+    text: '#4a5568'
+};
 </script>
 
 <template>
   <CustomerLayout>
-    <!-- Hero Section -->
-    <AhlamsHeroSection />
-
-    <!-- Featured Products -->
-    <section class="py-16 bg-gradient-to-b from-brand-bg to-white">
-      <div class="container mx-auto px-4">
-        <div class="text-center mb-12">
-          <h2 class="font-brand-elegant text-4xl text-brand-primary mb-4">Featured Collections</h2>
-          <p class="text-brand-secondary text-lg max-w-2xl mx-auto">Discover our most exquisite designs crafted with elegance and precision</p>
-        </div>
-
-        <div v-if="loading" class="flex justify-center items-center py-12">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-gold"></div>
-        </div>
-
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          <div v-for="product in featuredProducts" :key="product.id" class="group">
-            <div class="bg-white rounded-2xl overflow-hidden border border-brand-gold border-opacity-20 transition-all duration-300 group-hover:shadow-lg">
-              <div class="relative aspect-square overflow-hidden">
-                <img 
-                  :src="product.image_url || '/images/logo.jpeg'" 
-                  :alt="product.title"
-                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  onerror="this.src='/images/logo.jpeg'"
-                />
-                <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                
-                <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <button 
-                    @click="addToWishlist(product.id)"
-                    class="p-2 bg-white rounded-full shadow-lg hover:bg-brand-rose hover:text-white transition-colors"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              
-              <div class="p-6">
-                <h3 class="font-brand-elegant text-xl font-semibold text-brand-primary mb-2">{{ product.title }}</h3>
-                <p class="text-brand-secondary text-sm mb-4 line-clamp-2">{{ product.description }}</p>
-                
-                <div class="flex justify-between items-center">
-                  <span class="text-brand-rose font-bold text-lg">${{ product.price }}</span>
-                  <Link 
-                    :href="route('tshirt.page', { slug: product.id })" 
-                    class="px-4 py-2 bg-gradient-to-r from-brand-primary to-brand-secondary text-white rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
-                  >
-                    View Details
-                  </Link>
-                </div>
-              </div>
-            </div>
+    <!-- Hero Section with Neumorphic Design -->
+    <section class="neumorphic-hero">
+      <div class="stars-container" id="stars-container"></div>
+      
+      <div class="hero-content">
+        <div class="welcome-section">
+          <h1 class="hero-title">{{ $t('home.hero_title') }}</h1>
+          <p class="hero-description">
+            {{ $t('home.hero_subtitle') }}
+          </p>
+          
+          <div class="ind">
+            <h1 class="designs-title">{{ $t('home.designs_title') }}</h1>
           </div>
         </div>
 
-        <div class="text-center mt-12">
-          <Link 
-            :href="route('products.index')" 
-            class="inline-block px-8 py-4 bg-gradient-to-r from-brand-primary to-brand-secondary text-white rounded-xl hover:opacity-90 transition-opacity font-semibold text-lg"
-          >
-            View All Collections
+        <div class="categories-grid">
+          <Link :href="route('products.index')" class="neumorphic-box">
+            <div class="icon"><i class="fas fa-tags"></i></div>
+            <h3>{{ $t('home.categories.products') }}</h3>
+          </Link>
+
+          <Link :href="route('designer.create', { productType: defaultProductType })" class="neumorphic-box">
+            <div class="icon"><i class="fas fa-pencil-ruler"></i></div>
+            <h3>{{ $t('home.categories.designer') }}</h3>
+          </Link>
+          
+          <Link :href="route('about')" class="neumorphic-box">
+            <div class="icon"><i class="fas fa-info-circle"></i></div>
+            <h3>{{ $t('home.categories.about') }}</h3>
+          </Link>
+          
+          <Link :href="route('home')" class="neumorphic-box">
+            <div class="icon"><i class="fas fa-home"></i></div>
+            <h3>{{ $t('home.categories.home') }}</h3>
           </Link>
         </div>
       </div>
     </section>
 
-    <!-- About Section -->
-    <section class="py-16 bg-white">
-      <div class="container mx-auto px-4">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2 class="font-brand-elegant text-4xl text-brand-primary mb-6">About Ahlam's Girls</h2>
-            <p class="text-brand-secondary text-lg mb-6 leading-relaxed">
-              Founded with a vision to bring elegance and sophistication to women's fashion, Ahlam's Girls represents the epitome of luxury and craftsmanship. Our designs blend timeless elegance with contemporary style, creating pieces that celebrate the modern woman.
-            </p>
-            <p class="text-brand-secondary text-lg mb-8 leading-relaxed">
-              Every creation is meticulously crafted with premium materials and attention to detail, ensuring that each piece tells a story of grace, beauty, and refinement.
-            </p>
-            
-            <div class="grid grid-cols-2 gap-6">
-              <div class="text-center p-6 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-xl">
-                <div class="text-3xl font-bold text-white mb-2">500+</div>
-                <p class="text-brand-gold font-medium">Happy Customers</p>
-              </div>
-              <div class="text-center p-6 bg-gradient-to-br from-brand-secondary to-brand-bg rounded-xl">
-                <div class="text-3xl font-bold text-white mb-2">200+</div>
-                <p class="text-brand-gold font-medium">Unique Designs</p>
-              </div>
-            </div>
+    <section class="home-section">
+      <div class="section-header">
+        <h2 class="section-title">{{ $t('home.sections.featured_title') }}</h2>
+        <p class="section-subtitle">{{ $t('home.sections.featured_subtitle') }}</p>
+      </div>
+      <div class="featured-grid">
+        <Link
+          v-for="product in featuredProducts"
+          :key="product.id"
+          :href="route('product.page', { slug: product.slug })"
+          class="featured-card"
+        >
+          <div class="featured-image">
+            <img :src="product.image_url" :alt="product.name" />
           </div>
-          
-          <div class="relative">
-            <div class="aspect-square bg-gradient-to-br from-brand-rose to-brand-lavender rounded-2xl overflow-hidden">
-              <div class="w-full h-full flex items-center justify-center">
-                <div class="text-center text-white">
-                  <div class="text-6xl mb-4">👗</div>
-                  <h3 class="font-brand-elegant text-2xl font-bold">Elegance Redefined</h3>
-                  <p class="mt-2 opacity-90">Luxury Meets Fashion</p>
-                </div>
-              </div>
-            </div>
+          <div class="featured-body">
+            <h3>{{ product.name }}</h3>
+            <p>{{ product.description }}</p>
+            <span class="featured-price">{{ product.price }}</span>
+          </div>
+        </Link>
+      </div>
+    </section>
+
+    <section class="home-section alt-section">
+      <div class="section-header">
+        <h2 class="section-title">{{ $t('home.sections.templates_title') }}</h2>
+        <p class="section-subtitle">{{ $t('home.sections.templates_subtitle') }}</p>
+      </div>
+      <div class="template-showcase">
+        <div class="template-card" v-for="(item, index) in featuredProducts.slice(0, 4)" :key="`template-${index}`">
+          <img :src="item.image_url" :alt="item.name" />
+          <div class="template-overlay">
+            <h3>{{ item.name }}</h3>
+            <Link :href="route('designer.create', { productType: defaultProductType, product: item.slug })" class="template-action">
+              {{ $t('home.sections.templates_cta') }}
+            </Link>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Testimonials -->
-    <section class="py-16 bg-gradient-to-b from-white to-brand-bg">
-      <div class="container mx-auto px-4">
-        <div class="text-center mb-12">
-          <h2 class="font-brand-elegant text-4xl text-brand-primary mb-4">What Our Customers Say</h2>
-          <p class="text-brand-secondary text-lg max-w-2xl mx-auto">Hear from women who have experienced the elegance of Ahlam's Girls</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <div v-for="(testimonial, index) in testimonials" :key="index" class="bg-white p-6 rounded-2xl border border-brand-gold border-opacity-20">
-            <div class="flex mb-4">
-              <svg v-for="i in 5" :key="i" class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-              </svg>
-            </div>
-            <p class="text-brand-secondary mb-6 italic">"{{ testimonial.quote }}"</p>
-            <div class="flex items-center">
-              <div class="w-12 h-12 rounded-full bg-gradient-to-r from-brand-rose to-brand-lavender flex items-center justify-center text-white font-bold mr-4">
-                {{ testimonial.name.charAt(0) }}
-              </div>
-              <div>
-                <p class="font-semibold text-brand-primary">{{ testimonial.name }}</p>
-                <p class="text-sm text-brand-secondary">{{ testimonial.role }}</p>
-              </div>
-            </div>
+    <section class="home-section">
+      <div class="section-header">
+        <h2 class="section-title">{{ $t('home.sections.testimonials_title') }}</h2>
+        <p class="section-subtitle">{{ $t('home.sections.testimonials_subtitle') }}</p>
+      </div>
+      <div class="testimonials-grid">
+        <div class="testimonial-card" v-for="(item, index) in testimonials" :key="`testimonial-${index}`">
+          <p class="testimonial-quote">“{{ item.quote }}”</p>
+          <div class="testimonial-author">
+            <span class="author-name">{{ item.name }}</span>
+            <span class="author-role">{{ item.role }}</span>
           </div>
         </div>
       </div>
     </section>
+
   </CustomerLayout>
 </template>
 
 <style scoped>
-/* HomePage specific styles can be added here if needed */
+/* Neumorphic Hero Section */
+.neumorphic-hero {
+  background: linear-gradient(135deg, #e0e5ec 0%, #c9d6ff 100%);
+  min-height: 100vh;
+  padding: 50px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.night-mode .neumorphic-hero {
+  background: linear-gradient(135deg, #1e1e1e 0%, #3a3a5a 100%);
+}
+
+.stars-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.star {
+  position: absolute;
+  background-color: #fff;
+  border-radius: 50%;
+  animation: twinkle var(--duration) infinite ease-in-out;
+  opacity: 0;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0; }
+  50% { opacity: var(--opacity); }
+}
+
+body.night-mode .star {
+  background-color: #03dac6;
+}
+
+.hero-content {
+  display: flex;
+  gap: 50px;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1400px;
+}
+
+.welcome-section {
+  flex: 1;
+  padding-top: 50px;
+}
+
+.hero-title {
+  font-family: 'Dancing Script', cursive;
+  font-size: 48px;
+  color: #4a5568;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+body.night-mode .hero-title {
+  color: #ffffff;
+}
+
+.hero-description {
+  font-size: 18px;
+  color: #4a5568;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+body.night-mode .hero-description {
+  color: #ffffff;
+}
+
+.ind h1.designs-title {
+  font-size: 30px;
+  color: #c9d6ff;
+  text-transform: uppercase;
+  text-shadow: 1px 1px 1px #919191,
+               1px 2px 1px #919191,
+               1px 3px 1px #919191,
+               1px 4px 1px #919191,
+               1px 5px 1px #919191,
+               1px 6px 1px #919191,
+               1px 7px 1px #919191,
+               1px 8px 1px #919191,
+               1px 9px 1px #919191,
+               1px 10px 1px #919191,
+               1px 18px 6px rgba(16,16,16,0.4),
+               1px 22px 10px rgba(16,16,16,0.2),
+               1px 25px 35px rgba(16,16,16,0.2),
+               1px 30px 60px rgba(16,16,16,0.4);
+  transition: all 0.4s ease;
+  cursor: default;
+}
+
+.ind h1.designs-title:hover {
+  color: #c9d6ff;
+  transform: scale(1.2);
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  width: 400px;
+}
+
+.neumorphic-box {
+  background: #e0e5ec;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 15px;
+  box-shadow:
+    8px 8px 15px #a3b1c6,
+    -8px -8px 15px #ffffff;
+  color: #6d7587;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  text-decoration: none;
+}
+
+.neumorphic-box:hover {
+  box-shadow:
+    inset 4px 4px 8px #a3b1c6,
+    inset -4px -4px 8px #ffffff;
+  transform: translateY(-2px);
+}
+
+body.night-mode .neumorphic-box {
+  background: #2d3748;
+  color: #ffffff !important;
+  box-shadow:
+    8px 8px 15px #1a202c,
+    -8px -8px 15px #4a5568;
+}
+
+body.night-mode .neumorphic-box:hover {
+  box-shadow:
+    inset 4px 4px 8px #1a202c,
+    inset -4px -4px 8px #4a5568;
+}
+
+.icon {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: #6d7587;
+  transition: all 0.3s ease;
+}
+
+body.night-mode .icon {
+  color: #ffffff;
+}
+
+.neumorphic-box:hover .icon {
+  transform: scale(1.1);
+  color: #4a7eff;
+}
+
+.home-section {
+  padding: 80px 24px;
+  background: #e0e5ec;
+}
+
+.alt-section {
+  background: linear-gradient(135deg, #e0e5ec 0%, #c9d6ff 100%);
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.section-title {
+  font-family: 'Dancing Script', cursive;
+  font-size: 42px;
+  color: #4a7eff;
+  margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: #4a5568;
+  font-size: 18px;
+}
+
+.featured-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.featured-card {
+  background: #e0e5ec;
+  border-radius: 20px;
+  box-shadow: 8px 8px 15px #a3b1c6, -8px -8px 15px #ffffff;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s ease;
+}
+
+.featured-card:hover {
+  box-shadow: inset 4px 4px 8px #a3b1c6, inset -4px -4px 8px #ffffff;
+  transform: translateY(-4px);
+}
+
+.featured-image img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+
+.featured-body {
+  padding: 20px;
+}
+
+.featured-body h3 {
+  font-size: 20px;
+  color: #4a5568;
+  margin-bottom: 8px;
+}
+
+.featured-body p {
+  font-size: 14px;
+  color: #6d7587;
+  margin-bottom: 12px;
+  min-height: 40px;
+}
+
+.featured-price {
+  font-weight: bold;
+  color: #4a7eff;
+}
+
+.template-showcase {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.template-card {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 8px 8px 15px #a3b1c6, -8px -8px 15px #ffffff;
+}
+
+.template-card img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+}
+
+.template-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.65), rgba(0,0,0,0));
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 20px;
+  color: #ffffff;
+}
+
+.template-action {
+  margin-top: 10px;
+  align-self: flex-start;
+  background: #e0e5ec;
+  color: #4a7eff;
+  padding: 8px 16px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.testimonial-card {
+  background: #e0e5ec;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 8px 8px 15px #a3b1c6, -8px -8px 15px #ffffff;
+}
+
+.testimonial-quote {
+  color: #4a5568;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.testimonial-author {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.author-name {
+  font-weight: 600;
+  color: #4a7eff;
+}
+
+.author-role {
+  color: #6d7587;
+  font-size: 13px;
+}
+
+body.night-mode .home-section {
+  background: #2d3748;
+}
+
+body.night-mode .section-title,
+body.night-mode .featured-price,
+body.night-mode .author-name {
+  color: #6ea8ff;
+}
+
+body.night-mode .section-subtitle,
+body.night-mode .featured-body h3,
+body.night-mode .featured-body p,
+body.night-mode .testimonial-quote,
+body.night-mode .author-role {
+  color: #e2e8f0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .hero-content {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .welcome-section {
+    text-align: center;
+  }
+  
+  .categories-grid {
+    width: 100%;
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .neumorphic-hero {
+    padding: 30px 20px;
+  }
+  
+  .hero-title {
+    font-size: 36px;
+  }
+  
+  .categories-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

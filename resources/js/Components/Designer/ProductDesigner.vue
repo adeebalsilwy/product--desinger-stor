@@ -334,14 +334,6 @@ export default {
       return this.canRedoGeneral();
     },
     
-    canUndoBrush() {
-      return this.brushHistory && this.brushHistory.length > 0 && this.brushHistoryIndex > 0;
-    },
-    
-    canRedoBrush() {
-      return this.brushHistory && this.brushHistory.length > 0 && this.brushHistoryIndex < this.brushHistory.length - 1;
-    },
-    
     updateReactiveProperties() {
       this.canUndoValue = this.canUndoGeneral();
       this.canRedoValue = this.canRedoGeneral();
@@ -1367,7 +1359,7 @@ export default {
     },
     
     undoBrushStroke() {
-      if (this.canUndoBrush()) {
+      if (this.canUndoBrush) {
         this.brushHistoryIndex--;
         this.restoreFromBrushHistory();
         this.updateReactiveProperties();
@@ -1375,7 +1367,7 @@ export default {
     },
     
     redoBrushStroke() {
-      if (this.canRedoBrush()) {
+      if (this.canRedoBrush) {
         this.brushHistoryIndex++;
         this.restoreFromBrushHistory();
         this.updateReactiveProperties();
@@ -1462,7 +1454,7 @@ export default {
       // Try general history first (more comprehensive)
       if (this.canUndoGeneral()) {
         this.undoGeneral();
-      } else if (this.canUndoBrush()) {
+      } else if (this.canUndoBrush) {
         this.undoBrushStroke();
       }
     },
@@ -1471,7 +1463,7 @@ export default {
       // Try general history first (more comprehensive)
       if (this.canRedoGeneral()) {
         this.redoGeneral();
-      } else if (this.canRedoBrush()) {
+      } else if (this.canRedoBrush) {
         this.redoBrushStroke();
       }
     },

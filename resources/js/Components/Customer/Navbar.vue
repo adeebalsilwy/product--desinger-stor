@@ -1,9 +1,13 @@
 <script setup>
-import { ref } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
+import { ref, computed, onMounted } from 'vue';
+import { Link, router, usePage } from '@inertiajs/vue3';
 
 const accountMenuOpen = ref(false);
 const mobileMenuOpen = ref(false);
+const isNightMode = ref(false);
+const page = usePage();
+const currentLocale = computed(() => page.props.locale || 'ar');
+const defaultProductType = computed(() => page.props.defaultProductType || 't-shirt');
 
 const toggleAccountMenu = () => {
   accountMenuOpen.value = !accountMenuOpen.value;
@@ -24,10 +28,29 @@ const logout = () => {
 const setDefaultLogo = (event) => {
   event.target.src = '/images/logo.jpeg';
 };
+
+const toggleTheme = () => {
+  isNightMode.value = !isNightMode.value;
+  document.body.classList.toggle('night-mode', isNightMode.value);
+  localStorage.setItem('theme', isNightMode.value ? 'dark' : 'light');
+};
+
+const switchLocale = (locale) => {
+  if (locale === currentLocale.value) return;
+  router.post(route('locale.switch'), { locale }, { preserveScroll: true });
+};
+
+onMounted(() => {
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark') {
+    isNightMode.value = true;
+    document.body.classList.add('night-mode');
+  }
+});
 </script>
 
 <template>
-  <header class="bg-white bg-opacity-90 backdrop-blur-sm border-b border-brand-gold border-opacity-20 sticky top-0 z-50">
+  <header class="bg-neumorphic bg-opacity-90 backdrop-blur-sm border-b border-brand-gold border-opacity-40 sticky top-0 z-50">
     <div class="container mx-auto px-4 py-4">
       <div class="flex items-center justify-between">
         <!-- Logo -->
@@ -51,34 +74,40 @@ const setDefaultLogo = (event) => {
           <Link :href="route('home')" 
                 class="text-brand-primary hover:text-brand-gold transition-colors font-medium relative group"
                 :class="{ 'text-brand-gold': route().current('home') }">
-            Home
+            {{ $t('nav.home') }}
             <span v-if="route().current('home')" class="absolute -bottom-1 left-0 w-full h-0.5 bg-brand-gold"></span>
           </Link>
           
           <Link :href="route('products.index')" 
                 class="text-brand-primary hover:text-brand-gold transition-colors font-medium relative group"
-                :class="{ 'text-brand-gold': route().current('products.index') || route().current('tshirts') || route().current('tshirt.page') }">
-            Products
-            <span v-if="route().current('products.index') || route().current('tshirts') || route().current('tshirt.page')" class="absolute -bottom-1 left-0 w-full h-0.5 bg-brand-gold"></span>
+                :class="{ 'text-brand-gold': route().current('products.index') || route().current('product.page') }">
+            {{ $t('nav.products') }}
+            <span v-if="route().current('products.index') || route().current('product.page')" class="absolute -bottom-1 left-0 w-full h-0.5 bg-brand-gold"></span>
           </Link>
           
-          <Link :href="route('designer.create', { productType: 't-shirt' })" 
+          <Link :href="route('designer.create', { productType: defaultProductType })" 
                 class="text-brand-primary hover:text-brand-gold transition-colors font-medium relative group"
                 :class="{ 'text-brand-gold': route().current('designer.create') || route().current('designer.edit') }">
-            Designer
+            {{ $t('nav.designer') }}
             <span v-if="route().current('designer.create') || route().current('designer.edit')" class="absolute -bottom-1 left-0 w-full h-0.5 bg-brand-gold"></span>
           </Link>
           
           <Link :href="route('about')" 
                 class="text-brand-primary hover:text-brand-gold transition-colors font-medium relative group"
                 :class="{ 'text-brand-gold': route().current('about') }">
-            About
+            {{ $t('nav.about') }}
+          </Link>
+
+          <Link :href="route('gallery')" 
+                class="text-brand-primary hover:text-brand-gold transition-colors font-medium relative group"
+                :class="{ 'text-brand-gold': route().current('gallery') }">
+            {{ $t('nav.gallery') }}
           </Link>
           
           <Link :href="route('contact')" 
                 class="text-brand-primary hover:text-brand-gold transition-colors font-medium relative group"
                 :class="{ 'text-brand-gold': route().current('contact') }">
-            Contact
+            {{ $t('nav.contact') }}
           </Link>
         </nav>
 
@@ -88,8 +117,8 @@ const setDefaultLogo = (event) => {
           <div class="hidden md:block relative">
             <input 
               type="text" 
-              placeholder="Search..." 
-              class="pl-10 pr-4 py-2 rounded-full border border-brand-gold border-opacity-30 focus:outline-none focus:ring-2 focus:ring-brand-gold focus:border-transparent bg-white bg-opacity-50"
+              :placeholder="$t('nav.search_placeholder')" 
+              class="pl-10 pr-4 py-2 rounded-full border border-brand-gold border-opacity-30 focus:outline-none focus:ring-2 focus:ring-brand-gold focus:border-transparent bg-neumorphic"
             >
             <svg class="w-5 h-5 text-brand-secondary absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -116,18 +145,18 @@ const setDefaultLogo = (event) => {
 
             <!-- Account Dropdown -->
             <div v-show="accountMenuOpen" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 z-50 border border-brand-gold border-opacity-20">
-              <Link :href="route('profile.edit')" class="block px-4 py-2 text-brand-primary hover:bg-brand-gold hover:bg-opacity-10 transition-colors">
-                Profile
+              <Link :href="route('customer.profile.edit')" class="block px-4 py-2 text-brand-primary hover:bg-brand-gold hover:bg-opacity-10 transition-colors">
+                {{ $t('nav.profile') }}
               </Link>
               <Link :href="route('customer.dashboard')" class="block px-4 py-2 text-brand-primary hover:bg-brand-gold hover:bg-opacity-10 transition-colors">
-                My Dashboard
+                {{ $t('nav.dashboard') }}
               </Link>
               <Link :href="route('designer.my-designs')" class="block px-4 py-2 text-brand-primary hover:bg-brand-gold hover:bg-opacity-10 transition-colors">
-                My Designs
+                {{ $t('nav.my_designs') }}
               </Link>
               <form @submit.prevent="logout">
                 <button type="submit" class="w-full text-left px-4 py-2 text-brand-primary hover:bg-brand-gold hover:bg-opacity-10 transition-colors">
-                  Logout
+                  {{ $t('nav.logout') }}
                 </button>
               </form>
             </div>
@@ -135,10 +164,34 @@ const setDefaultLogo = (event) => {
 
           <!-- Auth Links -->
           <div v-else class="flex items-center space-x-2">
-            <Link :href="route('login')" class="px-4 py-2 text-brand-primary hover:text-brand-gold transition-colors font-medium">
-              Login
+            <Link :href="route('login', { customer: true })" class="px-4 py-2 text-brand-primary hover:text-brand-gold transition-colors font-medium">
+              {{ $t('nav.login') }}
             </Link>
-            <!-- Registration is currently disabled -->
+            <Link
+              v-if="$page.props.settings?.enable_registration"
+              :href="route('register')"
+              class="px-4 py-2 bg-brand-lavender bg-opacity-40 text-brand-primary rounded-full hover:bg-opacity-70 transition-colors font-medium"
+            >
+              {{ $t('nav.register') }}
+            </Link>
+          </div>
+
+          <div class="hidden md:flex items-center space-x-2">
+            <button
+              @click="toggleTheme"
+              class="nav-action-btn"
+              :aria-label="$t('nav.theme_toggle')"
+            >
+              <i :class="isNightMode ? 'fas fa-moon' : 'fas fa-sun'"></i>
+            </button>
+            <button
+              @click="switchLocale(currentLocale === 'ar' ? 'en' : 'ar')"
+              class="nav-action-btn"
+              :aria-label="$t('nav.language_toggle')"
+            >
+              <i class="fas fa-globe"></i>
+              <span class="text-xs font-semibold">{{ currentLocale === 'ar' ? 'EN' : 'AR' }}</span>
+            </button>
           </div>
 
           <!-- Mobile Menu Button -->
@@ -157,42 +210,89 @@ const setDefaultLogo = (event) => {
               class="block py-3 px-4 rounded-lg text-brand-primary hover:bg-brand-gold hover:bg-opacity-10 transition-colors font-medium"
               :class="{ 'bg-brand-gold bg-opacity-10': route().current('home') }"
               @click="closeMobileMenu">
-          Home
+          {{ $t('nav.home') }}
         </Link>
         
         <Link :href="route('products.index')" 
               class="block py-3 px-4 rounded-lg text-brand-primary hover:bg-brand-gold hover:bg-opacity-10 transition-colors font-medium"
-              :class="{ 'bg-brand-gold bg-opacity-10': route().current('products.index') || route().current('tshirts') || route().current('tshirt.page') }"
+              :class="{ 'bg-brand-gold bg-opacity-10': route().current('products.index') || route().current('product.page') }"
               @click="closeMobileMenu">
-          Products
+          {{ $t('nav.products') }}
         </Link>
         
-        <Link :href="route('designer.create', { productType: 't-shirt' })" 
+        <Link :href="route('designer.create', { productType: defaultProductType })" 
               class="block py-3 px-4 rounded-lg text-brand-primary hover:bg-brand-gold hover:bg-opacity-10 transition-colors font-medium"
               :class="{ 'bg-brand-gold bg-opacity-10': route().current('designer.create') || route().current('designer.edit') }"
               @click="closeMobileMenu">
-          Designer
+          {{ $t('nav.designer') }}
         </Link>
         
         <Link :href="route('about')" 
               class="block py-3 px-4 rounded-lg text-brand-primary hover:bg-brand-gold hover:bg-opacity-10 transition-colors font-medium"
               :class="{ 'bg-brand-gold bg-opacity-10': route().current('about') }"
               @click="closeMobileMenu">
-          About
+          {{ $t('nav.about') }}
+        </Link>
+
+        <Link :href="route('gallery')" 
+              class="block py-3 px-4 rounded-lg text-brand-primary hover:bg-brand-gold hover:bg-opacity-10 transition-colors font-medium"
+              :class="{ 'bg-brand-gold bg-opacity-10': route().current('gallery') }"
+              @click="closeMobileMenu">
+          {{ $t('nav.gallery') }}
         </Link>
         
         <Link :href="route('contact')" 
               class="block py-3 px-4 rounded-lg text-brand-primary hover:bg-brand-gold hover:bg-opacity-10 transition-colors font-medium"
               :class="{ 'bg-brand-gold bg-opacity-10': route().current('contact') }"
               @click="closeMobileMenu">
-          Contact
+          {{ $t('nav.contact') }}
         </Link>
+
+        <div class="flex items-center justify-between px-4 pt-2">
+          <button @click="toggleTheme" class="mobile-action-btn">
+            <i :class="isNightMode ? 'fas fa-moon' : 'fas fa-sun'"></i>
+            <span>{{ $t('nav.theme_toggle') }}</span>
+          </button>
+          <button @click="switchLocale(currentLocale === 'ar' ? 'en' : 'ar')" class="mobile-action-btn">
+            <i class="fas fa-globe"></i>
+            <span>{{ currentLocale === 'ar' ? 'EN' : 'AR' }}</span>
+          </button>
+        </div>
       </nav>
     </div>
   </header>
 </template>
 
 <style scoped>
+.nav-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #e0e5ec;
+  color: #4a5568;
+  box-shadow: 4px 4px 8px #a3b1c6, -4px -4px 8px #ffffff;
+  transition: all 0.2s ease;
+}
+
+.nav-action-btn:hover {
+  box-shadow: inset 4px 4px 8px #a3b1c6, inset -4px -4px 8px #ffffff;
+  color: #4a7eff;
+}
+
+.mobile-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #e0e5ec;
+  color: #4a5568;
+  box-shadow: 4px 4px 8px #a3b1c6, -4px -4px 8px #ffffff;
+  font-size: 12px;
+}
+
 /* Custom scrollbar for mobile menu */
 .md\:hidden::-webkit-scrollbar {
    width: 6px;

@@ -143,7 +143,7 @@
                             
                             <!-- Main Product Image with 3D Transform -->
                             <div class="relative z-10 transform transition-all duration-700 group-hover:scale-105 group-hover:rotate-2 group-hover:translate-z-10 product-3d-hover">
-                                <Link :href="route('tshirt.page', { slug: product.slug })">
+                                <Link :href="route('product.page', { slug: product.slug })">
                                     <div class="aspect-w-3 aspect-h-4 bg-gradient-to-br from-white to-gray-50 flex items-center justify-center relative overflow-hidden rounded-t-2xl">
                                         <div class="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent z-10"></div>
                                         <img 
@@ -207,7 +207,7 @@
                         <div class="p-6">
                             <div class="flex justify-between items-start mb-3">
                                 <Link 
-                                    :href="route('tshirt.page', { slug: product.slug })"
+                                    :href="route('product.page', { slug: product.slug })"
                                     class="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2 group-hover:underline"
                                 >
                                     {{ textHelper.limitText(product.title, 50) }}
@@ -256,7 +256,7 @@
                         <div class="flex flex-col md:flex-row">
                             <!-- Image -->
                             <div class="md:w-1/3 relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
-                                <Link :href="route('tshirt.page', { slug: product.slug })">
+                                <Link :href="route('product.page', { slug: product.slug })">
                                     <img 
                                         :src="product.images?.[0]?.url || '/assets/empty.png'" 
                                         :alt="product.title"
@@ -274,7 +274,7 @@
                             <div class="md:w-2/3 p-6 flex flex-col justify-between">
                                 <div>
                                     <Link 
-                                        :href="route('tshirt.page', { slug: product.slug })"
+                                        :href="route('product.page', { slug: product.slug })"
                                         class="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors mb-2"
                                     >
                                         {{ product.title }}
@@ -398,10 +398,13 @@
 </template>
 
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import { useTextHelpers } from '@/plugins/textHelpers';
 import QuickViewModal from '@/Components/Customer/QuickViewModal.vue';
+
+const page = usePage();
+const defaultProductType = computed(() => page.props.defaultProductType || 't-shirt');
 
 const props = defineProps({
     products: {
@@ -554,7 +557,7 @@ const quickView = (product) => {
 
 const customizeProduct = (product) => {
     // Redirect to designer with this product as base
-    window.location.href = route('designer.create', { productType: 't-shirt' }) + '?baseProduct=' + product.id;
+    window.location.href = route('designer.create', { productType: defaultProductType.value }) + '?baseProduct=' + product.id;
 };
 
 const handleQuickViewAddToCart = (data) => {

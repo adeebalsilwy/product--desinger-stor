@@ -14,6 +14,8 @@ class SavedDesign extends Model
         'user_id',
         'session_id',
         'product_type_id',
+        'product_id',
+        'template_id',
         'name',
         'design_data',
         'thumbnail_url',
@@ -21,6 +23,7 @@ class SavedDesign extends Model
         'print_files',
         'is_public',
         'is_template',
+        'elements',
     ];
 
     protected $casts = [
@@ -40,6 +43,16 @@ class SavedDesign extends Model
         return $this->belongsTo(ProductType::class);
     }
 
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    public function template()
+    {
+        return $this->belongsTo(DesignTemplate::class, 'template_id');
+    }
+
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
@@ -51,6 +64,15 @@ class SavedDesign extends Model
     public function getCanvasDataAttribute()
     {
         return json_decode($this->design_data, true);
+    }
+
+    /**
+     * Get the elements array
+     */
+    public function getElementsAttribute()
+    {
+        $data = json_decode($this->design_data, true);
+        return $data['elements'] ?? [];
     }
 
     /**

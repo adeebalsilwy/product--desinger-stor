@@ -13,12 +13,12 @@ class ClipartSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create clipart categories if they don't exist
+        // إنشاء فئات الزخارف اليمنية
         $categories = [
-            ['name' => 'Logos', 'slug' => 'logos'],
-            ['name' => 'Icons', 'slug' => 'icons'],
-            ['name' => 'Shapes', 'slug' => 'shapes'],
-            ['name' => 'Decorations', 'slug' => 'decorations'],
+            ['name' => 'زخارف يمنية', 'slug' => 'yemeni-ornaments'],
+            ['name' => 'نقوش تراثية', 'slug' => 'traditional-patterns'],
+            ['name' => 'أشكال إسلامية', 'slug' => 'islamic-shapes'],
+            ['name' => 'تطريزات', 'slug' => 'embroidery'],
         ];
 
         $categoryModels = [];
@@ -30,43 +30,82 @@ class ClipartSeeder extends Seeder
             $categoryModels[$category['slug']] = $categoryModel;
         }
 
-        // Create sample cliparts if they don't exist
+        // إنشاء زخارف يمنية أصيلة
         $cliparts = [
             [
-                'title' => 'Star Icon',
-                'clipart_category_id' => $categoryModels['icons']->id,
-                'image_url' => 'https://via.placeholder.com/150/FFD700/000000?text=★',
-                'thumbnail_url' => 'https://via.placeholder.com/50/FFD700/000000?text=★',
+                'title' => 'نجمة يمنية ثمانية',
+                'clipart_category_id' => $categoryModels['yemeni-ornaments']->id,
+                'image_url' => asset('template/yemeni-star.png'),
+                'thumbnail_url' => asset('template/thumbnails/yemeni-star-thumb.png'),
                 'is_premium' => false,
             ],
             [
-                'title' => 'Heart Icon',
-                'clipart_category_id' => $categoryModels['icons']->id,
-                'image_url' => 'https://via.placeholder.com/150/FF0000/FFFFFF?text=♥',
-                'thumbnail_url' => 'https://via.placeholder.com/50/FF0000/FFFFFF?text=♥',
+                'title' => 'زهرة ياسمين يمنية',
+                'clipart_category_id' => $categoryModels['yemeni-ornaments']->id,
+                'image_url' => asset('template/yemeni-flower.png'),
+                'thumbnail_url' => asset('template/thumbnails/yemeni-flower-thumb.png'),
                 'is_premium' => false,
             ],
             [
-                'title' => 'Company Logo',
-                'clipart_category_id' => $categoryModels['logos']->id,
-                'image_url' => 'https://via.placeholder.com/150/0000FF/FFFFFF?text=LOGO',
-                'thumbnail_url' => 'https://via.placeholder.com/50/0000FF/FFFFFF?text=LOGO',
-                'is_premium' => false,
-            ],
-            [
-                'title' => 'Circle Shape',
-                'clipart_category_id' => $categoryModels['shapes']->id,
-                'image_url' => 'https://via.placeholder.com/150/00FF00/000000?text=●',
-                'thumbnail_url' => 'https://via.placeholder.com/50/00FF00/000000?text=●',
-                'is_premium' => false,
-            ],
-            [
-                'title' => 'Floral Decoration',
-                'clipart_category_id' => $categoryModels['decorations']->id,
-                'image_url' => 'https://via.placeholder.com/150/FF69B4/FFFFFF?text=✿',
-                'thumbnail_url' => 'https://via.placeholder.com/50/FF69B4/FFFFFF?text=✿',
+                'title' => 'نقش لحجي تقليدي',
+                'clipart_category_id' => $categoryModels['traditional-patterns']->id,
+                'image_url' => asset('template/lahij-pattern.png'),
+                'thumbnail_url' => asset('template/thumbnails/lahij-pattern-thumb.png'),
                 'is_premium' => true,
-                'price' => 2.99,
+                'price' => 4.99,
+            ],
+            [
+                'title' => 'زخرفة صنعانية ذهبية',
+                'clipart_category_id' => $categoryModels['yemeni-ornaments']->id,
+                'image_url' => asset('template/sanaa-gold.png'),
+                'thumbnail_url' => asset('template/thumbnails/sanaa-gold-thumb.png'),
+                'is_premium' => true,
+                'price' => 6.99,
+            ],
+            [
+                'title' => 'شكل محراب إسلامي',
+                'clipart_category_id' => $categoryModels['islamic-shapes']->id,
+                'image_url' => asset('template/mihrab.png'),
+                'thumbnail_url' => asset('template/thumbnails/mihrab-thumb.png'),
+                'is_premium' => false,
+            ],
+            [
+                'title' => 'تطريز تعزي فضي',
+                'clipart_category_id' => $categoryModels['embroidery']->id,
+                'image_url' => asset('template/taiz-silver.png'),
+                'thumbnail_url' => asset('template/thumbnails/taiz-silver-thumb.png'),
+                'is_premium' => true,
+                'price' => 5.99,
+            ],
+            [
+                'title' => 'نخلة يمنية أصيلة',
+                'clipart_category_id' => $categoryModels['yemeni-ornaments']->id,
+                'image_url' => asset('template/palm-tree.png'),
+                'thumbnail_url' => asset('template/thumbnails/palm-tree-thumb.png'),
+                'is_premium' => false,
+            ],
+            [
+                'title' => 'قمر يمني منقوش',
+                'clipart_category_id' => $categoryModels['islamic-shapes']->id,
+                'image_url' => asset('template/yemeni-moon.png'),
+                'thumbnail_url' => asset('template/thumbnails/yemeni-moon-thumb.png'),
+                'is_premium' => false,
+            ],
+            [
+                'title' => 'زخرفة حضرمية ملونة',
+                'clipart_category_id' => $categoryModels['traditional-patterns']->id,
+                'image_url' => asset('template/hadhramaut-pattern.png'),
+                'thumbnail_url' => asset('template/thumbnails/hadhramaut-pattern-thumb.png'),
+                'is_premium' => true,
+                'price' => 7.99,
+            ],
+            [
+                'title' => 'تطريز بدوي تقليدي',
+                'clipart_category_id' => $categoryModels['embroidery']->id,
+                'image_url' => asset('template/bedouin-embroidery.png'),
+                'thumbnail_url' => asset('template/thumbnails/bedouin-embroidery-thumb.png'),
+                'is_premium' => true,
+                'price' => 8.99,
             ],
         ];
 
@@ -76,5 +115,7 @@ class ClipartSeeder extends Seeder
                 $clipart
             );
         }
+        
+        $this->command->info('تم تحميل ' . count($cliparts) . ' زخرفة يمنية بنجاح.');
     }
 }

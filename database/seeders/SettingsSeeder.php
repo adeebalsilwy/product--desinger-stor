@@ -12,39 +12,39 @@ class SettingsSeeder extends Seeder
      */
     public function run(): void
     {
-        // Check if settings already exist to avoid duplicates
+        // التحقق مما إذا كانت الإعدادات موجودة بالفعل لتجنب التكرار
         if (!Setting::exists()) {
             Setting::create([
-                'site_name' => 'D-Shirts',
-                'site_logo' => null,
-                'site_favicon' => null,
-                'site_description' => 'Elegant Boutique for Women\'s Fashion',
-                'site_email' => 'info@ahlamsgirls.com',
-                'site_phone' => '+1234567890',
-                'site_address' => '123 Fashion Street, Style City',
-                'site_currency' => 'USD',
+                'site_name' => 'أزياء يمنية أصيلة',
+                'site_logo' => '/template/yemeni-logo.png',
+                'site_favicon' => '/template/yemeni-favicon.ico',
+                'site_description' => 'متجر إلكتروني متخصص في الأزياء اليمنية التقليدية والحديثة - أصالة التراث اليمني',
+                'site_email' => 'info@yemenifashion.com',
+                'site_phone' => '+967-1-234567',
+                'site_address' => 'صنعاء، اليمن - شارع الزبيري',
+                'site_currency' => 'ريال يمني',
                 'tax_rate' => 0.00,
                 'maintenance_mode' => false,
-                'maintenance_message' => 'We are currently updating our site. Please check back soon!',
-                'facebook_url' => 'https://facebook.com/ahlamsgirls',
-                'twitter_url' => 'https://twitter.com/ahlamsgirls',
-                'instagram_url' => 'https://instagram.com/ahlamsgirls',
-                'linkedin_url' => 'https://linkedin.com/company/ahlamsgirls',
-                'meta_keywords' => 'fashion, women, clothing, boutique, elegant',
-                'meta_description' => 'Ahlam\'s Girls - Elegant Boutique for Women\'s Fashion',
+                'maintenance_message' => 'نحن نقوم حالياً بتحديث موقعنا. يرجى العودة قريباً!',
+                'facebook_url' => 'https://facebook.com/yemenifashion',
+                'twitter_url' => 'https://twitter.com/yemenifashion',
+                'instagram_url' => 'https://instagram.com/yemenifashion',
+                'linkedin_url' => 'https://linkedin.com/company/yemenifashion',
+                'meta_keywords' => 'أزياء يمنية, ملابس تقليدية, تراث يمني, تطريز يمني, عبايات, فساتين يمنية, صنعاء, تعز, لحج, حضرموت',
+                'meta_description' => 'أزياء يمنية أصيلة - متجر إلكتروني متخصص في الأزياء اليمنية التقليدية والحديثة بأعلى جودة',
                 'analytics_id' => null,
                 'enable_registration' => true,
                 'enable_reviews' => true,
                 'products_per_page' => 12,
-                'brand_primary_color' => '#1a1a2e',
-                'brand_secondary_color' => '#16213e',
-                'brand_accent_color' => '#e94560',
-                'brand_text_color' => '#ffffff',
-                'brand_bg_color' => '#0f3460',
-                'brand_logo_woman' => null,
-                'brand_tagline' => 'Elegance, Sewn to Perfection',
-                'brand_script_font' => 'brand-script',
-                'brand_regular_font' => 'brand-elegant',
+                'brand_primary_color' => '#8B4513', // بني تراثي
+                'brand_secondary_color' => '#DAA520', // ذهبي
+                'brand_accent_color' => '#DC143C', // أحمر قاني
+                'brand_text_color' => '#000000', // أسود
+                'brand_bg_color' => '#f5e6d3', // بيج فاتح
+                'brand_logo_woman' => '/template/yemeni-woman-logo.png',
+                'brand_tagline' => 'أصالة التراث اليمني بأناقة عصرية',
+                'brand_script_font' => 'yemeni-script',
+                'brand_regular_font' => 'traditional-arabic',
             ]);
         }
     }

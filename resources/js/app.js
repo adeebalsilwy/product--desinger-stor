@@ -26,7 +26,14 @@ createInertiaApp({
         // Initialize global CSRF protection
         CSRFService.initCSRFProtection();
         
-        return createApp({ render: () => h(App, props) })
+        const app = createApp({ render: () => h(App, props) });
+
+        app.config.globalProperties.$t = (key) => {
+            const page = app.config.globalProperties.$page;
+            return page?.props?.translations?.[key] || key;
+        };
+
+        return app
             .use(plugin)
             .use(ZiggyVue)
             .use(PrimeVue, {

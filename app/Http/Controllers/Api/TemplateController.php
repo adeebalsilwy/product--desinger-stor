@@ -30,9 +30,17 @@ class TemplateController extends Controller
         if ($request->has('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
+
+        if ($request->boolean('my_templates')) {
+            if (auth()->check()) {
+                $query->where('created_by', auth()->id());
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
         
         $templates = $query->with('productType')
-            ->popular()
+            ->orderBy('name')
             ->paginate($request->get('per_page', 20));
         
         return response()->json([

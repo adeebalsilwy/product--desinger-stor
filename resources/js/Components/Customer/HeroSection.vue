@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { ref, onMounted, computed } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
     title: {
@@ -26,6 +26,9 @@ const heroImages = ref([
     '/assets/home_images/middle.png',
     '/assets/home_images/right.png'
 ]);
+
+const page = usePage();
+const defaultProductType = computed(() => page.props.defaultProductType || 't-shirt');
 
 const scrollToShop = () => {
     const shopSection = document.getElementById('shop');
@@ -70,7 +73,7 @@ const scrollToShop = () => {
                         </Link>
                         
                         <Link
-                            :href="route('designer.create', { productType: 't-shirt' })"
+                            :href="route('designer.create', { productType: defaultProductType })"
                             class="inline-flex items-center justify-center px-8 py-4 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all duration-300 shadow-md hover:shadow-lg"
                         >
                             Design Your Own

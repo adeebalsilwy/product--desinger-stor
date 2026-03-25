@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 use App\Http\Controllers\Admin\OrdersController;
@@ -12,11 +13,16 @@ use App\Http\Controllers\Customer\HomePageController;
 use App\Http\Controllers\Customer\PaymentController;
 use App\Http\Controllers\Customer\ProductsController as CustomerProductsController;
 use App\Http\Controllers\Customer\DesignerController;
+use App\Models\DesignTemplate;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
 
 
-// ################################ Customer Routes ################################
+// Home Page - Main Landing with 3D Product Showcase
 Route::get('/', [HomePageController::class, 'index'])->name('home');
+
+// Keep backward compatibility for legacy URLs
+Route::redirect('/product', '/');
+Route::redirect('/t-shirt', '/');
 
 // Customer Dashboard Routes
 Route::middleware(['auth', 'role:customer'])->group(function () {
@@ -27,6 +33,56 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
 Route::get('/customer/login', function () {
     return redirect()->route('login', ['customer' => true]);
 })->name('customer.login');
+
+Route::post('/locale', function (Request $request) {
+    $locale = $request->input('locale');
+    if (!in_array($locale, ['ar', 'en'])) {
+        $locale = config('app.locale');
+    }
+    session()->put('locale', $locale);
+    app()->setLocale($locale);
+    return back();
+})->name('locale.switch');
+
+Route::get('/gallery/templates', function (Request $request) {
+    $query = DesignTemplate::query()->with(['productType:id,slug,name']);
+
+    if ($request->has('product_type')) {
+        $query->where('product_type_id', $request->product_type);
+    }
+
+    if ($request->has('category')) {
+        $query->where('category', $request->category);
+    }
+
+    if ($request->has('is_premium')) {
+        $query->where('is_premium', $request->is_premium);
+    }
+
+    if ($request->has('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
+
+    if ($request->boolean('my_templates')) {
+        if (auth()->check()) {
+            $query->where('created_by', auth()->id());
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+    }
+
+    $templates = $query->orderBy('name')->paginate($request->get('per_page', 50));
+
+    return response()->json([
+        'data' => $templates->items(),
+        'meta' => [
+            'current_page' => $templates->currentPage(),
+            'last_page' => $templates->lastPage(),
+            'per_page' => $templates->perPage(),
+            'total' => $templates->total(),
+        ],
+    ]);
+})->name('gallery.templates');
 
 Route::get('/privacy-policy', function () {
     return Inertia::render('Customer/PrivacyPolicy');
@@ -39,6 +95,10 @@ Route::get('/terms-of-use', function () {
 Route::get('/about', function () {
     return Inertia::render('Customer/About');
 })->name('about');
+
+Route::get('/gallery', function () {
+    return Inertia::render('Customer/Gallery');
+})->name('gallery');
 
 Route::get('/contact', function () {
     return Inertia::render('Customer/Contact');
@@ -60,13 +120,14 @@ Route::get('/cookie-policy', function () {
     return Inertia::render('Customer/CookiePolicy');
 })->name('cookie-policy');
 
+// Product Routes - Enhanced 3D Experience
 Route::redirect('/product', '/');
 
 // Keep backward compatibility
 Route::redirect('/t-shirt', '/');
 Route::get('/t-shirt/{slug}', [CustomerProductsController::class, 'tshirtPage'])->name('tshirt.page');
 
-// Generalized product routes
+// Generalized product routes with 3D viewer
 Route::get('/products', [CustomerProductsController::class, 'index'])->name('products.index');
 Route::get('/product/{slug}', [CustomerProductsController::class, 'tshirtPage'])->name('product.page');
 
@@ -162,9 +223,16 @@ Route::redirect('/dashboard', '/admin')->name('dashboard');
 
 // ############################### Designer Routes ###############################
 Route::prefix('designer')->group(function () {
-    Route::get('{productType}/{product?}', [\App\Http\Controllers\Designer\DesignerController::class, 'create'])->name('designer.create');
-    Route::get('edit/{design}', [\App\Http\Controllers\Designer\DesignerController::class, 'edit'])->name('designer.edit');
+    Route::get('select-product-type', [\App\Http\Controllers\Designer\DesignerController::class, 'selectProductType'])->name('designer.select-product-type');
     Route::get('my-designs', [\App\Http\Controllers\Designer\DesignerController::class, 'myDesigns'])->name('designer.my-designs');
+    Route::get('edit/{design}', [\App\Http\Controllers\Designer\DesignerController::class, 'edit'])->name('designer.edit');
+    
+    // Template management routes
+    Route::get('templates', function() {
+        return \App\Http\Controllers\Api\TemplateController::class;
+    })->name('designer.templates.api');
+    
+    Route::get('{productType}/{product?}', [\App\Http\Controllers\Designer\DesignerController::class, 'create'])->name('designer.create');
 });
 
 // ############################### Admin Designer Routes ###############################
@@ -186,7 +254,20 @@ Route::prefix('admin')->middleware(['auth', 'role:admin,staff'])->group(function
 // ################################ Auth Routes ################################
 require __DIR__ . '/auth.php';
 
+// Customer Profile Routes (for customer guard)
+Route::middleware(['auth:web,customer'])->group(function () {
+    Route::get('/customer/profile', [\App\Http\Controllers\Customer\ProfileController::class, 'edit'])->name('customer.profile.edit');
+    Route::patch('/customer/profile', [\App\Http\Controllers\Customer\ProfileController::class, 'update'])->name('customer.profile.update');
+});
+
 // API route for getting CSRF token
 Route::get('/api/csrf-token', function () {
     return response()->json(['token' => csrf_token()]);
 })->middleware('web')->name('api.csrf.token');
+
+// Saved Designs API Routes
+Route::middleware(['auth:web,customer'])->group(function () {
+    Route::post('/api/designs', [\App\Http\Controllers\Customer\SavedDesignController::class, 'store'])->name('api.designs.store');
+    Route::put('/api/designs/{design}', [\App\Http\Controllers\Customer\SavedDesignController::class, 'update'])->name('api.designs.update');
+    Route::delete('/api/designs/{design}', [\App\Http\Controllers\Customer\SavedDesignController::class, 'destroy'])->name('api.designs.destroy');
+});

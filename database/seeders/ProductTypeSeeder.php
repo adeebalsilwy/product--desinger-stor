@@ -6,6 +6,7 @@ use App\Models\ProductType;
 use App\Models\Product;
 use App\Models\PrintArea;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class ProductTypeSeeder extends Seeder
 {
@@ -14,21 +15,22 @@ class ProductTypeSeeder extends Seeder
      */
     public function run(): void
     {
-        // T-Shirts
-        $tshirt = ProductType::firstOrCreate(
-            ['slug' => 't-shirt'],
+        // الفساتين اليمنية التقليدية
+        $yemeniDress = ProductType::firstOrCreate(
+            ['slug' => 'yemeni-dress'],
             [
-                'name' => 'T-Shirt',
-                'description' => 'Customizable premium cotton t-shirts',
-                'base_price' => 19.99,
+                'name' => 'فستان يمني تقليدي',
+                'description' => 'فساتين يمنية تقليدية مطرزة يدوياً بتصاميم أصيلة تعكس التراث اليمني الأصيل',
+                'base_price' => 299.99,
                 'is_active' => true,
+                'image_url' => asset('template/yemeni-dress.png'),
             ]
         );
         
         PrintArea::firstOrCreate(
-            ['product_type_id' => $tshirt->id, 'name' => 'front'],
+            ['product_type_id' => $yemeniDress->id, 'name' => 'front'],
             [
-                'display_name' => 'Front Design',
+                'display_name' => 'التصميم الأمامي',
                 'width_mm' => 300,
                 'height_mm' => 400,
                 'offset_x' => 50,
@@ -38,9 +40,9 @@ class ProductTypeSeeder extends Seeder
         );
         
         PrintArea::firstOrCreate(
-            ['product_type_id' => $tshirt->id, 'name' => 'back'],
+            ['product_type_id' => $yemeniDress->id, 'name' => 'back'],
             [
-                'display_name' => 'Back Design',
+                'display_name' => 'التصميم الخلفي',
                 'width_mm' => 300,
                 'height_mm' => 400,
                 'offset_x' => 50,
@@ -49,130 +51,134 @@ class ProductTypeSeeder extends Seeder
             ]
         );
 
-        // Mugs
-        $mug = ProductType::firstOrCreate(
-            ['slug' => 'coffee-mug'],
+        // العبايات اليمنية الفاخرة
+        $abaya = ProductType::firstOrCreate(
+            ['slug' => 'yemeni-abaya'],
             [
-                'name' => 'Coffee Mug',
-                'description' => 'Ceramic coffee mugs with custom designs',
-                'base_price' => 12.99,
+                'name' => 'عباية يمنية فاخرة',
+                'description' => 'عبايات يمنية فاخرة مطرزة بالذهب والفضة، تصميمات حصرية للنساء اليمنيات',
+                'base_price' => 449.99,
                 'is_active' => true,
+                'image_url' => asset('template/yemeni-abaya.png'),
             ]
         );
         
         PrintArea::firstOrCreate(
-            ['product_type_id' => $mug->id, 'name' => 'wrap'],
+            ['product_type_id' => $abaya->id, 'name' => 'external'],
             [
-                'display_name' => 'Wrap Around',
-                'width_mm' => 200,
-                'height_mm' => 90,
-                'offset_x' => 0,
-                'offset_y' => 0,
+                'display_name' => 'التطريز الخارجي',
+                'width_mm' => 350,
+                'height_mm' => 450,
+                'offset_x' => 25,
+                'offset_y' => 25,
                 'is_default' => true,
             ]
         );
 
-        // Phone Cases
-        $phoneCase = ProductType::firstOrCreate(
-            ['slug' => 'phone-case'],
+        // البلوزات اليمنية العصرية
+        $yemeniBlouse = ProductType::firstOrCreate(
+            ['slug' => 'yemeni-blouse'],
             [
-                'name' => 'Phone Case',
-                'description' => 'Protective phone cases with custom prints',
-                'base_price' => 24.99,
+                'name' => 'بلوزة يمنية عصرية',
+                'description' => 'بلوزات يمنية عصرية تجمع بين الأصالة والمعاصرة، مناسبة للمناسبات المختلفة',
+                'base_price' => 89.99,
                 'is_active' => true,
+                'image_url' => asset('template/yemeni-blouse.png'),
             ]
         );
         
         PrintArea::firstOrCreate(
-            ['product_type_id' => $phoneCase->id, 'name' => 'back'],
+            ['product_type_id' => $yemeniBlouse->id, 'name' => 'front'],
             [
-                'display_name' => 'Back Cover',
-                'width_mm' => 75,
-                'height_mm' => 150,
-                'offset_x' => 0,
-                'offset_y' => 0,
-                'is_default' => true,
-            ]
-        );
-
-        // Posters
-        $poster = ProductType::firstOrCreate(
-            ['slug' => 'poster'],
-            [
-                'name' => 'Poster',
-                'description' => 'High-quality printed posters',
-                'base_price' => 29.99,
-                'is_active' => true,
-            ]
-        );
-        
-        PrintArea::firstOrCreate(
-            ['product_type_id' => $poster->id, 'name' => 'full'],
-            [
-                'display_name' => 'Full Print',
-                'width_mm' => 610,
-                'height_mm' => 915,
-                'offset_x' => 0,
-                'offset_y' => 0,
-                'is_default' => true,
-            ]
-        );
-
-        // Tote Bags
-        $tote = ProductType::firstOrCreate(
-            ['slug' => 'tote-bag'],
-            [
-                'name' => 'Tote Bag',
-                'description' => 'Eco-friendly canvas tote bags',
-                'base_price' => 15.99,
-                'is_active' => true,
-            ]
-        );
-        
-        PrintArea::firstOrCreate(
-            ['product_type_id' => $tote->id, 'name' => 'front'],
-            [
-                'display_name' => 'Front Panel',
+                'display_name' => 'الواجهة الأمامية',
                 'width_mm' => 250,
                 'height_mm' => 300,
-                'offset_x' => 25,
+                'offset_x' => 50,
                 'offset_y' => 50,
                 'is_default' => true,
             ]
         );
 
-        // Create sample products for each type
-        $this->createSampleProducts($tshirt);
-        $this->createSampleProducts($mug);
-        $this->createSampleProducts($phoneCase);
-        $this->createSampleProducts($poster);
-        $this->createSampleProducts($tote);
+        // التنانير اليمنية المزخرفة
+        $yemeniSkirt = ProductType::firstOrCreate(
+            ['slug' => 'yemeni-skirt'],
+            [
+                'name' => 'تنورة يمنية مزخرفة',
+                'description' => 'تنانير يمنية تقليدية مزخرفة بألوان زاهية وتصاميم تراثية جميلة',
+                'base_price' => 129.99,
+                'is_active' => true,
+                'image_url' => asset('template/yemeni-skirt.png'),
+            ]
+        );
+        
+        PrintArea::firstOrCreate(
+            ['product_type_id' => $yemeniSkirt->id, 'name' => 'waistband'],
+            [
+                'display_name' => 'منطقة الخصر',
+                'width_mm' => 200,
+                'height_mm' => 100,
+                'offset_x' => 50,
+                'offset_y' => 0,
+                'is_default' => true,
+            ]
+        );
+
+        // الحجاب اليمني المطرز
+        $hijab = ProductType::firstOrCreate(
+            ['slug' => 'yemeni-hijab'],
+            [
+                'name' => 'حجاب يمني مطرز',
+                'description' => 'حجاب يمني فاخر مطرز بتطريز يدوي دقيق، يعكس جمال المرأة اليمنية',
+                'base_price' => 59.99,
+                'is_active' => true,
+                'image_url' => asset('template/yemeni-hijab.png'),
+            ]
+        );
+        
+        PrintArea::firstOrCreate(
+            ['product_type_id' => $hijab->id, 'name' => 'border'],
+            [
+                'display_name' => 'تطريز الحواف',
+                'width_mm' => 180,
+                'height_mm' => 50,
+                'offset_x' => 10,
+                'offset_y' => 10,
+                'is_default' => true,
+            ]
+        );
+
+        // إنشاء منتجات نموذجية لكل نوع
+        $this->createYemeniProducts($yemeniDress);
+        $this->createYemeniProducts($abaya);
+        $this->createYemeniProducts($yemeniBlouse);
+        $this->createYemeniProducts($yemeniSkirt);
+        $this->createYemeniProducts($hijab);
     }
     
-    protected function createSampleProducts(ProductType $productType)
+    protected function createYemeniProducts(ProductType $productType)
     {
         Product::firstOrCreate(
-            ['slug' => "standard-{$productType->slug}"],
+            ['slug' => "classic-{$productType->slug}"],
             [
                 'product_type_id' => $productType->id,
-                'name' => "Standard {$productType->name}",
-                'description' => "Our standard quality {$productType->name}",
-                'sku' => strtoupper(str_replace('-', '', substr($productType->slug, 0, 3))) . '-STD-001',
+                'name' => "{$productType->name} الكلاسيكي",
+                'description' => "{$productType->name} كلاسيكي بتصميم تقليدي أصيل وجودة عالية",
+                'sku' => strtoupper(str_replace('-', '', substr($productType->slug, 0, 3))) . '-CLS-' . strtoupper(Str::random(4)),
                 'price' => $productType->base_price,
-                'inventory_count' => 100,
+                'inventory_count' => 50,
                 'is_active' => true,
             ]
         );
         
         Product::firstOrCreate(
-            ['slug' => "premium-{$productType->slug}"],
+            ['slug' => "luxury-{$productType->slug}"],
             [
                 'product_type_id' => $productType->id,
-                'name' => "Premium {$productType->name}",
-                'description' => "Premium quality {$productType->name} with enhanced features",
-                'sku' => strtoupper(str_replace('-', '', substr($productType->slug, 0, 3))) . '-PRM-001',
-                'price' => $productType->base_price * 1.5,
-                'inventory_count' => 50,
+                'name' => "{$productType->name} الفاخرة",
+                'description' => "{$productType->name} فاخرة بتطريز ذهبي وتصاميم حصرية",
+                'sku' => strtoupper(str_replace('-', '', substr($productType->slug, 0, 3))) . '-LUX-' . strtoupper(Str::random(4)),
+                'price' => $productType->base_price * 1.8,
+                'inventory_count' => 25,
                 'is_active' => true,
             ]
         );

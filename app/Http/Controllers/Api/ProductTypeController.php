@@ -21,6 +21,15 @@ class ProductTypeController extends Controller
         
         $productTypes = $query->withCount(['products', 'templates'])->latest()->paginate($request->get('per_page', 20));
         
+        // Append image_url with fallback to default images
+        $productTypes->getCollection()->transform(function($productType) {
+            if (!$productType->image_url) {
+                // Generate a default image based on product type slug
+                $productType->image_url = asset('images/product-types/' . $productType->slug . '.png');
+            }
+            return $productType;
+        });
+        
         return response()->json([
             'data' => $productTypes->items(),
             'meta' => [

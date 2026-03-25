@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import Ahlams3DSlider from './Ahlams3DSlider.vue';
 
 const props = defineProps({
     siteName: {
@@ -136,20 +137,18 @@ const scrollToCollection = () => {
                     </div>
                 </div>
 
-                <!-- Hero Image Section -->
+                <!-- Hero Image Section with 3D Slider -->
                 <div class="relative hidden lg:block">
-                    <!-- Central Elegant Dress Display -->
+                    <!-- 3D Logo and Templates Slider -->
                     <div class="relative z-10 transform transition-all duration-700 hover:scale-105">
-                        <div class="relative">
-                            <!-- Dress Silhouette Placeholder -->
-                            <div class="w-80 h-[500px] mx-auto gradient-luxury rounded-t-full rounded-b-3xl shadow-2xl flex items-center justify-center">
-                                <span class="text-white text-6xl">👗</span>
-                            </div>
-                            <!-- Decorative Elements Around Dress -->
-                            <div class="absolute -top-10 left-1/2 transform -translate-x-1/2 text-brand-gold text-5xl animate-sparkle">✨</div>
-                            <div class="absolute top-20 -right-10 text-brand-rose text-4xl animate-float">🌸</div>
-                            <div class="absolute bottom-20 -left-10 text-brand-lavender text-4xl animate-float animation-delay-1000">🌺</div>
+                        <div class="w-80 h-[500px] mx-auto">
+                            <Ahlams3DSlider />
                         </div>
+                        
+                        <!-- Decorative Elements Around 3D Display -->
+                        <div class="absolute -top-10 left-1/2 transform -translate-x-1/2 text-brand-gold text-5xl animate-sparkle">✨</div>
+                        <div class="absolute top-20 -right-10 text-brand-rose text-4xl animate-float">🌸</div>
+                        <div class="absolute bottom-20 -left-10 text-brand-lavender text-4xl animate-float animation-delay-1000">🌺</div>
                     </div>
                     
                     <!-- Side Elements -->
@@ -216,5 +215,56 @@ const scrollToCollection = () => {
 /* Custom Shadow */
 .shadow-3xl {
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* 3D Transformations */
+.perspective-1000 {
+    perspective: 1000px;
+}
+
+.transform-style-3d {
+    transform-style: preserve-3d;
+}
+
+.logo-3d-container {
+    animation: rotate3d 20s infinite linear;
+}
+
+@keyframes rotate3d {
+    0% {
+        transform: rotateY(0deg);
+    }
+    100% {
+        transform: rotateY(360deg);
+    }
+}
+
+.template-circle {
+    animation: rotateCircle 30s infinite linear reverse;
+}
+
+@keyframes rotateCircle {
+    0% {
+        transform: rotateX(10deg) rotateY(0deg);
+    }
+    100% {
+        transform: rotateX(10deg) rotateY(360deg);
+    }
+}
+
+/* Hover Effects for Templates */
+.logo-3d-model:hover {
+    transform: scale(1.05) rotateY(5deg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .logo-3d-container {
+        animation-duration: 30s;
+    }
+    
+    .template-circle {
+        animation-duration: 45s;
+    }
 }
 </style>

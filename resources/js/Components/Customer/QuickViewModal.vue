@@ -142,7 +142,7 @@ const customizeProduct = () => {
 const shareProduct = () => {
     if (!props.product || !productSlug.value) return;
     
-    const shareUrl = `${window.location.origin}/t-shirt/${productSlug.value}`;
+    const shareUrl = `${window.location.origin}/product/${productSlug.value}`;
     const shareTitle = productTitle.value;
     
     if (navigator.share) {

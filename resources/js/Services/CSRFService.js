@@ -31,6 +31,22 @@ export function getCsrfTokenFromCookie() {
     return null;
 }
 
+// Get Sanctum token from localStorage or session storage
+export function getSanctumToken() {
+    // Check for Sanctum token in various storage locations
+    let token = localStorage.getItem('sanctum.token') ||
+                sessionStorage.getItem('sanctum.token') ||
+                localStorage.getItem('api_token') ||
+                sessionStorage.getItem('api_token');
+    
+    if (token) {
+        console.log('Sanctum token found:', token ? 'FOUND' : 'NOT FOUND');
+        return token;
+    }
+    console.log('Sanctum token not found');
+    return null;
+}
+
 // Get CSRF token (tries meta tag first, then cookie)
 export function getCsrfToken() {
     const token = getCsrfTokenFromMeta() || getCsrfTokenFromCookie();
@@ -50,17 +66,24 @@ export function getCsrfParam() {
 // Setup axios defaults (if using axios)
 export function setupAxiosCSRF() {
     if (typeof axios !== 'undefined') {
-        const token = getCsrfToken();
-        if (token) {
-            axios.defaults.headers.common['X-XSRF-TOKEN'] = token;
+        const csrfToken = getCsrfToken();
+        if (csrfToken) {
+            axios.defaults.headers.common['X-XSRF-TOKEN'] = csrfToken;
             axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+        }
+        
+        // Also set up Sanctum token if available
+        const sanctumToken = getSanctumToken();
+        if (sanctumToken) {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${sanctumToken}`;
         }
     }
 }
 
 // Create fetch wrapper with automatic CSRF handling
 export async function csrfFetch(url, options = {}) {
-    let token = getCsrfToken();
+    let csrfToken = getCsrfToken();
+    let sanctumToken = getSanctumToken();
     
     // Ensure headers object exists
     if (!options.headers) {
@@ -68,11 +91,14 @@ export async function csrfFetch(url, options = {}) {
     }
     
     // Add CSRF token to headers - Laravel expects X-XSRF-TOKEN for AJAX requests
-    if (token) {
-        // For XHR requests, Laravel looks for X-XSRF-TOKEN header
-        options.headers['X-XSRF-TOKEN'] = token;
-        // Also add the standard X-Requested-With header
+    if (csrfToken) {
+        options.headers['X-XSRF-TOKEN'] = csrfToken;
         options.headers['X-Requested-With'] = 'XMLHttpRequest';
+    }
+    
+    // Add Sanctum token if available
+    if (sanctumToken) {
+        options.headers['Authorization'] = `Bearer ${sanctumToken}`;
     }
     
     // Set default credentials
@@ -83,7 +109,8 @@ export async function csrfFetch(url, options = {}) {
     console.log('=== CSRF Fetch Debug ===');
     console.log('URL:', url);
     console.log('Method:', options.method);
-    console.log('CSRF Token:', token ? 'FOUND' : 'NOT FOUND');
+    console.log('CSRF Token:', csrfToken ? 'FOUND' : 'NOT FOUND');
+    console.log('Sanctum Token:', sanctumToken ? 'FOUND' : 'NOT FOUND');
     console.log('Headers:', options.headers);
     console.log('Body type:', options.body ? options.body.constructor.name : 'NO BODY');
     
@@ -101,13 +128,13 @@ export async function csrfFetch(url, options = {}) {
             const refreshed = await refreshCsrfToken();
             if (refreshed) {
                 // Retry the original request with new token
-                token = getCsrfToken();
-                if (token) {
-                    options.headers['X-XSRF-TOKEN'] = token;
+                csrfToken = getCsrfToken();
+                if (csrfToken) {
+                    options.headers['X-XSRF-TOKEN'] = csrfToken;
                 }
                 
                 console.log('Retrying request with refreshed CSRF token...');
-                console.log('New token:', token ? 'FOUND' : 'NOT FOUND');
+                console.log('New token:', csrfToken ? 'FOUND' : 'NOT FOUND');
                 const retryResponse = await fetch(url, options);
                 console.log('Retry response status:', retryResponse.status);
                 return retryResponse;
@@ -119,6 +146,11 @@ export async function csrfFetch(url, options = {}) {
                 }));
                 throw new Error('CSRF Token Expired - Please refresh the page');
             }
+        }
+        // Handle Unauthorized (401) - might need to refresh Sanctum token
+        else if (response.status === 401 || response.status === 403) {
+            console.warn(`Authorization failed (${response.status}) - Sanctum token might be invalid`);
+            // Could attempt to refresh Sanctum token here if needed
         }
         
         return response;
@@ -288,6 +320,7 @@ export default {
     getCsrfTokenFromMeta,
     getCsrfTokenFromCookie,
     getCsrfToken,
+    getSanctumToken,
     getCsrfParam,
     setupAxiosCSRF,
     csrfFetch,

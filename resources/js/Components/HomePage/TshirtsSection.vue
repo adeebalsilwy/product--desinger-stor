@@ -17,7 +17,7 @@ const props = defineProps({
         class="grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 justify-center gap-8 w-full max-w-7xl mx-auto md:px-4 px-8"
     >
         <Link
-            :href="route('tshirt.page', { slug: tshirt.slug })"
+            :href="route('product.page', { slug: tshirt.slug })"
             v-for="tshirt in props.tshirts"
             :key="tshirt.id"
             class="group relative cursor-pointer"

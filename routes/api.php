@@ -19,7 +19,7 @@ use App\Http\Controllers\Api\SettingsController;
 |
 */
 
-// Design management - PUBLIC ACCESS
+// Design management - no middleware (authentication handled in controller)
 Route::prefix('designs')->group(function () {
     Route::get('/', [DesignController::class, 'index']);
     Route::post('/', [DesignController::class, 'store']);
@@ -32,7 +32,7 @@ Route::prefix('designs')->group(function () {
     Route::post('/{design}/save-as-template', [DesignController::class, 'saveAsTemplate']);
 });
 
-// Asset management - PUBLIC ACCESS
+// Asset management - no middleware (authentication handled in controller)
 Route::prefix('assets')->group(function () {
     Route::get('/', [AssetController::class, 'index']);
     Route::post('/upload', [AssetController::class, 'upload']);
@@ -41,7 +41,7 @@ Route::prefix('assets')->group(function () {
     Route::post('/bulk-delete', [AssetController::class, 'bulkDelete']);
 });
 
-// Orders - PUBLIC ACCESS
+// Orders - no middleware (authentication handled in controller)
 Route::apiResource('orders', OrderController::class);
 Route::get('orders/{order}/invoice', [OrderController::class, 'invoice']);
 
@@ -54,6 +54,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 // Public API routes
 Route::get('/settings', [SettingsController::class, 'index']);
+
+// Designer Templates API - Make sure this is registered
+Route::prefix('designer')->group(function () {
+    Route::get('/templates', [\App\Http\Controllers\Api\TemplateController::class, 'index'])->name('api.designer.templates');
+    Route::get('/templates/{template}', [\App\Http\Controllers\Api\TemplateController::class, 'show'])->name('api.designer.templates.show');
+});
 
 Route::prefix('v1')->group(function () {
     
@@ -80,4 +86,21 @@ Route::prefix('v1')->group(function () {
     
     // Public designs
     Route::get('/public-designs', [DesignController::class, 'publicDesigns']);
+});
+
+// Web-authenticated API routes for customer users
+Route::middleware(['web'])->group(function () {
+    Route::prefix('customer')->group(function () {
+        Route::prefix('designs')->group(function () {
+            Route::get('/', [DesignController::class, 'index']);
+            Route::post('/', [DesignController::class, 'store']);
+            Route::get('/{design}', [DesignController::class, 'show']);
+            Route::put('/{design}', [DesignController::class, 'update']);
+            Route::delete('/{design}', [DesignController::class, 'destroy']);
+            Route::post('/{design}/duplicate', [DesignController::class, 'duplicate']);
+            Route::post('/{design}/export', [DesignController::class, 'export']);
+            Route::post('/{design}/preview', [DesignController::class, 'generatePreview']);
+            Route::post('/{design}/save-as-template', [DesignController::class, 'saveAsTemplate']);
+        });
+    });
 });

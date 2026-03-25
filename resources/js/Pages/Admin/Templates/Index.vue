@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/Admin.vue';
 
 const props = defineProps({
@@ -32,6 +32,8 @@ const selectAllChecked = ref(false);
 const currentPage = computed(() => props.pagination?.current_page || 1);
 const lastPage = computed(() => props.pagination?.last_page || 1);
 const total = computed(() => props.pagination?.total || 0);
+const page = usePage();
+const defaultProductType = computed(() => page.props.defaultProductType || 't-shirt');
 
 // Watch for changes in selected templates to update select all checkbox
 watch(selectedTemplates, () => {
@@ -81,13 +83,13 @@ const deleteTemplate = (templateId) => {
 
 const useTemplate = (template) => {
     // Navigate to designer with this template
-    router.visit(route('designer.create', { productType: 't-shirt' }) + `?template=${template.id}`);
+    router.visit(route('designer.create', { productType: defaultProductType.value }) + `?template=${template.id}`);
 };
 
 const useTemplateInDesign = (template) => {
     // Navigate to designer with template applied to current design context
     // This would open the designer with the template pre-loaded
-    router.visit(route('designer.create', { productType: 't-shirt' }) + `?template=${template.id}&mode=apply`);
+    router.visit(route('designer.create', { productType: defaultProductType.value }) + `?template=${template.id}&mode=apply`);
 };
 
 const toggleTemplateSelection = (templateId) => {
@@ -285,7 +287,7 @@ const convertToDesign = (template) => {
                             <span class="text-sm font-medium">Designs</span>
                         </button>
                         <button
-                            @click="router.visit(route('designer.create', { productType: 't-shirt' }))"
+                            @click="router.visit(route('designer.create', { productType: defaultProductType }))"
                             class="group p-4 bg-gradient-to-r from-orange-500 to-amber-600 text-white rounded-xl hover:from-orange-600 hover:to-amber-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex flex-col items-center justify-center"
                         >
                             <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center mb-2 group-hover:bg-opacity-30 transition-all duration-200">

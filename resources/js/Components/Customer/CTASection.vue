@@ -1,5 +1,6 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const props = defineProps({
     title: {
@@ -19,6 +20,9 @@ const props = defineProps({
         default: 'View Collection'
     }
 });
+
+const page = usePage();
+const defaultProductType = computed(() => page.props.defaultProductType || 't-shirt');
 </script>
 
 <template>
@@ -39,7 +43,7 @@ const props = defineProps({
                 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link
-                        :href="route('designer.create', { productType: 't-shirt' })"
+                        :href="route('designer.create', { productType: defaultProductType })"
                         class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-medium rounded-lg text-blue-600 bg-white hover:bg-gray-50 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                     >
                         {{ primaryButtonText }}

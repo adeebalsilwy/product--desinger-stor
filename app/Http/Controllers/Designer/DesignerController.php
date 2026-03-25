@@ -13,6 +13,13 @@ use Illuminate\Support\Facades\Auth;
 
 class DesignerController extends Controller
 {
+    public function selectProductType()
+    {
+        return Inertia::render('Customer/Designer/SelectProductType', [
+            'defaultProductType' => $this->getDefaultProductTypeSlug(),
+        ]);
+    }
+    
     public function create(Request $request, $productTypeSlug, $productSlug = null)
     {
         $productType = ProductType::where('slug', $productTypeSlug)->firstOrFail();
@@ -41,11 +48,18 @@ class DesignerController extends Controller
             }
         }
         
+        // Handle mode=apply parameter
+        $mode = $request->query('mode');
+        if ($mode === 'apply' && $template) {
+            // Template will be automatically applied in the frontend
+        }
+        
         return Inertia::render('Customer/Designer/Create', [
             'productType' => $productType,
             'product' => $product,
             'printAreas' => $productType->printAreas,
             'initialTemplate' => $template,
+            'defaultProductType' => $this->getDefaultProductTypeSlug(),
         ]);
     }
 
@@ -69,7 +83,8 @@ class DesignerController extends Controller
         
         return Inertia::render('Customer/Designer/Edit', [
             'design' => $design,
-            'printAreas' => $design->productType->printAreas,
+            'printAreas' => $design->productType ? $design->productType->printAreas : [],
+            'defaultProductType' => $this->getDefaultProductTypeSlug(),
         ]);
     }
 
@@ -95,6 +110,7 @@ class DesignerController extends Controller
 
         return Inertia::render('Customer/Designer/MyDesigns', [
             'designs' => $designs,
+            'defaultProductType' => $this->getDefaultProductTypeSlug(),
         ]);
     }
     
@@ -131,5 +147,13 @@ class DesignerController extends Controller
         }
         
         return false;
+    }
+
+    private function getDefaultProductTypeSlug()
+    {
+        return ProductType::query()
+            ->where('is_active', true)
+            ->orderBy('id')
+            ->value('slug') ?? 't-shirt';
     }
 }

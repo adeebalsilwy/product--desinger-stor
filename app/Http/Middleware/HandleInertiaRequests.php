@@ -4,10 +4,12 @@ namespace App\Http\Middleware;
 
 use App\Models\Customer;
 use App\Models\Order;
+use App\Models\ProductType;
 use App\Models\Tshirt;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Number;
 use Inertia\Middleware;
 
@@ -38,33 +40,49 @@ class HandleInertiaRequests extends Middleware
     {
         $cart = session()->get('cart', []);
         $settings = Setting::getSettings();
-        if (Auth::check()) {
-            return [
-                ...parent::share($request),
-                'auth' => [
-                    'user' => $request->user(),
-                ],
+        $locale = session('locale', config('app.locale'));
+        app()->setLocale($locale);
+        $defaultProductType = ProductType::query()
+            ->where('is_active', true)
+            ->orderBy('id')
+            ->value('slug') ?? 't-shirt';
+        $translations = [];
+        $webUser = Auth::user();
+        $customerUser = auth('customer')->user();
+        $authUser = $webUser ?: $customerUser;
+        $authGuard = $webUser ? 'web' : ($customerUser ? 'customer' : null);
 
-                'settings' => $settings,
-                'orders_count' => Order::count(),
-                'customers_count' => Customer::count(),
-                'products_count' => Tshirt::count(),
-                'revenue' => Number::currency(
-                    Order::where('payment_status', '=', 'paid')
-                        ->where('status', '!=', 'cancelled')
-                        ->with('tshirts')
-                        ->get()
-                        ->sum(function ($order) {
-                            return $order->getTotalAmount();
-                        })
-                ),
-                'cart' => $cart,
-            ];
+        if (file_exists(resource_path("lang/{$locale}/customer.php"))) {
+            $translations = Lang::get('customer');
         }
-        return [
+        $shared = [
             ...parent::share($request),
+            'auth' => $authUser ? [
+                'user' => $authUser,
+                'guard' => $authGuard,
+            ] : null,
             'settings' => $settings,
             'cart' => $cart,
+            'locale' => $locale,
+            'translations' => $translations,
+            'defaultProductType' => $defaultProductType,
         ];
+
+        if (Auth::check()) {
+            $shared['orders_count'] = Order::count();
+            $shared['customers_count'] = Customer::count();
+            $shared['products_count'] = Tshirt::count();
+            $shared['revenue'] = Number::currency(
+                Order::where('payment_status', '=', 'paid')
+                    ->where('status', '!=', 'cancelled')
+                    ->with('tshirts')
+                    ->get()
+                    ->sum(function ($order) {
+                        return $order->getTotalAmount();
+                    })
+            );
+        }
+
+        return $shared;
     }
 }
