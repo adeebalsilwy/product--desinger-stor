@@ -197,7 +197,10 @@
           <button v-for="template in templates" :key="template.id" class="template-card"
             :class="{ active: activeTemplate.id === template.id }" @click="applyTemplate(template)">
             <span class="template-preview template-image-preview" :style="templateCardStyle(template)">
-              <img v-if="template.preview" :src="template.preview" :alt="template.name" />
+              <img v-if="template.preview && template.preview !== 'null' && template.preview !== 'undefined'" :src="template.preview" :alt="template.name" />
+              <img v-else-if="template.preview_url && template.preview_url !== 'null' && template.preview_url !== 'undefined'" :src="template.preview_url" :alt="template.name" />
+              <img v-else-if="template.image" :src="template.image" :alt="template.name" />
+              <img v-else-if="template.template_image" :src="template.template_image" :alt="template.name" />
             </span>
             <span class="template-name">{{ template.name }}</span>
           </button>
@@ -321,7 +324,18 @@
               :class="{ active: activeTemplate.id === template.id }"
               @click="applyTemplate(template); wardrobeMinimized = false">
               <div class="clothing-img-container-3d">
-                <img v-if="template.preview" :src="template.preview" class="clothing-img-3d" :alt="template.name" />
+                <div v-if="template.preview && template.preview !== 'null' && template.preview !== 'undefined'" class="clothing-img-wrapper-3d">
+                  <img :src="template.preview" class="clothing-img-3d" :alt="template.name" />
+                </div>
+                <div v-else-if="template.preview_url && template.preview_url !== 'null' && template.preview_url !== 'undefined'" class="clothing-img-wrapper-3d">
+                  <img :src="template.preview_url" class="clothing-img-3d" :alt="template.name" />
+                </div>
+                <div v-else-if="template.image" class="clothing-img-wrapper-3d">
+                  <img :src="template.image" class="clothing-img-3d" :alt="template.name" />
+                </div>
+                <div v-else-if="template.template_image" class="clothing-img-wrapper-3d">
+                  <img :src="template.template_image" class="clothing-img-3d" :alt="template.name" />
+                </div>
                 <div v-else class="clothing-fallback" :style="templateCardStyle(template)"></div>
               </div>
               <div class="clothing-name-3d">{{ template.name }}</div>
@@ -484,16 +498,50 @@ export default {
       return this.templatesResolved
     }
   },
+  watch: {
+    activeTemplate: {
+      handler(newVal, oldVal) {
+        // Redraw the template when the active template changes
+        if (newVal && newVal !== oldVal) {
+          this.$nextTick(() => {
+            this.drawTemplate();
+            this.updateMockupImage();
+          });
+        }
+      },
+      deep: true
+    }
+  },
   async mounted() {
-    this.templateContext = this.$refs.templateCanvas.getContext('2d')
-    this.drawingContext = this.$refs.drawingCanvas.getContext('2d')
-    this.drawingContext.lineCap = 'round'
-    this.drawingContext.lineJoin = 'round'
+    // Wait for DOM to be ready
+    await this.$nextTick();
+    
+    // Initialize canvas contexts
+    if (this.$refs.templateCanvas && this.$refs.drawingCanvas) {
+      this.templateContext = this.$refs.templateCanvas.getContext('2d')
+      this.drawingContext = this.$refs.drawingCanvas.getContext('2d')
+      this.drawingContext.lineCap = 'round'
+      this.drawingContext.lineJoin = 'round'
+    }
+    
+    // Load templates first
+    await this.loadTemplates()
+    
+    // Draw template after templates are loaded
     this.drawTemplate()
     this.pushHistory(true)
-    await this.loadTemplates()
+    
+    // Load existing design
     this.loadExistingDesign()
+    
+    // Update mockup image
     await this.updateMockupImage()
+    
+    // Initialize the design area to ensure it's properly rendered
+    this.$nextTick(() => {
+      this.initializeDesignArea();
+    });
+    
     document.addEventListener('click', this.handleOutsideClick)
   },
   beforeUnmount() {
@@ -528,7 +576,7 @@ export default {
       this.openPalette = null
     },
     normalizeTemplate(row, index = 0) {
-      const preview = row.preview || row.image || row.thumbnail || row.photo || row.template_image || row.cover || row.url || null
+      const preview = row.preview || row.preview_url || row.image || row.thumbnail || row.thumbnail_url || row.photo || row.template_image || row.cover || row.url || null
       const background = row.background || row.gradient || row.bg || 'linear-gradient(180deg,#ffffff 0%,#f5f7ff 100%)'
       return {
         id: row.id ?? row.uuid ?? `template-${index}`,
@@ -553,23 +601,28 @@ export default {
 
         if (!rows.length) {
           const endpoints = [
+            '/api/designer/templates',
             '/designer/templates',
             '/customer/designer/templates',
-            '/api/designer/templates',
-            '/api/templates',
             '/templates'
           ]
           for (const endpoint of endpoints) {
             try {
+              console.log(`Trying to fetch templates from: ${endpoint}`);
               const response = await fetch(endpoint, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+              console.log(`Response from ${endpoint}:`, response.status);
               if (!response.ok) continue
               const json = await response.json()
+              console.log(`JSON response from ${endpoint}:`, json);
               const list = Array.isArray(json) ? json : (json.data || json.templates || [])
               if (Array.isArray(list) && list.length) {
                 rows = list
+                console.log(`Found ${list.length} templates from ${endpoint}`);
                 break
               }
-            } catch (_) { }
+            } catch (error) {
+              console.error(`Error fetching templates from ${endpoint}:`, error);
+            }
           }
         }
 
@@ -601,6 +654,9 @@ export default {
         const found = this.templatesList.find(t => String(t.id) === String(design.template_id))
         if (found) {
           this.applyTemplate(found, false)
+        } else {
+          // If template not found in loaded list, try to get it separately
+          this.fetchTemplateById(design.template_id);
         }
       } else if (design.template) {
         this.applyTemplate(design.template, false)
@@ -658,9 +714,56 @@ export default {
           img.src = designData.drawing
         }
       }
+      
+      // Update the 3D viewer if it's available
+      this.$nextTick(() => {
+        if (this.$refs.product3dviewer) {
+          this.$refs.product3dviewer.loadProductTextureWithBackgroundRemoval(this.mockupImage, false);
+        }
+      });
+    },
+    
+    async fetchTemplateById(templateId) {
+      try {
+        const response = await fetch(`/api/templates/${templateId}`);
+        if (response.ok) {
+          const template = await response.json();
+          this.applyTemplate(template, false);
+        } else {
+          console.error('Failed to fetch template by ID:', templateId);
+        }
+      } catch (error) {
+        console.error('Error fetching template by ID:', error);
+      }
     },
     templateCardStyle(template) {
-      return { background: template.background || this.defaultTemplate.background }
+      // Return the background style for the template card
+      if (template.preview && template.preview !== 'null' && template.preview !== 'undefined') {
+        return { 
+          backgroundImage: `url(${template.preview})`, 
+          backgroundSize: 'contain', 
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundColor: '#f0f0f0' // Light gray background to show transparency
+        };
+      } else if (template.image) {
+        return { 
+          backgroundImage: `url(${template.image})`, 
+          backgroundSize: 'contain', 
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundColor: '#f0f0f0' // Light gray background to show transparency
+        };
+      } else if (template.template_image) {
+        return { 
+          backgroundImage: `url(${template.template_image})`, 
+          backgroundSize: 'contain', 
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundColor: '#f0f0f0' // Light gray background to show transparency
+        };
+      }
+      return { background: template.background || this.defaultTemplate.background };
     },
     selectColor(color) {
       this.currentColor = color
@@ -670,43 +773,278 @@ export default {
       }
     },
     applyTemplate(template, push = true) {
+      console.log('Applying template:', template);
       this.activeTemplate = { ...this.defaultTemplate, ...template }
       this.garmentColor = this.activeTemplate.baseColor || '#ffffff'
-      if (push) this.commitChanges()
-      else this.drawTemplate()
-      this.wardrobeOpen = false
-      this.openPalette = null
-      this.updateMockupImage()
+      
+      // Update the stage background immediately
+      this.$nextTick(() => {
+        // Ensure canvas contexts are available
+        if (this.templateContext) {
+          this.drawTemplate();
+        }
+        
+        // Update mockup image to reflect changes
+        this.updateMockupImage();
+        
+        // Ensure the wardrobe is closed and palette is updated
+        this.wardrobeOpen = false
+        this.openPalette = null
+        
+        // Push changes to history if needed
+        if (push) this.commitChanges()
+      });
+      
+      // Also trigger an immediate redraw
+      if (this.templateContext) {
+        this.drawTemplate();
+      }
+      
+      console.log('Template applied, active template:', this.activeTemplate);
     },
     drawTemplate() {
-      const ctx = this.templateContext
-      ctx.clearRect(0, 0, this.stageWidth, this.stageHeight)
-      ctx.save()
-      ctx.fillStyle = this.garmentColor
-      const cx = this.stageWidth / 2
-      const top = 44
-      const bodyHeight = this.stageHeight - 95
-      ctx.beginPath()
-      ctx.moveTo(cx - 88, top + 18)
-      ctx.quadraticCurveTo(cx - 145, top + 55, cx - 188, top + 165)
-      ctx.quadraticCurveTo(cx - 215, top + 248, cx - 235, top + 468)
-      ctx.quadraticCurveTo(cx - 130, top + bodyHeight, cx, top + bodyHeight - 10)
-      ctx.quadraticCurveTo(cx + 130, top + bodyHeight, cx + 235, top + 468)
-      ctx.quadraticCurveTo(cx + 215, top + 248, cx + 188, top + 165)
-      ctx.quadraticCurveTo(cx + 145, top + 55, cx + 88, top + 18)
-      ctx.quadraticCurveTo(cx + 42, top - 4, cx + 10, top + 6)
-      ctx.lineTo(cx + 34, top + 58)
-      ctx.quadraticCurveTo(cx + 44, top + 95, cx + 20, top + 154)
-      ctx.lineTo(cx - 20, top + 154)
-      ctx.quadraticCurveTo(cx - 44, top + 95, cx - 34, top + 58)
-      ctx.lineTo(cx - 10, top + 6)
-      ctx.quadraticCurveTo(cx - 42, top - 4, cx - 88, top + 18)
-      ctx.closePath()
-      ctx.fill()
-      ctx.strokeStyle = 'rgba(74,20,140,0.16)'
-      ctx.lineWidth = 3
-      ctx.stroke()
-      ctx.restore()
+      if (!this.templateContext) {
+        console.warn('Template context not available');
+        return;
+      }
+      
+      const ctx = this.templateContext;
+      ctx.clearRect(0, 0, this.stageWidth, this.stageHeight);
+      
+      // Handle background - could be a color, gradient, or image
+      ctx.save();
+      
+      // Check if the background is a gradient or just a color
+      if (this.activeTemplate.background && this.activeTemplate.background.includes('gradient')) {
+        // Parse gradient string and create gradient
+        const gradient = this.createGradientFromCSS(this.activeTemplate.background);
+        if (gradient) {
+          ctx.fillStyle = gradient;
+        } else {
+          ctx.fillStyle = this.activeTemplate.background || this.defaultTemplate.background || this.garmentColor;
+        }
+      } else {
+        ctx.fillStyle = this.activeTemplate.background || this.defaultTemplate.background || this.garmentColor;
+      }
+      ctx.fillRect(0, 0, this.stageWidth, this.stageHeight);
+      ctx.restore();
+      
+      // Draw template image if available
+      if (this.activeTemplate.preview || this.activeTemplate.preview_url || this.activeTemplate.image || this.activeTemplate.template_image) {
+        const templateUrl = this.activeTemplate.preview || this.activeTemplate.preview_url || this.activeTemplate.image || this.activeTemplate.template_image;
+        
+        // Create image object to load template image
+        const img = new Image();
+        img.crossOrigin = 'Anonymous'; // Handle CORS if needed
+        
+        img.onload = () => {
+          // Draw the template image with transparency support
+          ctx.save();
+          
+          // Calculate aspect ratio to fit within the stage
+          const aspectRatio = img.width / img.height;
+          let drawWidth, drawHeight, offsetX, offsetY;
+          
+          if (aspectRatio > 1) { // Landscape
+            drawWidth = Math.min(this.stageWidth * 0.8, img.width);
+            drawHeight = drawWidth / aspectRatio;
+          } else { // Portrait or square
+            drawHeight = Math.min(this.stageHeight * 0.6, img.height);
+            drawWidth = drawHeight * aspectRatio;
+          }
+          
+          // Center the image
+          offsetX = (this.stageWidth - drawWidth) / 2;
+          offsetY = (this.stageHeight - drawHeight) / 2;
+          
+          // Draw the template image
+          ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+          ctx.restore();
+          
+          // Update mockup image after template image is drawn
+          this.$nextTick(() => {
+            this.updateMockupImage();
+          });
+        };
+        
+        img.onerror = () => {
+          // If image fails to load, try alternative template image fields
+          if (this.activeTemplate.preview_url && this.activeTemplate.preview_url !== templateUrl) {
+            img.src = this.activeTemplate.preview_url;
+          } else if (this.activeTemplate.image && this.activeTemplate.image !== templateUrl) {
+            img.src = this.activeTemplate.image;
+          } else if (this.activeTemplate.template_image && this.activeTemplate.template_image !== templateUrl) {
+            img.src = this.activeTemplate.template_image;
+          } else {
+            // If all image sources fail, draw the default template shape
+            this.drawTemplateShape(ctx);
+            // Update mockup image after drawing shape
+            this.$nextTick(() => {
+              this.updateMockupImage();
+            });
+          }
+        };
+        
+        img.src = templateUrl;
+      } else {
+        // Draw the default template shape
+        this.drawTemplateShape(ctx);
+      }
+      
+      console.log('Template drawn with background:', this.activeTemplate.background);
+    },
+    
+    drawTemplateShape(ctx) {
+      // Draw template shape
+      ctx.save();
+      ctx.fillStyle = this.garmentColor;
+      const cx = this.stageWidth / 2;
+      const top = 44;
+      const bodyHeight = this.stageHeight - 95;
+      ctx.beginPath();
+      ctx.moveTo(cx - 88, top + 18);
+      ctx.quadraticCurveTo(cx - 145, top + 55, cx - 188, top + 165);
+      ctx.quadraticCurveTo(cx - 215, top + 248, cx - 235, top + 468);
+      ctx.quadraticCurveTo(cx - 130, top + bodyHeight, cx, top + bodyHeight - 10);
+      ctx.quadraticCurveTo(cx + 130, top + bodyHeight, cx + 235, top + 468);
+      ctx.quadraticCurveTo(cx + 215, top + 248, cx + 188, top + 165);
+      ctx.quadraticCurveTo(cx + 145, top + 55, cx + 88, top + 18);
+      ctx.quadraticCurveTo(cx + 42, top - 4, cx + 10, top + 6);
+      ctx.lineTo(cx + 34, top + 58);
+      ctx.quadraticCurveTo(cx + 44, top + 95, cx + 20, top + 154);
+      ctx.lineTo(cx - 20, top + 154);
+      ctx.quadraticCurveTo(cx - 44, top + 95, cx - 34, top + 58);
+      ctx.lineTo(cx - 10, top + 6);
+      ctx.quadraticCurveTo(cx - 42, top - 4, cx - 88, top + 18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(74,20,140,0.16)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+    },
+    
+    createGradientFromCSS(gradientString) {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = this.stageWidth;
+        canvas.height = this.stageHeight;
+        const ctx = canvas.getContext('2d');
+        
+        // Extract gradient information from CSS gradient string
+        if (gradientString.includes('linear-gradient')) {
+          // Parse linear gradient: extract direction/orientation and color stops
+          const gradientMatch = gradientString.match(/linear-gradient\(([^)]+)\)/);
+          if (gradientMatch) {
+            const fullParams = gradientMatch[1];
+            
+            // Split by commas, but be careful not to split within color definitions like rgba(255,255,255)
+            // First, temporarily replace commas inside parentheses
+            let processedParams = fullParams;
+            const parenMatches = fullParams.match(/\([^)]+\)/g) || [];
+            parenMatches.forEach((match, index) => {
+              processedParams = processedParams.replace(match, `__TEMP_PAREN_${index}__`);
+            });
+            
+            // Split by commas and clean up
+            const parts = processedParams.split(',').map(part => {
+              // Restore parentheses
+              let restoredPart = part.trim();
+              parenMatches.forEach((match, index) => {
+                restoredPart = restoredPart.replace(`__TEMP_PAREN_${index}__`, match);
+              });
+              return restoredPart;
+            });
+            
+            // Process color stops - filter out directional parts and keep only color stops
+            const colorStops = [];
+            parts.forEach(part => {
+              part = part.trim();
+              // Skip if this looks like a direction (starts with a number followed by deg/rad or keywords like "to")
+              if (/^\d+(?:\.\d+)?\s*(deg|rad)/i.test(part) || /^to\s/i.test(part) || /^(left|right|top|bottom|center)$/i.test(part.trim())) {
+                return;
+              }
+              
+              // Check if this part is a color stop (contains a color and optionally a position)
+              if (part.match(/(#(?:[0-9a-fA-F]{3}){1,2}|(?:rgb|hsl)a?\([^)]+\)|\w+|transparent)(?:\s+(\d+(?:\.\d+)?%|from|to))?/)) {
+                const colorMatch = part.match(/^(#(?:[0-9a-fA-F]{3}){1,2}|(?:rgb|hsl)a?\([^)]+\)|\w+|transparent)/);
+                if (colorMatch) {
+                  const color = colorMatch[1];
+                  // Extract position if present
+                  const positionMatch = part.match(/(\d+(?:\.\d+)?%|from|to)$/);
+                  const position = positionMatch ? positionMatch[1] : undefined;
+                  
+                  // Validate the color before adding
+                  if (this.isValidColor(color)) {
+                    colorStops.push({ color: color.trim(), position: position });
+                  } else {
+                    console.warn('Skipping invalid color:', color);
+                  }
+                }
+              }
+            });
+            
+            // Create a linear gradient from top to bottom by default
+            const gradient = ctx.createLinearGradient(0, 0, 0, this.stageHeight);
+            
+            // Add color stops to gradient
+            if (colorStops.length >= 1) {
+              colorStops.forEach((stop, index) => {
+                let position;
+                if (stop.position && stop.position.endsWith('%')) {
+                  position = parseInt(stop.position) / 100;
+                } else if (index === 0) {
+                  position = 0;
+                } else if (index === colorStops.length - 1) {
+                  position = 1;
+                } else {
+                  position = index / (colorStops.length - 1);
+                }
+                // Ensure position is within bounds
+                position = Math.max(0, Math.min(1, position));
+                try {
+                  gradient.addColorStop(position, stop.color);
+                } catch (e) {
+                  console.warn('Invalid color for gradient:', stop.color, e);
+                  // Add fallback color if current one is invalid
+                  if (index === 0) gradient.addColorStop(0, '#ffffff');
+                  else gradient.addColorStop(1, '#f5f7ff');
+                }
+              });
+            } else {
+              // Fallback
+              gradient.addColorStop(0, '#ffffff');
+              gradient.addColorStop(1, '#f5f7ff');
+            }
+            
+            return gradient;
+          }
+        }
+        return null;
+      } catch (e) {
+        console.warn('Could not parse gradient:', e);
+        return null;
+      }
+    },
+    
+    isValidColor(color) {
+      // Create a temporary canvas to validate color
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Save current fillStyle to restore later
+      const originalFillStyle = ctx.fillStyle;
+      
+      try {
+        ctx.fillStyle = color;
+        // If the color is invalid, fillStyle won't change
+        return ctx.fillStyle !== originalFillStyle;
+      } catch (e) {
+        return false;
+      } finally {
+        // Always restore original fillStyle
+        ctx.fillStyle = originalFillStyle;
+      }
     },
     getPoint(event) {
       const rect = this.$refs.drawingCanvas.getBoundingClientRect()
@@ -826,7 +1164,12 @@ export default {
       }
       this.commitChanges()
     },
-    clearDrawing() { this.drawingContext.clearRect(0, 0, this.stageWidth, this.stageHeight); this.commitChanges() },
+    clearDrawing() { 
+      this.drawingContext.clearRect(0, 0, this.stageWidth, this.stageHeight);
+      this.elements = [];
+      this.selectedElementId = null;
+      this.commitChanges();
+    },
     resetDesign() {
       this.elements = []
       this.selectedElementId = null
@@ -1176,8 +1519,19 @@ export default {
     },
     
     async updateMockupImage() {
-      const canvas = await this.buildExportCanvas()
-      this.mockupImage = canvas.toDataURL('image/png')
+      try {
+        const canvas = await this.buildExportCanvas()
+        this.mockupImage = canvas.toDataURL('image/png')
+        console.log('Mockup image updated in Edit component');
+      } catch (error) {
+        console.error('Error updating mockup image:', error);
+      }
+    },
+    
+    initializeDesignArea() {
+      // Initialize the design area with default content
+      this.drawTemplate();
+      this.updateMockupImage();
     }
   }
 }
@@ -1770,8 +2124,17 @@ export default {
 .template-image-preview img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block
+}
+
+.template-image-preview {
+  background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+              linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+              linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+              linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 
 .template-name {
@@ -2015,6 +2378,29 @@ export default {
   height: 100%;
   object-fit: cover;
   display: block
+}
+
+.clothing-img-wrapper-3d {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+              linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+              linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+              linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.clothing-img-wrapper-3d img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .clothing-name-3d {

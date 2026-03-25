@@ -916,30 +916,18 @@ async function removeImageBackground(imageUrl) {
                 // Analyze multiple areas to determine background
                 const backgroundColors = detectBackgroundColors(data, canvas.width, canvas.height);
                 
-                // Remove pixels matching background colors
+                // Create a more sophisticated mask for background removal
+                const mask = createSophisticatedMask(data, canvas.width, canvas.height, backgroundColors);
+                
+                // Apply the mask to the image data
                 for (let i = 0; i < data.length; i += 4) {
-                    const r = data[i];
-                    const g = data[i + 1];
-                    const b = data[i + 2];
+                    const idx = i / 4;
+                    const x = idx % canvas.width;
+                    const y = Math.floor(idx / canvas.width);
                     
-                    // Check if pixel is similar to any detected background color
-                    let isBackground = false;
-                    for (const bgColor of backgroundColors) {
-                        const diff = Math.sqrt(
-                            Math.pow(r - bgColor.r, 2) + 
-                            Math.pow(g - bgColor.g, 2) + 
-                            Math.pow(b - bgColor.b, 2)
-                        );
-                        
-                        // Euclidean distance threshold
-                        if (diff < bgColor.threshold) {
-                            isBackground = true;
-                            break;
-                        }
-                    }
-                    
-                    if (isBackground) {
-                        data[i + 3] = 0; // Set alpha to 0
+                    // Use the mask to determine if this pixel should be transparent
+                    if (mask[y][x]) {
+                        data[i + 3] = 0; // Set alpha to 0 for background
                     }
                 }
                 
@@ -961,6 +949,83 @@ async function removeImageBackground(imageUrl) {
         
         img.src = imageUrl;
     });
+}
+
+function createSophisticatedMask(data, width, height, backgroundColors) {
+    // Create a 2D array to represent the mask (true = background, false = foreground)
+    const mask = Array(height).fill().map(() => Array(width).fill(false));
+    
+    // Use flood fill algorithm to identify connected background regions
+    const visited = Array(height).fill().map(() => Array(width).fill(false));
+    
+    // Check each background color and mark pixels accordingly
+    for (const bgColor of backgroundColors) {
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                if (visited[y][x]) continue;
+                
+                const idx = (y * width + x) * 4;
+                const r = data[idx];
+                const g = data[idx + 1];
+                const b = data[idx + 2];
+                
+                // Calculate color difference
+                const diff = Math.sqrt(
+                    Math.pow(r - bgColor.r, 2) + 
+                    Math.pow(g - bgColor.g, 2) + 
+                    Math.pow(b - bgColor.b, 2)
+                );
+                
+                // If this pixel is similar to background color, mark as background
+                if (diff < bgColor.threshold) {
+                    mask[y][x] = true;
+                    visited[y][x] = true;
+                }
+            }
+        }
+    }
+    
+    // Perform morphological operations to clean up the mask
+    return refineMask(mask, width, height);
+}
+
+function refineMask(mask, width, height) {
+    // Apply morphological operations to clean up the mask
+    const refined = Array(height).fill().map(() => Array(width).fill(false));
+    
+    // Apply erosion to remove small noise
+    for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+            let count = 0;
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    if (mask[y + dy][x + dx]) count++;
+                }
+            }
+            // Only keep as background if surrounded by other background pixels
+            refined[y][x] = count >= 5; // At least 5 out of 9 neighbors must be background
+        }
+    }
+    
+    // Apply dilation to fill in small gaps
+    const finalMask = Array(height).fill().map(() => Array(width).fill(false));
+    for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+            let hasBgNeighbor = false;
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    if (refined[y + dy][x + dx]) {
+                        hasBgNeighbor = true;
+                        break;
+                    }
+                }
+                if (hasBgNeighbor) break;
+            }
+            finalMask[y][x] = refined[y][x] || hasBgNeighbor;
+        }
+    }
+    
+    return finalMask;
 }
 
 function detectBackgroundColors(data, width, height) {
@@ -1237,14 +1302,75 @@ function updateEraserEffect() {
     const material = projectionMeshRef.value.material;
     
     if (isEraserActive.value) {
-        // Reduce opacity to simulate erasing
-        material.opacity = Math.max(0.1, material.opacity - 0.3);
+        // Apply eraser effect by changing material properties
+        material.blending = THREE.CustomBlending;
+        material.blendSrc = THREE.ZeroFactor;
+        material.blendDst = THREE.OneMinusSrcAlphaFactor;
+        material.depthWrite = false;
+        // Adjust eraser size by scaling the mesh
+        const scale = Math.max(0.1, 1 - (eraserSize.value / 100));
+        projectionMeshRef.value.scale.set(scale, scale, 1);
     } else {
-        // Restore original opacity
-        material.opacity = projection.value.opacity;
+        // Restore normal material properties
+        material.blending = THREE.NormalBlending;
+        material.depthWrite = true;
+        // Reset scale to original
+        projectionMeshRef.value.scale.set(1, 1, 1);
     }
     
     material.needsUpdate = true;
+}
+
+// Add a function to apply color to specific areas of the texture
+function applyColorToSpecificArea(area, color, intensity) {
+    if (!projectionTextureRef.value) return;
+    
+    // Create a canvas to manipulate the texture
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = projectionTextureRef.value.image.width;
+    canvas.height = projectionTextureRef.value.image.height;
+    
+    // Draw the original texture
+    ctx.drawImage(projectionTextureRef.value.image, 0, 0);
+    
+    // Apply the color overlay to the specified area
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillStyle = color;
+    ctx.globalAlpha = intensity;
+    
+    // For now, just fill the entire area - in a real implementation, 
+    // this would be based on the specific area selected by the user
+    ctx.fillRect(area.x, area.y, area.width, area.height);
+    
+    // Update the texture with the modified canvas
+    projectionTextureRef.value.image = canvas;
+    projectionTextureRef.value.needsUpdate = true;
+}
+
+// Add a function to erase specific parts of the texture
+function eraseSpecificArea(area) {
+    if (!projectionTextureRef.value) return;
+    
+    // Create a canvas to manipulate the texture
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = projectionTextureRef.value.image.width;
+    canvas.height = projectionTextureRef.value.image.height;
+    
+    // Draw the original texture
+    ctx.drawImage(projectionTextureRef.value.image, 0, 0);
+    
+    // Create an eraser effect by setting alpha to 0 in the specified area
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    ctx.fillRect(area.x, area.y, area.width, area.height);
+    
+    // Update the texture with the modified canvas
+    projectionTextureRef.value.image = canvas;
+    projectionTextureRef.value.needsUpdate = true;
 }
 
 function setColor(color) {
@@ -1523,7 +1649,7 @@ function saveDesign() {
     console.log('Saving design:', designData);
     
     // Simulate API call
-    fetch('/api/user-designs', {
+    fetch('//api/designs', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

@@ -170,6 +170,7 @@ function customizeProduct() {
     }
 
     let productTypeSlug = "t-shirt";
+    let productId = currentProduct.value?.id || null;
 
     if (currentProduct.value?.productType?.slug) {
         productTypeSlug = currentProduct.value.productType.slug;
@@ -179,6 +180,8 @@ function customizeProduct() {
 
     if (productSlug) {
         router.visit(route("designer.create", { productType: productTypeSlug, product: productSlug }));
+    } else if (productId) {
+        router.visit(route("designer.create", { productType: productTypeSlug, product: productId }));
     } else {
         router.visit(route("designer.create", { productType: productTypeSlug }));
     }
@@ -240,6 +243,11 @@ async function viewIn3D() {
 
     await nextTick();
 
+    // Initialize the 3D viewer with the selected image
+    if (product3DViewerRef.value?.loadProductTextureWithBackgroundRemoval) {
+        product3DViewerRef.value.loadProductTextureWithBackgroundRemoval(selectedTryOnImage.value, true);
+    }
+    
     if (product3DViewerRef.value?.resetView) {
         product3DViewerRef.value.resetView();
     }
