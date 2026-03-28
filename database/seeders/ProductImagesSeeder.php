@@ -20,168 +20,117 @@ class ProductImagesSeeder extends Seeder
         // Disable foreign key checks temporarily
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         
+        // Get all template images from the template folder
+        $templatePath = storage_path('app/public/template');
+        
+        if (!file_exists($templatePath)) {
+            $this->command->error("Template folder not found: {$templatePath}");
+            return;
+        }
+        
+        // Get all image files from template directory
+        $validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+        $templateFiles = [];
+        
+        foreach (scandir($templatePath) as $file) {
+            $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            if (in_array($extension, $validExtensions) && is_file($templatePath . '/' . $file)) {
+                $templateFiles[] = $file;
+            }
+        }
+        
+        if (empty($templateFiles)) {
+            $this->command->error("No template images found in: {$templatePath}");
+            return;
+        }
+        
+        $this->command->info("✅ Found " . count($templateFiles) . " template images available");
+        
         // Get all products that don't have images yet
         $products = Product::doesntHave('images')->get();
         
         $this->command->info("Processing {$products->count()} products for image addition...");
         
         foreach ($products as $product) {
-            // Check if the product already has a dedicated folder
+            $this->command->info("\n📦 Processing: {$product->name} ({$product->slug})");
+            
+            // Create a dedicated folder for this product's images
             $productImagesFolder = 'products/' . $product->slug;
             
-            // If the product folder exists and has images, use them
-            if (Storage::disk('public')->exists($productImagesFolder)) {
-                $imageFiles = Storage::disk('public')->files($productImagesFolder);
-                
-                $imageOrder = 1;
-                
-                foreach ($imageFiles as $imageFile) {
-                    $extension = pathinfo($imageFile, PATHINFO_EXTENSION);
-                    
-                    // Only add image files
-                    if (in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-                        // Check if this image already exists for this product
-                        $existingImage = ShirtImage::where('tshirt_id', $product->id)
-                            ->where('url', '/storage/' . $imageFile)
-                            ->first();
-                        
-                        if (!$existingImage) {
-                            ShirtImage::create([
-                                'tshirt_id' => $product->id, // Using product id in tshirt_id field for compatibility
-                                'url' => '/storage/' . $imageFile,
-                                'order' => $imageOrder++
-                            ]);
-                            
-                            $this->command->info("Added image {$imageFile} to product {$product->name}");
-                        }
-                    }
-                }
+            if (!Storage::disk('public')->exists($productImagesFolder)) {
+                Storage::disk('public')->makeDirectory($productImagesFolder);
+                $this->command->info("  ✓ Created folder: {$productImagesFolder}");
             }
             
-            // If no images were found in the product folder, use the original method
-            $imageCount = ShirtImage::where('tshirt_id', $product->id)->count();
-            if ($imageCount == 0) {
-                // Get all tshirt image directories from storage
-                $tshirtDirs = [];
-                
-                if (Storage::disk('public')->exists('tshirts')) {
-                    $tshirtDirs = Storage::disk('public')->directories('tshirts');
+            // Delete old images and records first
+            $oldImages = ShirtImage::where('tshirt_id', $product->id)->get();
+            foreach ($oldImages as $oldImage) {
+                $oldPath = str_replace('/storage/', '', $oldImage->url);
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
                 }
-                
-                if (!empty($tshirtDirs)) {
-                    // Pick a random tshirt directory to use for this product
-                    $selectedDir = $tshirtDirs[array_rand($tshirtDirs)];
-                    
-                    // Get all images from the selected directory
-                    $imageFiles = Storage::disk('public')->files($selectedDir);
-                    
-                    // Create a dedicated folder for this product if it doesn't exist
-                    $productImagesFolder = 'products/' . $product->slug;
-                    if (!Storage::disk('public')->exists($productImagesFolder)) {
-                        Storage::disk('public')->makeDirectory($productImagesFolder);
-                    }
-                    
-                    $imageOrder = 1;
-                    
-                    // Add images from the tshirt directory to the product
-                    foreach ($imageFiles as $index => $imageFile) {
-                        if ($imageOrder > 5) { // Maximum 5 images per product
-                            break;
-                        }
-                        
-                        $extension = pathinfo($imageFile, PATHINFO_EXTENSION);
-                        
-                        // Only add image files
-                        if (in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-                            // Copy the image to the product's dedicated folder
-                            $newImagePath = $productImagesFolder . '/' . 'additional_' . ($index + 1) . '_' . $product->slug . '.' . $extension;
-                            
-                            Storage::disk('public')->copy($imageFile, $newImagePath);
-                            
-                            ShirtImage::create([
-                                'tshirt_id' => $product->id, // Using product id in tshirt_id field for compatibility
-                                'url' => '/storage/' . $newImagePath,
-                                'order' => $imageOrder++
-                            ]);
-                            
-                            $this->command->info("Added image {$newImagePath} to product {$product->name}");
-                        }
-                    }
-                }
-                
-                // If still no images were found, use template images as fallback
-                if (ShirtImage::where('tshirt_id', $product->id)->count() == 0) {
-                    // Try to get a template to use for images
-                    $template = null;
-                    
-                    if ($product->design_template_id) {
-                        $template = DesignTemplate::find($product->design_template_id);
-                    } else {
-                        $template = DesignTemplate::first();
-                    }
-                    
-                    if ($template) {
-                        // Create a dedicated folder for this product if it doesn't exist
-                        $productImagesFolder = 'products/' . $product->slug;
-                        if (!Storage::disk('public')->exists($productImagesFolder)) {
-                            Storage::disk('public')->makeDirectory($productImagesFolder);
-                        }
-                        
-                        // Copy template images to the product folder and add to database
-                        if ($template->preview_url) {
-                            $previewFileName = pathinfo(parse_url($template->preview_url, PHP_URL_PATH), PATHINFO_BASENAME);
-                            $newPreviewPath = $productImagesFolder . '/' . 'mainImage_' . $product->slug . '.' . pathinfo($previewFileName, PATHINFO_EXTENSION);
-                            
-                            // Extract the original template file path
-                            $originalTemplatePath = str_replace('/storage/', '', parse_url($template->preview_url, PHP_URL_PATH));
-                            
-                            if (Storage::disk('public')->exists($originalTemplatePath)) {
-                                Storage::disk('public')->copy($originalTemplatePath, $newPreviewPath);
-                                
-                                ShirtImage::create([
-                                    'tshirt_id' => $product->id,
-                                    'url' => '/storage/' . $newPreviewPath,
-                                    'order' => 1
-                                ]);
-                            }
-                        }
-                        
-                        if ($template->thumbnail_url) {
-                            $thumbnailFileName = pathinfo(parse_url($template->thumbnail_url, PHP_URL_PATH), PATHINFO_BASENAME);
-                            $newThumbnailPath = $productImagesFolder . '/' . 'thumbnail_' . $product->slug . '.' . pathinfo($thumbnailFileName, PATHINFO_EXTENSION);
-                            
-                            // Extract the original template file path
-                            $originalTemplatePath = str_replace('/storage/', '', parse_url($template->thumbnail_url, PHP_URL_PATH));
-                            
-                            if (Storage::disk('public')->exists($originalTemplatePath)) {
-                                Storage::disk('public')->copy($originalTemplatePath, $newThumbnailPath);
-                                
-                                ShirtImage::create([
-                                    'tshirt_id' => $product->id,
-                                    'url' => '/storage/' . $newThumbnailPath,
-                                    'order' => 2
-                                ]);
-                            }
-                        }
-                        
-                        $this->command->info("Added template images to product {$product->name}");
-                    }
-                }
+                $oldImage->delete();
             }
+            $this->command->info("  ✓ Cleaned old images");
             
-            // Set the first image as the product thumbnail if not already set
-            if (!$product->thumbnail_url) {
-                $firstImage = $product->images()->orderBy('order')->first();
-                if ($firstImage) {
-                    $product->update(['thumbnail_url' => $firstImage->url]);
-                    $this->command->info("Set thumbnail for product {$product->name}");
-                }
-            }
+            // Generate new images using random templates
+            $this->generateProductImages($product, $productImagesFolder, $templateFiles, $templatePath);
         }
         
         // Re-enable foreign key checks
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
         
-        $this->command->info('Product images seeding completed!');
+        $this->command->info('\n✅ Product images seeding completed!');
+    }
+    
+    /**
+     * Generate images for a product using random templates
+     */
+    private function generateProductImages($product, $folder, $templateFiles, $templatePath)
+    {
+        // Shuffle template files to select randomly
+        shuffle($templateFiles);
+        
+        // Select 5 random templates for this product
+        $selectedTemplates = array_slice($templateFiles, 0, 5);
+        
+        // If we have less than 5 templates, use what we have
+        if (count($selectedTemplates) < 5) {
+            $selectedTemplates = array_merge($selectedTemplates, array_slice($templateFiles, 0, 5 - count($selectedTemplates)));
+        }
+        
+        $imageTypes = ['main', 'thumbnail', 'additional_1', 'additional_2', 'additional_3'];
+        $imageOrder = 1;
+        
+        foreach ($selectedTemplates as $index => $templateFile) {
+            try {
+                $imageType = $imageTypes[$index] ?? 'additional_' . $index;
+                $imageName = "{$imageType}_{$product->slug}." . pathinfo($templateFile, PATHINFO_EXTENSION);
+                $imagePath = "{$folder}/{$imageName}";
+                
+                // Copy template image to product folder
+                $sourcePath = $templatePath . '/' . $templateFile;
+                Storage::disk('public')->put($imagePath, file_get_contents($sourcePath));
+                
+                // Save to database
+                ShirtImage::create([
+                    'tshirt_id' => $product->id,
+                    'url' => '/storage/' . $imagePath,
+                    'order' => $imageOrder++
+                ]);
+                
+                $this->command->info("  ✓ Generated: {$imageName} (from template: {$templateFile})");
+                
+            } catch (\Exception $e) {
+                $this->command->error("  ✗ Failed to generate {$imageType}: " . $e->getMessage());
+            }
+        }
+        
+        // Set first image as thumbnail
+        $firstImage = $product->images()->orderBy('order')->first();
+        if ($firstImage && !$product->thumbnail_url) {
+            $product->update(['thumbnail_url' => $firstImage->url]);
+            $this->command->info("  ✓ Set thumbnail URL");
+        }
     }
 }

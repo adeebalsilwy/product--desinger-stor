@@ -38,7 +38,7 @@ router.on('navigate', () => {
         </div>
         
         <!-- Cart (for mobile overlay) -->
-        <Cart v-if="props.showCart" />
+        <!-- <Cart v-if="props.showCart" /> -->
 
         <!-- Page Content -->
         <main :class="props.contentClass">

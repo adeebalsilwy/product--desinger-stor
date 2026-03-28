@@ -7,7 +7,6 @@ use App\Models\ShirtImage;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
-use Intervention\Image\Laravel\Facades\Image;
 
 class GenerateProductImagesSeeder extends Seeder
 {
@@ -17,6 +16,32 @@ class GenerateProductImagesSeeder extends Seeder
     public function run(): void
     {
         $this->command->info('🎨 Starting Product Image Generation from Templates...');
+        
+        // Get all template images from the template folder
+        $templatePath = storage_path('app/public/template');
+        
+        if (!file_exists($templatePath)) {
+            $this->command->error("Template folder not found: {$templatePath}");
+            return;
+        }
+        
+        // Get all image files from template directory
+        $validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+        $templateFiles = [];
+        
+        foreach (scandir($templatePath) as $file) {
+            $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            if (in_array($extension, $validExtensions) && is_file($templatePath . '/' . $file)) {
+                $templateFiles[] = $file;
+            }
+        }
+        
+        if (empty($templateFiles)) {
+            $this->command->error("No template images found in: {$templatePath}");
+            return;
+        }
+        
+        $this->command->info("✅ Found " . count($templateFiles) . " template images");
         
         // Disable foreign key checks temporarily
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
@@ -48,8 +73,8 @@ class GenerateProductImagesSeeder extends Seeder
             }
             $this->command->info("  ✓ Cleaned old images");
             
-            // Generate new images based on product type
-            $this->generateProductImages($product, $productImagesFolder);
+            // Generate new images using random templates
+            $this->generateProductImages($product, $productImagesFolder, $templateFiles, $templatePath);
         }
         
         // Re-enable foreign key checks
@@ -59,36 +84,33 @@ class GenerateProductImagesSeeder extends Seeder
     }
     
     /**
-     * Generate images for a product
+     * Generate images for a product using random templates
      */
-    private function generateProductImages($product, $folder)
+    private function generateProductImages($product, $folder, $templateFiles, $templatePath)
     {
-        // Define base colors based on product type
-        $colors = $this->getColorsForProduct($product);
+        // Shuffle template files to select randomly
+        shuffle($templateFiles);
         
-        // Generate 5 images with different backgrounds/text
-        $imageConfigs = [
-            ['type' => 'main', 'color' => $colors[0], 'text' => $product->name],
-            ['type' => 'thumbnail', 'color' => $colors[1], 'text' => 'Thumbnail'],
-            ['type' => 'additional_1', 'color' => $colors[2], 'text' => 'Detail View'],
-            ['type' => 'additional_2', 'color' => $colors[3], 'text' => 'Side View'],
-            ['type' => 'additional_3', 'color' => $colors[4], 'text' => 'Back View'],
-        ];
+        // Select 5 random templates for this product
+        $selectedTemplates = array_slice($templateFiles, 0, 5);
         
+        // If we have less than 5 templates, use what we have
+        if (count($selectedTemplates) < 5) {
+            $selectedTemplates = array_merge($selectedTemplates, array_slice($templateFiles, 0, 5 - count($selectedTemplates)));
+        }
+        
+        $imageTypes = ['main', 'thumbnail', 'additional_1', 'additional_2', 'additional_3'];
         $imageOrder = 1;
         
-        foreach ($imageConfigs as $config) {
+        foreach ($selectedTemplates as $index => $templateFile) {
             try {
-                $imageName = "{$config['type']}_{$product->slug}.jpg";
+                $imageType = $imageTypes[$index] ?? 'additional_' . $index;
+                $imageName = "{$imageType}_{$product->slug}." . pathinfo($templateFile, PATHINFO_EXTENSION);
                 $imagePath = "{$folder}/{$imageName}";
                 
-                // Generate the image
-                $this->createProductImage(
-                    $imagePath,
-                    $config['color'],
-                    $config['text'],
-                    $product->productType ? $product->productType->name : 'Product'
-                );
+                // Copy template image to product folder
+                $sourcePath = $templatePath . '/' . $templateFile;
+                Storage::disk('public')->put($imagePath, file_get_contents($sourcePath));
                 
                 // Save to database
                 ShirtImage::create([
@@ -97,10 +119,10 @@ class GenerateProductImagesSeeder extends Seeder
                     'order' => $imageOrder++
                 ]);
                 
-                $this->command->info("  ✓ Generated: {$imageName}");
+                $this->command->info("  ✓ Generated: {$imageName} (from template: {$templateFile})");
                 
             } catch (\Exception $e) {
-                $this->command->error("  ✗ Failed to generate {$config['type']}: " . $e->getMessage());
+                $this->command->error("  ✗ Failed to generate {$imageType}: " . $e->getMessage());
             }
         }
         
@@ -112,85 +134,7 @@ class GenerateProductImagesSeeder extends Seeder
         }
     }
     
-    /**
-     * Create a single product image using Intervention Image v3
-     */
-    private function createProductImage($path, $backgroundColor, $text, $productType)
-    {
-        // Create simple elegant gradient background image
-        $img = Image::create(1000, 1000, $backgroundColor);
-        
-        // Add subtle gradient overlay
-        for ($y = 0; $y < 1000; $y += 20) {
-            $brightness = 1 + ($y / 1000) * 0.3;
-            $img->fill('rgba(255,255,255,0.05)', 0, $y, 1000, $y + 20);
-        }
-        
-        // Add elegant centered circle design
-        $centerColor = '#ffffff';
-        $img->circle(500, 400, 150, function($draw) use ($centerColor) {
-            $draw->background($centerColor);
-            $draw->opacity(0.25);
-        });
-        
-        $img->circle(500, 400, 100, function($draw) use ($centerColor) {
-            $draw->border(3, $centerColor);
-            $draw->opacity(0.4);
-        });
-        
-        // Add text at bottom third
-        try {
-            $img->text($text, 500, 850, function($font) {
-                $font->file(public_path('fonts/arial.ttf'));
-                $font->size(36);
-                $font->color('#ffffff');
-                $font->align('center');
-            });
-        } catch (\Exception $e) {
-            $img->text($text, 500, 850, function($font) {
-                $font->size(36);
-                $font->color('#ffffff');
-                $font->align('center');
-            });
-        }
-        
-        // Add brand watermark at top
-        try {
-            $img->text("Ahlam's Girls", 500, 50, function($font) {
-                $font->file(public_path('fonts/arial.ttf'));
-                $font->size(28);
-                $font->color('#ffd700');
-                $font->align('center');
-            });
-        } catch (\Exception $e) {
-            $img->text("Ahlam's Girls", 500, 50, function($font) {
-                $font->size(28);
-                $font->color('#ffd700');
-                $font->align('center');
-            });
-        }
-        
-        // Save as high-quality JPEG
-        Storage::disk('public')->put($path, $img->toJpeg(95));
-    }
+
     
-    /**
-     * Get colors for product based on type
-     */
-    private function getColorsForProduct($product)
-    {
-        $productType = $product->productType ? strtolower($product->productType->name) : '';
-        
-        if (str_contains($productType, 'dress') || str_contains($productType, 'evening')) {
-            return ['#1a1a2e', '#16213e', '#0f3460', '#e94560', '#533483'];
-        } elseif (str_contains($productType, 'abaya')) {
-            return ['#000000', '#1a1a1a', '#2d2d2d', '#3d3d3d', '#4a4a4a'];
-        } elseif (str_contains($productType, 'casual') || str_contains($productType, 't-shirt')) {
-            return ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7'];
-        } elseif (str_contains($productType, 'wedding')) {
-            return ['#f8e1e7', '#f0c1d1', '#e8a1b9', '#df81a1', '#d66189'];
-        } else {
-            return ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6'];
-        }
-    }
+
 }
