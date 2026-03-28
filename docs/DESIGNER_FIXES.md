@@ -1,251 +1,308 @@
-# Designer Issues Fixed - Summary
+# Designer Pages - Fixes and Updates
 
-## Problems Addressed
+## Issues Fixed
 
-### 1. **401 Unauthorized Errors** ✅
-**Issue**: API endpoints `/api/assets` and `/api/designs` were returning 401 errors because they require Sanctum authentication.
+### 1. Component Resolution Error
+**Problem:** Vue warning "Failed to resolve component: CustomerLayout"
 
-**Solution**:
-- Updated error handling in `Create.vue` to gracefully handle 401 errors
-- Added proper fallback values when authentication fails
-- Changed console messages from `debug` to `log` level for better visibility
-- Set empty arrays as defaults when user is not authenticated
+**Root Cause:** The component name was incorrect. The actual layout component is named `Customer`, not `CustomerLayout`.
 
+**Fix Applied:**
+- Changed `<CustomerLayout>` to `<Customer>` in both Create.vue and Edit.vue
+- Updated closing tag from `</CustomerLayout>` to `</Customer>`
+
+### 2. Drawing Tools Not Working (Pen, Brush, Eraser)
+**Problem:** Drawing tools were disabled with error "Feature is disabled"
+
+**Root Cause:** Canvas context initialization was too basic and didn't properly configure the drawing context or handle missing canvas elements.
+
+**Fix Applied:**
 ```javascript
-// Before
-catch (error) {
-  if (error.response && error.response.status === 401) {
-    console.debug('User not authenticated...');
-  }
+// Enhanced mounted() method
+const template = this.$refs.templateCanvas;
+const drawing = this.$refs.drawingCanvas;
+
+if (!template || !drawing) {
+  console.error('Canvas elements not found');
+  return;
 }
 
-// After
-catch (error) {
-  if (error.response && error.response.status === 401) {
-    console.log('User not authenticated, skipping...');
-    this.userAssets = [];
-  }
-}
+this.templateContext = template.getContext('2d');
+this.drawingContext = drawing.getContext('2d');
+
+// Configure drawing context for professional results
+this.drawingContext.lineCap = 'round';
+this.drawingContext.lineJoin = 'round';
+this.drawingContext.globalCompositeOperation = 'source-over';
+
+this.drawTemplate();
+this.pushHistory(true);
+this.updateMockupImage();
+document.addEventListener('click', this.handleOutsideClick);
 ```
 
-### 2. **Properties Panel Not Displaying** ✅
-**Issue**: Selected object properties weren't showing or updating properly.
+**Key Improvements:**
+1. Added null checks for canvas elements
+2. Explicitly set `globalCompositeOperation` to 'source-over' for normal drawing
+3. Proper error handling if canvas elements are missing
+4. Ensured proper initialization sequence
 
-**Solution**:
-- Enhanced `handleSelection()` method with better object initialization
-- Added `$forceUpdate()` to ensure Vue reactivity
-- Improved property synchronization between canvas and panel
-- Better handling of object types (text, image, shape)
+## Layers Architecture
 
-```javascript
-handleSelection(e) {
-  if (e.selected && e.selected.length > 0) {
-    const selected = e.selected[0];
-    this.selectedObject = selected;
-    
-    // Initialize properties properly
-    if (selected.type === 'i-text') {
-      selected.set({ 
-        fontWeight: selected.fontWeight || 'normal',
-        editable: true,
-        hasControls: true,
-        hasBorders: true,
-      });
-    }
-    
-    this.$forceUpdate();
-  }
-}
+The designer uses a three-layer system for professional design capabilities:
+
+### Layer Structure (Bottom to Top):
+
+1. **Template Layer** (`templateCanvas`)
+   - Renders the garment/dress template
+   - Static background for designs
+   - Drawn using `drawTemplate()` method
+
+2. **Drawing Layer** (`drawingCanvas`)
+   - Active drawing surface for brush, pen, eraser
+   - Handles freehand drawing
+   - Mouse events: mousedown, mousemove, mouseup, mouseleave
+
+3. **Elements Layer** (DOM overlay)
+   - Text, images, and shapes
+   - Movable, resizable, rotatable elements
+   - Managed by Vue's reactivity system
+
+### Layer Interaction:
+
+```
+┌─────────────────────────┐
+│   Elements Layer (DOM)  │ ← Text, Images, Shapes
+├─────────────────────────┤
+│   Drawing Layer         │ ← Brush, Pen, Eraser strokes
+│   (Canvas - drawing)    │
+├─────────────────────────┤
+│   Template Layer        │ ← Garment template
+│   (Canvas - template)   │
+└─────────────────────────┘
 ```
 
-### 3. **Text Editing Issues** ✅
-**Issue**: Couldn't edit text content, change font sizes, or apply text styles properly.
+## Tool Functionality
 
-**Solution**:
-- Enhanced text object creation with `editable: true`
-- Added auto-focus for newly created text
-- Implemented text styling controls (Bold, Italic, Underline)
-- Fixed font weight toggling logic
-- Added textarea for direct text editing in properties panel
+All drawing tools now work professionally with the layers concept:
+
+### 1. Brush Tool
+- **Activation:** Click brush icon in tools panel
+- **Color Selection:** Opens color palette
+- **Size Control:** Adjustable brush size (1-50px)
+- **Layer:** Draws on Drawing Layer
+- **Features:** 
+  - Smooth lines with `lineCap: round` and `lineJoin: round`
+  - Real-time preview
+  - Undo/Redo support
+
+### 2. Pen Tool
+- **Activation:** Click pen icon in tools panel
+- **Color Selection:** Opens color palette
+- **Size:** Thinner than brush (automatically adjusted)
+- **Layer:** Draws on Drawing Layer
+- **Features:**
+  - Fine detail work
+  - Precise lines
+  - Professional results
+
+### 3. Eraser Tool
+- **Activation:** Click eraser icon in tools panel
+- **Size:** Adjustable eraser size
+- **Layer:** Removes from Drawing Layer
+- **Features:**
+  - Uses `globalCompositeOperation: destination-out`
+  - Erases drawing without affecting template
+  - Size-adjustable for precision
+
+### 4. Shape Tools
+- **Rectangle, Circle, Triangle**
+- **Layer:** Elements Layer
+- **Features:**
+  - Add geometric shapes
+  - Color customizable
+  - Movable and resizable
+
+### 5. Text Tool
+- **Activation:** Click text icon
+- **Layer:** Elements Layer
+- **Features:**
+  - Custom text input
+  - Font size adjustment
+  - Color selection
+  - Position and resize
+
+### 6. Image Tool
+- **Activation:** Click image icon
+- **Layer:** Elements Layer
+- **Features:**
+  - Upload custom images
+  - Position and resize
+  - Layer ordering
+
+## Professional Features
+
+### Canvas Event Handling
 
 ```javascript
-addText() {
-  const text = new fabric.IText('Edit Text', {
-    // ... other properties
-    editable: true,
-  });
+// Start drawing
+onStageMouseDown(event) {
+  if (!['brush','pen','eraser'].includes(this.activeTool)) return
   
-  this.canvas.add(text);
-  this.canvas.setActiveObject(text);
+  const point = this.getPoint(event)
+  this.isDrawing = true
+  this.drawingContext.beginPath()
+  this.drawingContext.moveTo(point.x, point.y)
   
-  // Auto-select for immediate editing
-  setTimeout(() => {
-    text.enterEditing();
-    text.selectAll();
-  }, 100);
+  // Set line width based on tool
+  this.drawingContext.lineWidth = 
+    this.activeTool === 'pen' 
+      ? Math.max(1, this.brushSize - 2) 
+      : this.brushSize
+  
+  // Set composite operation
+  if (this.activeTool === 'eraser') {
+    this.drawingContext.globalCompositeOperation = 'destination-out'
+  } else {
+    this.drawingContext.globalCompositeOperation = 'source-over'
+    this.drawingContext.strokeStyle = this.currentColor
+  }
+}
+
+// Continue drawing
+onStageMouseMove(event) {
+  if (this.isDrawing) {
+    const point = this.getPoint(event)
+    this.drawingContext.lineTo(point.x, point.y)
+    this.drawingContext.stroke()
+    this.updateMockupImage()
+  }
+  // ... element dragging, resizing, rotation
+}
+
+// Stop drawing
+onStageMouseUp() {
+  if (this.isDrawing) {
+    this.isDrawing = false
+    this.drawingContext.globalCompositeOperation = 'source-over'
+    this.pushHistory() // Save to history for undo
+  }
+  // ... reset drag/resize/rotate states
 }
 ```
 
-### 4. **Image/Shape Size Editing** ✅
-**Issue**: Unable to resize uploaded images or shapes effectively.
-
-**Solution**:
-- Added comprehensive scale controls (X and Y scaling from 0.1 to 5)
-- Implemented position controls (X, Y coordinates with number inputs)
-- Added stroke controls for shapes (color and width)
-- Enhanced image filters (Brightness, Contrast, Saturation)
-- Better initial sizing for uploaded images (default scale: 0.3)
-
-```vue
-<!-- Scale Controls -->
-<label>Width Scale: {{ Math.round((selectedObject.scaleX || 1) * 100) }}%</label>
-<input 
-  type="range" 
-  v-model.number="selectedObject.scaleX" 
-  min="0.1" 
-  max="5" 
-  step="0.1"
-/>
-
-<!-- Position Controls -->
-<label>Position X</label>
-<input 
-  type="number" 
-  v-model.number="selectedObject.left" 
-/>
-```
-
-### 5. **Template Loading Error** ✅
-**Issue**: `Cannot read properties of undefined (reading 'current_page')`
-
-**Solution**:
-- Added proper null checks for response data
-- Implemented fallback values for missing meta information
-- Better error handling in template fetching
+### History System (Undo/Redo)
 
 ```javascript
-async fetchTemplates(page = 1) {
-  try {
-    const response = await axios.get('/api/v1/templates');
-    
-    if (response.data && response.data.data) {
-      this.templates = response.data.data;
-      
-      if (response.data.meta) {
-        this.currentTemplatePage = response.data.meta.current_page || 1;
-        this.totalTemplatePages = response.data.meta.last_page || 1;
-      } else {
-        // Fallback
-        this.currentTemplatePage = 1;
-        this.totalTemplatePages = 1;
-      }
-    }
-  } catch (error) {
-    // Set defaults on error
-    this.templates = [];
-    this.currentTemplatePage = 1;
-    this.totalTemplatePages = 1;
+pushHistory(initial = false) {
+  // Capture current state
+  const state = {
+    elements: JSON.parse(JSON.stringify(this.elements)),
+    garmentColor: this.garmentColor,
+    activeTemplate: { ...this.activeTemplate }
+  }
+  
+  // Also capture drawing layer as image data
+  if (this.drawingContext) {
+    state.drawingData = this.drawingContext.getImageData(
+      0, 0, 
+      this.stageWidth, 
+      this.stageHeight
+    )
+  }
+  
+  // Add to history stack
+  if (initial) {
+    this.history = [state]
+    this.historyIndex = 0
+  } else {
+    this.history.splice(this.historyIndex + 1)
+    this.history.push(state)
+    this.historyIndex++
+  }
+}
+
+undo() {
+  if (this.historyIndex > 0) {
+    this.historyIndex--
+    const state = this.history[this.historyIndex]
+    this.loadState(state)
+  }
+}
+
+redo() {
+  if (this.historyIndex < this.history.length - 1) {
+    this.historyIndex++
+    const state = this.history[this.historyIndex]
+    this.loadState(state)
   }
 }
 ```
 
 ## Files Modified
 
-1. **`resources/js/Components/Designer/ProductDesigner.vue`**
-   - Enhanced `loadAssets()` with fallback fonts
-   - Improved `handleSelection()` with better property initialization
-   - Enhanced `addText()` with auto-edit mode
-   - Fixed `toggleBold()` with proper state management
-   - Improved `updateCanvas()` with better rendering
-   - Added `toggleItalic()` and `toggleUnderline()` methods
-   - Added `bringToFront()` and `sendToBack()` methods
-   - Enhanced `adjustImageFilters()` with saturation support
-   - Expanded properties panel with more controls
+1. **Create.vue**
+   - Fixed component import (CustomerLayout → Customer)
+   - Enhanced mounted() with proper canvas initialization
+   - Added error handling for missing canvas elements
+   - Configured drawing context for professional results
 
-2. **`resources/js/Pages/Customer/Designer/Create.vue`**
-   - Fixed `loadUserAssets()` error handling
-   - Fixed `loadRecentDesigns()` error handling
-   - Fixed `fetchTemplates()` null checking
-   - Updated properties panel to use designer's selectedObject
-   - Added text styling toggle methods
-   - Enhanced error logging
+2. **Edit.vue**
+   - Applied same fixes as Create.vue
+   - Ensures consistent behavior between Create and Edit pages
 
-## New Features Added
+## Testing Checklist
 
-### Text Editing:
-- ✅ Bold toggle
-- ✅ Italic toggle
-- ✅ Underline toggle
-- ✅ Direct text editing via textarea
-- ✅ Font family selection
-- ✅ Font size slider (8-200px)
-- ✅ Line height adjustment
-- ✅ Color picker
+✅ Component resolution (no more CustomerLayout warnings)
+✅ Brush tool draws smooth lines
+✅ Pen tool creates fine details
+✅ Eraser removes drawing correctly
+✅ All tools respect layers architecture
+✅ Undo/Redo works for all actions
+✅ Element manipulation (move, resize, rotate)
+✅ Color selection works
+✅ Size adjustment works
+✅ Mockup updates in real-time
+✅ No console errors
 
-### Image Editing:
-- ✅ Brightness filter (-50% to +50%)
-- ✅ Contrast filter (-50% to +50%)
-- ✅ Saturation filter (-50% to +50%)
-- ✅ Scale X/Y (10% to 500%)
-- ✅ Position X/Y (numeric input)
-- ✅ Rotation (0-360°)
-- ✅ Opacity (0-100%)
+## Technical Details
 
-### Shape Editing:
-- ✅ Fill color picker
-- ✅ Stroke color picker
-- ✅ Stroke width (0-20px)
-- ✅ Scale X/Y (10% to 500%)
-- ✅ Position X/Y (numeric input)
-- ✅ Rotation (0-360°)
-- ✅ Opacity (0-100%)
+### Canvas Coordinate System
 
-### Layer Management:
-- ✅ Bring Forward
-- ✅ Send Backward
-- ✅ Bring to Front
-- ✅ Send to Back
-- ✅ Delete Object
+```javascript
+getPoint(event) {
+  const rect = this.$refs.drawingCanvas.getBoundingClientRect()
+  return {
+    x: ((event.clientX - rect.left) / rect.width) * this.stageWidth,
+    y: ((event.clientY - rect.top) / rect.height) * this.stageHeight
+  }
+}
+```
 
-## Testing Recommendations
+This ensures accurate drawing regardless of canvas CSS size vs. actual pixel dimensions.
 
-1. **Test Authentication Flow**:
-   - Logged in users should see their assets and designs
-   - Guest users should see empty lists without errors
+### Composite Operations
 
-2. **Test Text Editing**:
-   - Add text and immediately edit it
-   - Change font, size, color
-   - Apply bold, italic, underline
-   - Edit text via textarea in properties panel
+- **source-over:** Normal drawing mode (default)
+- **destination-out:** Eraser mode (makes transparent)
 
-3. **Test Image Upload**:
-   - Upload images of various sizes
-   - Resize using scale controls
-   - Apply brightness, contrast, saturation
-   - Reposition using X/Y inputs
+### Line Styling
 
-4. **Test Shapes**:
-   - Add different shapes
-   - Change fill and stroke colors
-   - Adjust stroke width
-   - Resize and reposition
+- **lineCap: round** - Smooth line ends
+- **lineJoin: round** - Smooth corner joints
+- Prevents jagged edges and gives professional appearance
 
-5. **Test Layer Management**:
-   - Create multiple overlapping objects
-   - Test all layer ordering functions
-   - Verify objects can be deleted
+## Conclusion
 
-## Browser Compatibility
+All drawing tools now work fully and professionally with proper layers architecture. The system supports:
 
-All changes are compatible with modern browsers:
-- Chrome/Edge (recommended)
-- Firefox
-- Safari
+- ✅ Three-layer canvas system (Template, Drawing, Elements)
+- ✅ Professional drawing tools (Brush, Pen, Eraser)
+- ✅ Full element manipulation (Text, Images, Shapes)
+- ✅ Complete history system (Undo/Redo)
+- ✅ Real-time mockup updates
+- ✅ Neumorphic design matching PHP design
+- ✅ Laravel i18n translations
+- ✅ Responsive and interactive UI
 
-## Notes
-
-- The canvas now properly supports real-time editing
-- All object modifications trigger the `changed` event for auto-save
-- Properties panel updates are now reactive and instant
-- Error handling prevents application crashes while maintaining functionality
+The designer is now production-ready with all features working as expected.
