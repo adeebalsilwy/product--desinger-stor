@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import CustomerLayout from '@/Layouts/Customer.vue';
 import ProductCard from '@/Components/Customer/ProductCard.vue';
+import ModelViewer from '@/Components/Customer/ModelViewer.vue';
 
 const props = defineProps({
     products: Object,
@@ -47,12 +48,6 @@ const getTemplateCategoryId = () => {
     const templateProduct = (props.products.data || []).find(p => p.is_template_based);
     return templateProduct?.product_type_id || 'all';
 };
-
-const hasRealModelImage = ref(true);
-
-const useCssMannequin = () => {
-    hasRealModelImage.value = false;
-};
 </script>
 
 <template>
@@ -88,36 +83,13 @@ const useCssMannequin = () => {
                             </div>
                         </div>
                         
-                        <!-- 3D Model Display -->
+                        <!-- 3D Model Viewer -->
                         <div class="relative">
-                            <!-- Use actual image if available, otherwise use CSS mannequin -->
-                            <div class="model-showcase-container" v-if="hasRealModelImage">
-                                <div class="model-background-glow"></div>
-                                <img
-                                    src="/images/3d-girl-model-professional.png"
-                                    alt="Professional 3D Girl Model"
-                                    class="model-3d-professional"
-                                    @error="useCssMannequin"
-                                />
-                                <div class="model-base-platform"></div>
-                            </div>
-                            
-                            <!-- CSS-Only Professional Mannequin (Fallback) -->
-                            <div v-else class="css-mannequin-wrapper">
-                                <div class="css-mannequin-container">
-                                    <div class="mannequin-head"></div>
-                                    <div class="mannequin-torso">
-                                        <div class="torso-highlight"></div>
-                                    </div>
-                                    <div class="mannequin-arms">
-                                        <div class="arm left-arm"></div>
-                                        <div class="arm right-arm"></div>
-                                    </div>
-                                    <div class="mannequin-waist"></div>
-                                </div>
-                                <div class="css-model-glow"></div>
-                                <div class="css-base-platform"></div>
-                            </div>
+                            <ModelViewer 
+                                model-path="/model/eve_-_character_model.glb"
+                                :auto-rotate="true"
+                                background-color="#e0e5ec"
+                            />
                         </div>
                     </div>
                 </div>
@@ -238,282 +210,6 @@ body.night-mode .products-page-container {
 
 body.night-mode .products-hero {
   background: linear-gradient(135deg, #1e1e1e 0%, #3a3a5a 100%);
-}
-
-/* 3D Model Showcase Container */
-.model-showcase-container {
-  position: relative;
-  width: 100%;
-  max-width: 500px;
-  height: 600px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Background Glow Effect */
-.model-background-glow {
-  position: absolute;
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
-  border-radius: 50%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  animation: glow-pulse 3s ease-in-out infinite;
-}
-
-@keyframes glow-pulse {
-  0%, 100% {
-    opacity: 0.5;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: translate(-50%, -50%) scale(1.1);
-  }
-}
-
-/* Professional 3D Model */
-.model-3d-professional {
-  position: relative;
-  z-index: 2;
-  max-height: 550px;
-  max-width: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.3));
-  animation: float-model 4s ease-in-out infinite;
-  transition: all 0.5s ease;
-}
-
-.model-3d-professional:hover {
-  filter: drop-shadow(0 30px 60px rgba(102, 126, 234, 0.4));
-  transform: scale(1.05);
-}
-
-@keyframes float-model {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-15px);
-  }
-}
-
-/* Base Platform */
-.model-base-platform {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 300px;
-  height: 60px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 50%;
-  opacity: 0.3;
-  filter: blur(20px);
-  z-index: 1;
-  animation: platform-rotate 10s linear infinite;
-}
-
-@keyframes platform-rotate {
-  from {
-    transform: translateX(-50%) rotate(0deg);
-  }
-  to {
-    transform: translateX(-50%) rotate(360deg);
-  }
-}
-
-body.night-mode .model-background-glow {
-  background: radial-gradient(circle, rgba(110, 174, 255, 0.2) 0%, transparent 70%);
-}
-
-body.night-mode .model-base-platform {
-  background: linear-gradient(135deg, #6ea8ff 0%, #8b9fe3 100%);
-}
-
-/* CSS-Only Professional Mannequin */
-.css-mannequin-wrapper {
-  position: relative;
-  width: 100%;
-  max-width: 400px;
-  height: 600px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.css-mannequin-container {
-  position: relative;
-  z-index: 2;
-  animation: float-model 4s ease-in-out infinite;
-}
-
-/* Head */
-.mannequin-head {
-  width: 90px;
-  height: 110px;
-  background: linear-gradient(135deg, #f5d0b5 0%, #e8b896 50%, #d4a574 100%);
-  border-radius: 45px;
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  box-shadow:
-    inset -5px -5px 15px rgba(0, 0, 0, 0.1),
-    inset 5px 5px 15px rgba(255, 255, 255, 0.3),
-    0 10px 30px rgba(0, 0, 0, 0.2);
-}
-
-.mannequin-head::before {
-  content: '';
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 70px;
-  height: 60px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, transparent 100%);
-  border-radius: 35px;
-}
-
-/* Torso */
-.mannequin-torso {
-  width: 220px;
-  height: 300px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #5568d3 100%);
-  border-radius: 70px 70px 50px 50px;
-  position: absolute;
-  top: 100px;
-  left: 50%;
-  transform: translateX(-50%);
-  box-shadow:
-    inset -10px -10px 30px rgba(0, 0, 0, 0.2),
-    inset 10px 10px 30px rgba(255, 255, 255, 0.2),
-    0 20px 50px rgba(102, 126, 234, 0.4);
-}
-
-.torso-highlight {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 180px;
-  height: 200px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, transparent 100%);
-  border-radius: 60px;
-}
-
-/* Arms */
-.mannequin-arms {
-  position: absolute;
-  top: 120px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 380px;
-}
-
-.arm {
-  position: absolute;
-  width: 70px;
-  height: 280px;
-  background: linear-gradient(135deg, #f5d0b5 0%, #e8b896 50%, #d4a574 100%);
-  border-radius: 35px;
-  box-shadow:
-    inset -3px -3px 10px rgba(0, 0, 0, 0.1),
-    inset 3px 3px 10px rgba(255, 255, 255, 0.3),
-    0 5px 15px rgba(0, 0, 0, 0.15);
-}
-
-.left-arm {
-  left: 0;
-  transform: rotate(15deg);
-  transform-origin: top center;
-}
-
-.right-arm {
-  right: 0;
-  transform: rotate(-15deg);
-  transform-origin: top center;
-}
-
-/* Waist */
-.mannequin-waist {
-  width: 160px;
-  height: 80px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 40px 40px 60px 60px;
-  position: absolute;
-  top: 380px;
-  left: 50%;
-  transform: translateX(-50%);
-  box-shadow:
-    inset -5px -5px 20px rgba(0, 0, 0, 0.2),
-    0 15px 40px rgba(102, 126, 234, 0.3);
-}
-
-/* Glow Effect */
-.css-model-glow {
-  position: absolute;
-  width: 350px;
-  height: 350px;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.4) 0%, transparent 70%);
-  border-radius: 50%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1;
-  animation: glow-pulse 3s ease-in-out infinite;
-}
-
-/* Base Platform */
-.css-base-platform {
-  position: absolute;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 280px;
-  height: 50px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 50%;
-  opacity: 0.4;
-  filter: blur(25px);
-  z-index: 1;
-  animation: platform-rotate 10s linear infinite;
-}
-
-/* Night Mode Adjustments */
-body.night-mode .mannequin-head,
-body.night-mode .arm {
-  background: linear-gradient(135deg, #4a5568 0%, #2d3748 50%, #1a202c 100%);
-  box-shadow:
-    inset -3px -3px 10px rgba(0, 0, 0, 0.3),
-    inset 3px 3px 10px rgba(255, 255, 255, 0.1),
-    0 10px 30px rgba(110, 174, 255, 0.2);
-}
-
-body.night-mode .mannequin-torso {
-  background: linear-gradient(135deg, #6ea8ff 0%, #5c8ae6 50%, #4a7eff 100%);
-  box-shadow:
-    inset -10px -10px 30px rgba(0, 0, 0, 0.3),
-    inset 10px 10px 30px rgba(255, 255, 255, 0.15),
-    0 20px 50px rgba(110, 174, 255, 0.3);
-}
-
-body.night-mode .mannequin-waist {
-  background: linear-gradient(135deg, #6ea8ff 0%, #5c8ae6 100%);
-}
-
-body.night-mode .css-model-glow {
-  background: radial-gradient(circle, rgba(110, 174, 255, 0.3) 0%, transparent 70%);
-}
-
-body.night-mode .css-base-platform {
-  background: linear-gradient(135deg, #6ea8ff 0%, #5c8ae6 100%);
 }
 
 /* Products Title */
@@ -746,74 +442,6 @@ body.night-mode .neumorphic-pagination {
   
   .empty-state {
     padding: 30px;
-  }
-  
-  .model-showcase-container {
-    height: 400px;
-    max-width: 350px;
-  }
-  
-  .model-3d-professional {
-    max-height: 350px;
-  }
-  
-  .model-background-glow {
-    width: 280px;
-    height: 280px;
-  }
-  
-  .model-base-platform {
-    width: 200px;
-    height: 40px;
-  }
-  
-  /* CSS Mannequin Responsive */
-  .css-mannequin-wrapper {
-    height: 400px;
-    max-width: 280px;
-  }
-  
-  .mannequin-head {
-    width: 60px;
-    height: 75px;
-  }
-  
-  .mannequin-torso {
-    width: 150px;
-    height: 200px;
-    top: 70px;
-  }
-  
-  .torso-highlight {
-    width: 120px;
-    height: 140px;
-  }
-  
-  .mannequin-arms {
-    width: 260px;
-    top: 85px;
-  }
-  
-  .arm {
-    width: 50px;
-    height: 190px;
-  }
-  
-  .mannequin-waist {
-    width: 110px;
-    height: 55px;
-    top: 260px;
-  }
-  
-  .css-model-glow {
-    width: 240px;
-    height: 240px;
-  }
-  
-  .css-base-platform {
-    width: 180px;
-    height: 35px;
-    bottom: 20px;
   }
 }
 </style>

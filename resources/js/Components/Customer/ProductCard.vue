@@ -27,10 +27,20 @@ const formatPrice = (price) => {
 };
 
 const getFirstImage = () => {
-    // First try to use product images
+    // First try to use product thumbnail_url
+    if (props.product.thumbnail_url) {
+        return getImageUrl(props.product.thumbnail_url);
+    }
+    
+    // Then try to use product images relationship
     if (props.product.images && props.product.images.length > 0) {
-        const firstImage = props.product.images[0];
-        // Check if the image is an object with a url property, or a string
+        const sortedImages = [...props.product.images].sort((a, b) => {
+            const orderA = typeof a === 'object' ? (a.order || 0) : 0;
+            const orderB = typeof b === 'object' ? (b.order || 0) : 0;
+            return orderA - orderB;
+        });
+        
+        const firstImage = sortedImages[0];
         const imageUrl = typeof firstImage === 'object' && firstImage.url ? firstImage.url : firstImage;
         return getImageUrl(imageUrl);
     }
@@ -42,12 +52,6 @@ const getFirstImage = () => {
     
     if (props.product.designTemplate && props.product.designTemplate.preview_url) {
         return getImageUrl(props.product.designTemplate.preview_url);
-    }
-    
-    // For template-based products, show on mannequin/model
-    if (props.product.is_template_based && props.product.template_data) {
-        // Use a professional mannequin mockup with the template design
-        return '/images/mannequin-with-design-' + props.product.id + '.png';
     }
     
     // Fallback to placeholder

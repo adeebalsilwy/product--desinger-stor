@@ -47,6 +47,7 @@ const productDescription = computed(() => {
 const productImages = computed(() => {
     let images = [];
 
+    // Try to get images from the product object
     if (Array.isArray(currentProduct.value?.images)) {
         images = currentProduct.value.images;
     } else if (
@@ -54,6 +55,15 @@ const productImages = computed(() => {
         Array.isArray(currentProduct.value.tshirt.images)
     ) {
         images = currentProduct.value.tshirt.images;
+    }
+
+    // Sort images by order property if available
+    if (images.length > 0) {
+        images = [...images].sort((a, b) => {
+            const orderA = typeof a === 'object' ? (a.order || 0) : 0;
+            const orderB = typeof b === 'object' ? (b.order || 0) : 0;
+            return orderA - orderB;
+        });
     }
 
     const imageUrls = images
@@ -66,6 +76,11 @@ const productImages = computed(() => {
             return null;
         })
         .filter((url) => !!url && url !== "/images/logo.jpeg");
+
+    // If no images found, try to use thumbnail_url from product
+    if (!imageUrls.length && currentProduct.value?.thumbnail_url) {
+        imageUrls.push(currentProduct.value.thumbnail_url);
+    }
 
     if (!imageUrls.length) {
         return ["/images/placeholder-product.png"];

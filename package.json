@@ -21,6 +21,7 @@
     "dependencies": {
         "@heroicons/vue": "^2.2.0",
         "@primevue/themes": "^4.2.1",
+        "@types/three": "^0.183.1",
         "apexcharts": "^5.10.3",
         "cropperjs": "^2.1.0",
         "fabric": "^5.5.2",
